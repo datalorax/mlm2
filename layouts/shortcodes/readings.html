@@ -1,0 +1,38 @@
+{{ $arg1 := (.Get 0) }}
+
+{{ if eq  $arg1 "" }}
+
+	-
+
+{{ else }}
+
+<!-- Create correct link -->
+	{{ if eq $arg1 "clark" }}
+
+		<span class = "readings"><a class = "clark" href= "https://m-clark.github.io/mixed-models-with-R/{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+	
+	{{ else if eq $arg1 "r4ds" }}
+
+		<span class = "readings"><a class = "r4ds" href="https://r4ds.had.co.nz/{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+
+	{{ else if eq $arg1 "clark2" }}
+
+		<span class = "readings"><a class = "clark2" href="https://m-clark.github.io/bayesian-basics/{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+
+	{{ else if eq $arg1 "gh" }}
+
+		<span class = "readings"><a class = "gh" href="{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+
+	{{ else if eq $arg1 "sw" }}
+
+		<span class = "readings"><a class = "sw" href="{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+
+	{{ else if eq $arg1 "other" }}
+
+		<span class = "readings"><a class = "other" href="{{ .Get 1 }}"> <i data-feather="book"></i> </a></span>
+
+	{{end}}
+
+
+
+{{ end }}
