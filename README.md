@@ -1,4 +1,4 @@
-# EDLD 652: Data visualization for educational data science
+# EDLD 629: Multilevel Modeling II
 [![Netlify Status](https://api.netlify.com/api/v1/badges/6db04431-8e04-46e0-acce-de65e5a34e1b/deploy-status)](https://app.netlify.com/sites/mlm2-2021/deploys)
 
 
