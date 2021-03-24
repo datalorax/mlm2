@@ -1,0 +1,734 @@
+---
+title: "Data structuring and basic models"
+author: "Daniel Anderson "
+date: "Week 2"
+output:
+  xaringan::moon_reader:
+    css: ["default", "new.css"]
+    lib_dir: libs
+    nature:
+      navigation:
+        scroll: false
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "https://platform.twitter.com/widgets.js"
+    includes:
+      in_header: "load-feather.html"
+---
+
+```{r include = FALSE, results = "asis"}
+source(here::here("static", "slides", "slide-setup.R"))
+xaringanExtra::use_clipboard()
+```
+
+`r setup("w2p1")`
+
+---
+# Agenda 
+
+* Restructuring data
+
+* Fitting models:
+  + Unconditional model
+  + Random intercepts
+  + Random slopes
+
+* Homework 1
+
+--
+## Today will be highly applied, and (I hope) mostly review
+The only real difference is it will be in R
+
+
+---
+class: inverse-blue middle
+
+# Restructuring data 
+
+---
+# First, load the data
+
+```{r message = FALSE}
+library(tidyverse)
+theme_set(theme_minimal(25))
+knitr::opts_chunk$set(fig.width = 9, fig.height = 6)
+curran <- read_csv(here::here("data", "curran.csv"))
+curran
+```
+
+---
+# About the data
+
+>The data are a sample of 405 children who were within the first two years of entry to elementary school. The data consist of four repeated measures of both the child’s antisocial behavior and the child’s reading recognition skills. In addition, on the first measurement occasion, measures were collected of emotional support and cognitive stimulation provided by the mother. The data were collected using face-to-face interviews of both the child and the mother at two-year intervals between 1986 and 1992.
+
+See [here](https://multilevel-analysis.sites.uu.nl/datasets/)
+
+---
+# Format
+* Let's say we want to use reading scores as the outcome
+
+* We have four columns of reading scores
+
+* We can't specify multiple outcomes.
+
+## What do we do?
+
+---
+background-image:url(https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+background-size:contain
+
+# Make the data longer
+
+.footnote[Image from [R for Data Science](https://r4ds.had.co.nz/tidy-data.html)]
+
+---
+# Let's start it easy
+
+First, let's select just the ID variable and the reading scores
+
+```{r }
+read <- curran %>% 
+  select(id, starts_with("read"))
+read
+```
+
+---
+# What should our data look like?
+* Take two minutes to visualize what you think the data should look like
+
+* Feel free to even sketch something out.
+
+* We'll talk about it as a class after
+
+.pull-right[
+```{r echo = FALSE}
+knitr::kable(read[1:4, ])
+```
+]
+
+`r countdown::countdown(2, left = 0)`
+
+---
+# Moving to longer
+
+```{r }
+read %>% 
+  pivot_longer(cols = read1:read4,
+               names_to = "timepoint",
+               values_to = "score") 
+```
+
+---
+# Alternative
+You can also specify the columns that should *not* be pivoted
+
+```{r }
+read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score")
+```
+
+---
+# Are we done?
+
+--
+* In this case, we probably want to fit a growth model. That means `timepoint` needs to be numeric.
+
+
+--
+* There are numerous ways to do this - here are a few
+
+---
+# Mutate
+* Use `mutate()` to modify the column afterwords 
+
+.gray[Why did I subtract 1?]
+
+```{r }
+read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score") %>% 
+  mutate(timepoint = parse_number(timepoint) - 1)
+```
+
+
+
+---
+# Transform during the pivot
+
+```{r }
+read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score",
+               names_transform = list(timepoint = parse_number)) #<<
+```
+
+---
+# Alternative transformation
+This does the subtraction by 1 also
+
+```{r }
+sub1 <- function(x) parse_number(x) - 1
+
+read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score",
+               names_transform = list(timepoint = sub1)) 
+```
+
+---
+# Yet another approach
+This one doesn't subtract 1, however
+```{r }
+read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score",
+               names_prefix = "read",#<<
+               names_ptype = list(timepoint = "numeric")) #<<
+```
+
+
+---
+# Moving back
+Although moving longer is most often useful for multilevel modeling, occasionally we need to go wider - e.g., for a join.
+
+--
+### First, let's create a longer data object
+
+```{r }
+l <- read %>% 
+  pivot_longer(-id,
+               names_to = "timepoint",
+               values_to = "score",
+               names_transform = list(timepoint = sub1)) 
+```
+
+---
+# Now let's move it back
+Use `pivot_wider()` instead
+
+```{r }
+l %>% 
+  pivot_wider(names_from = timepoint, 
+              values_from = score)
+```
+
+---
+# Challenge
+Let's go back to the full `curran` data. See if you can get your data to look like the below.
+
+There are, again, multiple ways to do this, including only through pivot_longer
+
+```{r echo = FALSE}
+curran %>% 
+  pivot_longer(anti1:read4,
+               names_to = c("variable", "timepoint"),
+               names_sep = "(?=[\\d])",
+               names_transform = list(timepoint = sub1))
+```
+
+`r countdown::countdown(6, left = 0)`
+
+---
+# More transforming
+Our data is probably still not in the format we want. Can you get it in the format like the below?
+
+```{r echo = FALSE}
+d <- curran %>% 
+  pivot_longer(anti1:read4,
+               names_to = c("variable", "timepoint"),
+               names_sep = "(?=[\\d])",
+               names_transform = list(timepoint = sub1)) %>% 
+  pivot_wider(names_from = variable,
+              values_from = value)
+d
+```
+
+`r countdown::countdown(4, left = 0)`
+
+
+---
+# Another example
+### Read in the letter sounds data
+
+```{r message = FALSE}
+ls <- read_csv(here::here("data", "ls19.csv"))
+ls
+```
+
+---
+# LS Data
+* Average scores on the letter sounds portion of the kindergarten entry assessment for every school in the state, by race.
+
+* Data  missing if *n* too small
+
+* Remember - you (generally) don't need to dummy-code variables in R
+
+* Try structuring this data so you could estimate between-district variability, while accounting for  race/ethnicity
+
+`r countdown::countdown(6)`
+
+---
+# Self-regulation data
+
+* Same basic data with a different outcome and a different structure. 
+
+* Try restructuring this one
+
+```{r message = FALSE}
+selfreg <- read_csv(here::here("data", "selfreg19.csv"))
+selfreg
+```
+
+`r countdown::countdown(6, left = 0)`
+
+
+---
+# A bit of a caveat
+* The preceding examples would lead to sort of fundamentally flawed analyses
+
+* We'd be estimating each district mean as the mean of the school means
+
+* There are ways to account for this, which we may or may not get into later in the term
+
+* Could potentially try weighting each school mean by the school size
+
+---
+class: inverse-blue middle
+# Modeling
+
+---
+# Back to curran data
+* Let's fit a basic two-level growth model
+
+* We'll compare a random intercepts model to a random slopes model and talk about some of the complexities involved 
+
+---
+class: inverse-red middle
+# Unconditional growth model
+
+---
+# Model fitting
+* We could start with a fully unconditional model (not unconditional growth), but that's really a misspecification in this case - we know we have to account for time.
+
+* Let's first fit a model with random intercepts
+
+--
+* A reminder of what the data look like
+
+```{r }
+d
+```
+
+---
+# Fit the model
+
+Let's talk through what's going on here:
+
+```{r message = FALSE}
+library(lme4)
+m_intercepts <- lmer(read ~ 1 + timepoint + (1|id),
+                     data = d)
+```
+
+---
+# Notation
+
+### Raudenbush and Bryk
+$$
+\begin{aligned}
+\text{read}_{ij} &= \pi_{0jk} + \pi_{1jk}(\text{timepoint}) + e_{ijk} \\\
+\pi_{0jk} &= \beta_{00k} + \beta_{01k}(\text{FRL}) + r_{0jk} \\\
+\pi_{1jk} &= \beta_{10k} \\\
+\end{aligned}
+$$
+
+--
+### In Gelman & Hill
+```{r echo = FALSE, message = FALSE}
+equatiomatic::extract_eq(m_intercepts)
+```
+
+---
+# What does this look like?
+Below is a random sample of the model predictions for 20 participants
+
+```{r echo = FALSE}
+tmp <- d %>% 
+  drop_na(timepoint, id, read) %>% 
+  mutate(pred = predict(m_intercepts))
+
+full_data <- tmp %>% 
+  count(id) %>% 
+  filter(n == max(n))
+
+set.seed(42)
+samp <- sample(unique(full_data$id), 20)
+
+tmp %>% 
+  filter(id %in% samp) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_line(aes(group = id),
+            alpha = 0.8,
+            size = 1.3)
+```
+
+---
+# Parallel slopes
+* Had we of fit a standard regression model we would have had one slope to represent the trend of all participants, which would (fairly clearly) be less than ideal
+
+* Now, we've allowed each participant to have a different *starting* point, but constrained the rate of change to be constant.
+
+* How reasonable is this assumption?
+
+---
+# Random sample of 9 participants 
+
+```{r echo = FALSE}
+tmp %>% 
+  filter(id %in% samp[1:9]) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_point(aes(y = read)) +
+  geom_line(color = "cornflowerblue",
+            size = 1.3) +
+  facet_wrap(~id)
+```
+
+---
+# And 9 different participants 
+```{r echo = FALSE}
+tmp %>% 
+  filter(id %in% samp[10:18]) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_point(aes(y = read)) +
+  geom_line(color = "cornflowerblue",
+            size = 1.3) +
+  facet_wrap(~id)
+```
+
+### I would argue this is looking pretty good
+
+---
+# Plotting
+* I realize I didn't echo the code for the prior plots
+
+* You can look at the source code if you want
+
+* We will talk about making these types of plots next week
+
+---
+# Model summary
+
+```{r }
+summary(m_intercepts)
+```
+
+
+---
+class: inverse-orange middle
+# Random slopes
+
+---
+# Modeling
+* Let's fit a second model that allows each participant to have a different slope
+
+--
+```{r }
+m_slopes <- lmer(read ~ 1 + timepoint + (1 + timepoint|id),
+                     data = d)
+```
+
+--
+### Quick note on syntax
+
+I'm being very explicit in the above about what I'm estimating. However, intercepts are generally implied. So the above is equivalent to
+
+```{r eval = FALSE}
+m_slopes <- lmer(read ~ timepoint + (timepoint|id),
+                     data = d)
+```
+
+which is actually how I generally write it
+
+---
+# Important!
+You are not only estimating an additional variance component (variance of the intercept and variance of the slope), but also the *covariance* among them.
+
+--
+### In Gelman & Hill Notation
+
+```{r echo = FALSE}
+equatiomatic::extract_eq(m_slopes)
+```
+
+---
+# Contrast this with R & B
+### Raudenbush and Bryk
+
+$$
+\begin{aligned}
+\text{read}_{ij} &= \pi_{0jk} + \pi_{1jk}(\text{timepoint}) + e_{ijk} \\\
+\pi_{0jk} &= \beta_{00k} + \beta_{01k}(\text{FRL}) + r_{0jk} \\\
+\pi_{1jk} &= \beta_{10k} + r_{1jk}\\\
+\end{aligned}
+$$
+
+The covariance estimation is less clear, unless we add the additional distributional assumptions part
+
+--
+
+$$
+e_{ijk} \sim N \left(0, \sigma\right)
+$$
+
+$$
+\begin{aligned}
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &r_{0jk} \\
+      &r_{1jk}
+    \end{aligned}
+  \end{array}
+\right)
+  &\sim MVN \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &0 \\
+      &0
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \tau_{00} & \tau_{01} \\ 
+     \tau_{10} & \tau_{11}
+  \end{array}
+\right)
+ \right)
+    \text{, for id j = 1,} \dots \text{,J}
+\end{aligned}
+$$
+
+---
+# Random slopes
+Same 20  participants from before. Do they look like they differ?
+
+```{r echo = FALSE}
+tmp2 <- d %>% 
+  drop_na(timepoint, id, read) %>% 
+  mutate(pred = predict(m_slopes))
+
+tmp2 %>% 
+  filter(id %in% samp) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_line(aes(group = id),
+            alpha = 0.8,
+            size = 1.3)
+```
+
+
+---
+# Look by participant
+### Same random sample of 9 participants 
+
+```{r echo = FALSE}
+tmp2 %>% 
+  filter(id %in% samp[1:9]) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_point(aes(y = read)) +
+  geom_line(color = "cornflowerblue",
+            size = 1.3) +
+  facet_wrap(~id)
+```
+
+---
+# And an additional 9 different participants 
+```{r echo = FALSE}
+tmp2 %>% 
+  filter(id %in% samp[10:18]) %>% 
+  ggplot(aes(timepoint, pred)) +
+  geom_point(aes(y = read)) +
+  geom_line(color = "cornflowerblue",
+            size = 1.3) +
+  facet_wrap(~id)
+```
+
+---
+# What's the output look like
+```{r }
+summary(m_slopes)
+```
+
+---
+# Let's interpret each of the following
+
+* $\alpha_{j[i]}$
+
+* $\beta_{1j[i]}$
+
+* $\sigma^2_{\alpha_{j}}$
+
+* $\rho_{\alpha_{j}\beta_{1j}}$
+
+* $\sigma^2_{\beta_{1j}}$
+
+---
+# In equation form
+
+```{r echo = FALSE}
+equatiomatic::extract_eq(m_slopes, use_coefs = TRUE)
+```
+
+
+---
+# Comparing models
+* How do we know which model is preferred?
+
+
+--
+* We won't want to overfit, but we also don't want to underfit
+  + What do these terms mean again?
+
+
+--
+* Numerous approaches
+  + $\chi^2$ significance test of the change in the model deviance
+  + Information criteria (AIC/BIC)
+  + Cross validation procedures
+  
+---
+# Using built-in approaches
+
+```{r }
+anova(m_intercepts, m_slopes)
+```
+
+### What does this mean?
+
+---
+# The {performance} package
+
+Similar information, little bit nicer output
+
+```{r results = "asis", message = FALSE}
+library(performance)
+compare_performance(m_intercepts, m_slopes) %>% 
+  print_md()
+```
+
+---
+# Likelihood ratio test
+```{r results = "asis", message = FALSE}
+test_likelihoodratio(m_intercepts, m_slopes) %>% 
+  print_md()
+```
+
+---
+# Or use Bayes factors
+
+This is the default if the models are nested, as ours are
+
+```{r results = "asis", message = FALSE}
+test_performance(m_intercepts, m_slopes) %>% 
+  print_md()
+```
+
+---
+# Quick note on Bayes factors
+* Pure Bayesians typically hate them - they are sometimes called a Bayesain p-value
+
+* Tests under which model the observed data are more likely
+
+* Larger values indicate less support for the comparison model
+
+* I would advise you only use it in combination with other sources of evidence
+
+See [here](https://easystats.github.io/bayestestR/articles/bayes_factors.html) for more information
+
+---
+# Final comparison
+Let's look at the predictions for a few individual participants
+
+--
+
+```{r echo = FALSE}
+d <- d %>% 
+  drop_na(timepoint, id, read) %>% 
+  mutate(pred_int = predict(m_intercepts),
+         pred_slope = predict(m_slopes)) %>% 
+  pivot_longer(starts_with("pred"),
+               names_to = "model",
+               values_to = "prediction",
+               names_prefix = "pred_")
+
+d %>% 
+  filter(id %in% samp[1:3]) %>% 
+  ggplot(aes(timepoint, prediction)) +
+  geom_point(aes(y = read)) +
+  geom_line(aes(color = model),
+            size = 1.3) +
+  facet_wrap(~id) +
+  scale_color_brewer(palette = "Dark2")
+```
+
+---
+# Another 3 participants
+
+```{r echo = FALSE}
+d %>% 
+  filter(id %in% samp[4:6]) %>% 
+  ggplot(aes(timepoint, prediction)) +
+  geom_point(aes(y = read)) +
+  geom_line(aes(color = model),
+            size = 1.3) +
+  facet_wrap(~id) +
+  scale_color_brewer(palette = "Dark2")
+```
+
+---
+# One more set
+
+```{r echo = FALSE}
+d %>% 
+  filter(id %in% samp[7:9]) %>% 
+  ggplot(aes(timepoint, prediction)) +
+  geom_point(aes(y = read)) +
+  geom_line(aes(color = model),
+            size = 1.3) +
+  facet_wrap(~id) +
+  scale_color_brewer(palette = "Dark2")
+```
+
+---
+# Conclusions
+Given the evidence we've looked at I would conclude:
+* Both models are a considerable improvement over a linear regression model
+
+--
+* The random intercepts and slopes model is a better fit to the data than the random intercepts only model
+
+--
+* There is more variability in initial starting point than rate of change (which is typical)
+
+
+---
+* There was a modest correlation between the intercept and the slope, suggesting those who start higher also have steeper rates of change (but this was minor)
+
+---
+class: inverse-blue middle
+# Questions
+
+---
+class: inverse-green middle
+# Homework 1
+
+### Next time
+* Model predictions and visualizations

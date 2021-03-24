@@ -4,10 +4,14 @@
     <title>Welcome!</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
-    <script src="libs/header-attrs-2.6.6/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.7.4/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
-    <link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <link href="libs/countdown-0.3.5/countdown.css" rel="stylesheet" />
+    <script src="libs/countdown-0.3.5/countdown.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <link rel="stylesheet" href="new.css" type="text/css" />
   </head>
@@ -18,7 +22,7 @@ class: center, middle, inverse, title-slide
 # Welcome!
 ## An overview of the course
 ### Daniel Anderson
-### Week 1, Class 1
+### Week 1
 
 ---
 
@@ -34,15 +38,15 @@ layout: true
   &lt;div class="slides-footer"&gt;
   &lt;span&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://github.com/uo-datasci-specialization/c2-dataviz-2021/raw/main/static/slides/w1p1.pdf"&gt;
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w1p1.pdf"&gt;
     &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://dataviz-2021.netlify.app/slides/w1p1.html"&gt;
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w1p1.html"&gt;
     &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://github.com/uo-datasci-specialization/c2-dataviz-2021"&gt;
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2"&gt;
     &lt;i class = "footer-icon" data-feather="github"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
@@ -57,7 +61,7 @@ layout: true
 
 * Getting on the same page
 * Syllabus
-* A little bit of git/GitHub
+* A little bit of R
 ]
 
 .pull-right[
@@ -78,8 +82,11 @@ layout: true
 .pull-right[
 
 ![](img/IMG_1306.jpeg)
-&lt;/div&gt;
 ]
+
+---
+background-image: url(https://media1.tenor.com/images/3589ebbb70e8e8de7e6170c16a6690d3/tenor.gif)
+background-size: contain
 
 ---
 class: center middle inverse-blue
@@ -88,14 +95,20 @@ class: center middle inverse-blue
 
 .left[
 * Introduce yourself
-* Why are you here?
+
+* Why are you here? I know you probs took HLM 1, but give me a little more than that.
+
 * What pronouns would you like us to use for you for this class?
-* What was one thing you did not related to academic work over winter break?
+
+* What is one fun thing you have done not related to academic work recently?
+
+* Do you have a furry friend you want to introduce?
 ]
 
 ---
 
 # A few class policies
+
 
 --
 * Be kind
@@ -149,112 +162,112 @@ background-size:cover
 # Course Website(s)
 
 .pull-left[
-## [website](https://dataviz-2021.netlify.app)
+## [website](https://mlm2-2021.netlify.app)
 ]
 
 .pull-right[
 .right[
-## [repo](https://github.com/uo-datasci-specialization/c2-dataviz-2021)
+## [repo](https://github.com/datalorax/mlm2)
   ]
 ]
 
 
-&lt;iframe src="https://dataviz-2021.netlify.app" width="100%" height="400px"&gt;&lt;/iframe&gt;
+&lt;iframe src="https://mlm2-2021.netlify.app" width="100%" height="400px"&gt;&lt;/iframe&gt;
 
 ---
 # Materials
-* Nearly everything will be distributed through the repo and through the website.
+* Nearly everything will be distributed through the website. Go there now! Get the slides!
 
-* Please clone the repo now, if you haven't already. Pull each week for the most recent changes.
+* If you feel comfortable, it would be best if you could clone the repo , then just pull each week for the most recent changes.
 
-* We'll use Canvas for grading, and that is essentially it.
+* We'll use Canvas for grading and announcements. I'll post a few things there too, but not much.
+
+* The slides will always be available through the website, and you can click the button in the footer to download them as a PDF.
 
 ---
-# R Markdown notes
-* These slides were produced with [**{xaringan}**](https://github.com/yihui/xaringan), an R Markdown variant. I encourage you to try it out and use it for your final project presentation.
+# A method by many names
 
-* The website was also produced with R Markdown (sort of)
-  + It's a [**{blogdown}**](https://github.com/rstudio/blogdown) website with some custom CSS and Hugo shortcodes
+All of these refer to the **same thing**!
+
+* Hierarchical linear modeling
+
+* Multilevel modeling
+
+* Mixed effects modeling
+
+
+--
+And then there's a bunch of similar variants!
+
+* Hierarchical linear regression
+
+* Mixed effects regression
+
+etc.
+
+---
+# The vocabulary I'll use
+This class is technically called 
+
+.center[
+**Hierarchical linear modeling II**. 
+
+I don't like that term
+
+![](https://media0.giphy.com/media/l0MYzxkg0o1tkGSaI/source.gif)
+]
+
+---
+# Multilevel modeling
+Instead, I'll use the term multilevel modeling
+
+* Keeps it distinct from hierarchical regression (not the same thing at all)
+
+* Provides a useful heuristic
+
+  - Like many heuristics, can also be a bit limiting
   
-* This course is not just about data viz, but also mediums for communication. This includes websites and [data dashboards](https://jenthompson.me/examples/insight_progress.html) among other possibilities.
+
+---
+# Course Learning objectives
+
+
+* Fit and interpret multilevel models in R using both frequentist and Bayesian approaches
+
+
+--
+* Fit and interpret multilevel logistic regression models 
+
+
+--
+* Visualize the fitted model predictions
+
+
+--
+* Understand the assumptions of multilevel models and be able to simulate data assuming the data were generated from a multilevel model 
+
+---
+# Course Learning objectives
+
+* Understand various variance-covariance specification of the random effects and how this relates to overfitting
+
+
+--
+* Understand and be able to translate equations between the Raudenbush &amp; Bryk notation and the Gelman &amp; Hill notation
+
+
+--
+* Be able to model growth flexibly within a multilevel framework, including discontinuous and non-linear trends
 
 
 ---
 class: inverse-red middle
+# A bit of a caveat
+The previous two slides outline a lot of objectives. 
 
-# My assumptions about you
+My goal is to get you exposure to all of these concepts and help you dive deeper if you so choose
 
----
-# I assume you
-
-* Understand the R package ecosystem (how to find, install, load, and learn about them)
-
-
---
-* Can read "flat" (i.e., rectangular) datasets into R 
-
-  + I don't care what you use, but you should be using RStudio Projects &amp; the [{here}](https://github.com/r-lib/here) package
-
-    - See [Jenny Bryan's blog post](https://www.tidyverse.org/articles/2017/12/workflow-vs-script/) for why.
-
-
-
----
-* Can perform basic data wrangling and transformations in R, using the
-tidyverse  
-
-  + Leverage appropriate functions for introductory data science tasks (pipeline)
-  + "clean up" the dataset using scripts and reproducible workflows
-
---
-
-* Use version control with R via git and GitHub  
-
-
---
-* Use R Markdown to create reproducible dynamic reports
-
-
----
-# Learning objectives
-
-* Transform data in a variety of ways to create effective data visualizations
-
---
-
-* Understand and fluently apply different types of data joins
-
---
-* Understand best practices in data visualization
-
---
-
-* Customize ggplot2 graphics by reordering factors, creating themes, and applying ggthemes
-
-
---
-
-* Create an online data visualization portfolio using distill and/or flexdashboards to demonstrate key learning 
-
-
----
-
-# Examples
-Below are some links to final projects from students who took this class last year.
-
-.pull-left[
-### Dashboards
-* [Alexis Adams-Clark](https://alexisadamsclark.github.io/dashboard_finalproj/)
-* [Brendan Cullen](https://brendanhcullen.github.io/data-viz-dashboard/)
-* [Ouafaa Hmaddi](https://ohmaddi.github.io/Portfolio-Kiva/)
-]
-
-.pull-right[
-### Blog post
-* [Teresa Chen](https://teresashchen.github.io/blog/)
-* [Ashley Miller](https://ashlynnmiller.github.io/MsRememberingBlog/)
-* [Karlena Ochoa](https://karlenaochoa.github.io/610_website/)
-]
+Not all learning objectives will be covered equally - this is an advanced class, you get to decide where you'd like to focus
 
 
 ---
@@ -266,35 +279,34 @@ Provide you a frame for what you should be working to learn for that specific we
 
 ### This week's objectives
 * Understand the requirements of the course
+
 * Understand the requirements of the final project
-* Be ready to go with *git* and GitHub
+
+* Be ready to go with R and understand the basics of fitting a multilevel model
 
 
 ---
+class: inverse-blue middle
+# Textbooks
 
-# Required Textbooks (free)
+I will only require reading from textbooks that you can access for free. 
 
-.pull-left[
-## [Healy](http://socviz.co)
+---
+# [Mixed models with R](https://m-clark.github.io/mixed-models-with-R/)
 
-&lt;div&gt;
-&lt;img src = http://socviz.co/assets/dv-cover-pupress.jpg height = 400&gt;
-&lt;/div&gt;
-
-]
-
-.pull-right[
-.right[
-## [Wilke](https://serialmentor.com/dataviz/)
-]
-
-&lt;div&gt;
-&lt;img src =
-https://clauswilke.com/dataviz/cover.png height = 400&gt; &lt;/div&gt;
+&lt;iframe src="https://m-clark.github.io/mixed-models-with-R/" width="100%" height="400px"&gt;&lt;/iframe&gt;
 
 
-]
+---
+background-image: url(http://www.stat.columbia.edu/~gelman/arm/cover.gif)
+background-position: right
+class: middle
 
+
+# [Gelman and hill](http://www.stat.columbia.edu/~gelman/arm/)
+Not freely available but I will 
+
+provide select readings.
 
 ---
 
@@ -316,372 +328,116 @@ https://clauswilke.com/dataviz/cover.png height = 400&gt; &lt;/div&gt;
 .right[
 ### [Wickham &amp; Grolemund](https://r4ds.had.co.nz)
 ]
----
-class: inverse-green middle
-
-## Another resource
-See the current draft [here](https://www.sds.pub). Please read Chapter 8 before next class.
-
-&lt;iframe src="https://www.sds.pub" width="100%" height="400px"&gt;&lt;/iframe&gt;
-
 
 ---
-class: inverse-orange middle
-# Extra credit opportunity
-**10 points**: Deep dive into a topic not covered by the course
+background-image: url(https://images-na.ssl-images-amazon.com/images/I/511qSRzSlGL._SX338_BO1,204,203,200_.jpg)
+background-position: right
+class: middle
 
-
----
-# Some options
-
-* Geographic data (we'll have an intro, but there's a ton here and we won't really do it justice)
-* Network data
-* Text data
-* DAGs
-* Flow data (e.g., alluvial diagrams)
-* Relational data (SQL &amp; friends)
-* Interactive plots
-* Animated plots
-
----
-class: inverse-blue  middle
-# Some examples
-
----
-background-image:url(https://timogrossenbacher.ch/wp-content/uploads/2016/12/tm-final-map-1.png)
-background-size:contain
-
-&lt;br/&gt;
-
-
-[Timo Grossenbacher](https://timogrossenbacher.ch/2016/12/beautiful-thematic-maps-with-ggplot2-only/)
-
----
-class: inverse
-background-image:url(https://user-images.githubusercontent.com/25231784/41408567-08313b66-6fcb-11e8-8c55-75baa36364cd.png)
-background-size:contain
-
-&lt;br/&gt;
-&lt;br/&gt;
-
-[Paul Campbell](https://gist.github.com/PaulC91/e767ca4f0c4335e6e0d2f71eb7cc98cc)
-
----
-class: bottom
-background-image:url(https://ggdag.netlify.com/articles/intro-to-dags_files/figure-html/unnamed-chunk-11-1.png)
-background-size:contain
-
-&lt;br/&gt;
-&lt;br/&gt;
-
-[ggdag](https://ggdag.netlify.com/articles/intro-to-dags.html) via Malcolm Barrett
-
-
----
-class: bottom
-background-image:url(https://static01.nyt.com/images/2018/05/02/learning/economic-mobilityLN/economic-mobilityLN-superJumbo.png?quality=90&amp;auto=webp)
-background-size:contain
-
-&lt;br/&gt;
-&lt;br/&gt;
-
-[Patrick Honner](https://www.nytimes.com/2018/05/03/learning/lesson-plans/moving-on-up-teaching-with-the-data-of-economic-mobility.html) via NYT
-
----
-class: bottom
-background-image:url(https://cloud.githubusercontent.com/assets/7896861/17839509/d66b3c2a-67b7-11e6-9ee4-5f8ad54746d7.gif)
-background-size:contain
-
-&lt;br/&gt;
-&lt;br/&gt;
-
-[James Curley](https://github.com/jalapic/nba)
-
----
-# Labs
-
-See the [assignments](https://dataviz-2021.netlify.app/assignments/) page of the website.
-
-10 points each (30 points total; 15%)
-
-1. Distributions &amp; GitHub collabo 
-
-1. Visual perception  &amp; plot reproducing
-
-1. Color
-
-
----
-# Homework
-20 points each (40 points; 20%)
-
-* Basically the same as the labs, but scored correct/incorrect, and no in-class time devoted to them.
-
-* Okay to work on collaboratively - I actively encourage you to do so as long as you're using a shared repo
-
-
---
-
-* **Homework 1**: Creating new visuals while utilizing different types of joins 
-
-* **Homework 2**: Visualizing uncertainty, tables, and plot refinement
-
-
----
-# Quick note on reproducibility
-
-A [great blog post](https://simplystatistics.org/2019/08/28/you-can-replicate-almost-any-plot-with-ggplot2/) by [Rafael Irizarry](https://twitter.com/rafalab) shows how almost any plot you see in popular media can be reproduced in R with ggplot.
-
---
-
-### For example
-
-
----
-# WSJ Version
-
-![](img/measles_wsj.png) 
-
----
-# ggplot reproduction
-
-![](https://simplystatistics.org/post/2019-08-28-you-can-replicate-almost-any-plot-with-ggplot2_files/figure-html/wsj-vaccines-example-1.png)
-
-
----
-# Data viz "in the wild" presentations
-Everyone will present for ~5 minutes - order randomly assigned (coming up next)
-
-* Find two data viz examples intended for two different audiences
-
-* Discuss the following
-  - What's trying to be communicated
-  - How effective do you judge it? Why?
-  - At least 1 area of strength
-  - At least 1 area for (potential) improvement
-
-
----
-
-# Presentation order
-
-.footnote[I will email this out as well. ]
-
-
-
-.pull-left[
-&lt;table&gt;
- &lt;thead&gt;
-  &lt;tr&gt;
-   &lt;th style="text-align:left;"&gt; Date &lt;/th&gt;
-   &lt;th style="text-align:left;"&gt; Presenter &lt;/th&gt;
-  &lt;/tr&gt;
- &lt;/thead&gt;
-&lt;tbody&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-11 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Kay &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-11 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Wanjia &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-13 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Joe &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-13 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Janette &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-20 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Kavya &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-20 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Meg &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-25 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Anisha &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-25 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Rachael &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-27 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Zach &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-01-27 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Tess &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-01 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Chris &lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-]
-
-.pull-right[
-&lt;table&gt;
- &lt;thead&gt;
-  &lt;tr&gt;
-   &lt;th style="text-align:left;"&gt; Date &lt;/th&gt;
-   &lt;th style="text-align:left;"&gt; Presenter &lt;/th&gt;
-  &lt;/tr&gt;
- &lt;/thead&gt;
-&lt;tbody&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-01 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Vinita &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-03 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Shijing &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-03 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; David &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-10 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Raleigh &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-10 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Maggie &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-15 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Ann-Marie &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-15 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Murat &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-17 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Sarah Don &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-22 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Hyeonjin &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-02-24 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Anwesha &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-03-01 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Makayla &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; 2021-03-03 &lt;/td&gt;
-   &lt;td style="text-align:left;"&gt; Sarah Dim &lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-]
+# One more
+Not free, but recommended
 
 ---
 class: inverse-red middle
+# Assignments
+
+## 100 points possible
+
+---
+# Participation (10%)
+
+Each week, I'll ask you to follow along for specific parts of the slides.
+
+You might also have notes you take on specific topics.
+
+Please turn in your script and/or notes to canvas each week (1 point each).
+
+Note - this is expected whether you attend "live" or watch the recording later.
+
+---
+# Homework
+
+I am expecting we will have time to devote to the homework assignments in class.
+
+You are welcome to work in groups.
+
+Please use RMarkdown.
+
+---
+class: middle
+
+### 15 points each (45 points total; 45%)
+
+
+| Lab|Date Assigned |Date Due      |Topic                                                       |
+|---:|:-------------|:-------------|:-----------------------------------------------------------|
+|   1|Fri, April 09 |Fri, April 23 |Basic multilevel modeling with R                            |
+|   2|Fri, April 23 |Fri, May 07   |Growth models and variance-covariance matrices              |
+|   3|Fri, May 07   |Fri, May 21   |Bayesian estimation &amp; multilevel logistic regression models |
+
+
+---
 # Final Project 
-120 points total (60%)
+45 points total
 
----
-# Six parts
-* Proposal (10 points): Due 1/27/21
+### Three parts
+* Proposal/outline (5 points): Due 4/30/21
 
-* Draft (15 points): Due 2/24/21
+* Script (20 points): Due 6/9/21
 
-* Peer review (15 points): Assigned, 2/24/21; Due 3/3/21
-
-* Presentation (20 points): 3/8/21 and 3/10/21 (Week 10)
-
-* Product (60 points): Due 11:59:59 PM, 3/17/21
-
-
----
-# Product
-
-### Four components: 
-
-* A web-deployed portfolio showcasing your [#dataviz](https://twitter.com/search?q=%23DataViz&amp;src=tyah)
-  skills.
-  + [distill](https://rstudio.github.io/distill/) (what I'll lecture on), 
-    [R Markdown](https://bookdown.org/yihui/rmarkdown/rmarkdown-site.html), or
-    [blogdown](https://bookdown.org/yihui/blogdown/) website
-  + Technical document with [pagedown](https://github.com/rstudio/pagedown) or
-    [bookdown](https://bookdown.org/yihui/bookdown/)
-  + Scientific poster with [pagedown](https://github.com/rstudio/pagedown)
-  + [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/)
-
----
-
-* At least three finalized data displays, with each accompanied by a strong 
-  narrative/story, as well as the history of how the visualization changed over 
-  time.
-  
-* Housed on GitHub
-  + Fully reproducible
-
-* Deployed through [GitHub pages](https://pages.github.com) (or netlify or similar)
-
+* Writeup (20 points): Due 6/9/21
 
 ---
 # Proposal
+### Four components
 
-### Four components:
+* Data source identified, which must be shareable with me
 
-* Description of the data source (**must** be publicly available)
+* Research Question(s) identified (no more than three), which must be 
+  addressable through a multilevel model
 
-* Preliminary ideas of different viz
+* A description of any data processing that must occur before you can fit the 
+  given model
 
-* Identification of the intended audience for each viz 
-
-* The intended message to be communicated for each viz 
-
----
-# Draft
-
-* Expected to still be a work in progress
-  + Data visualizations should be largely complete
-
-* Deployment not expected
-
-* Provided to your peers so they can learn from you as much as you can learn from their feedback
+* Your current status with the project (e.g., challenges you are facing,
+  what steps still need to occur, feasibility of finishing, etc.)
 
 ---
-# Peer Review
-* We are all professionals here. It is imperative we act like it. 
+# Script
 
-* Understand the purpose of the exercise.  
+See the [assignments](https://mlm2-2021.netlify.app/assignments/#r-script-20-points) page for full details
 
-* Zero tolerance policy for inappropriate comments
+* Reproducibility: 2 points
 
-* Should be vigorously encouraging 
+* Exploratory and descriptive analyses: 3 points
 
---
+* Analysis: 10 points
+  + Model should map directly to the research question and be
+    properly specified. 
+  + Judgments are clear and justified from the evidence.
 
-### Utilizing GitHub
-You'll be assigned three proposals to review (5 points each)
-
-* Fork their repo, embed comments &amp; suggest changes to their code, submit a PR
+* Plots: 5 points
+  + One plot **from your model** that communicates
+    the coefficients, model predictions, or other features. 
 
 ---
-# Presentation 
-Order randomly assigned. Basically a chance to share what you created!
+# Writeup
 
-* Discuss what is trying to be communicated
+See the [assignments](https://mlm2-2021.netlify.app/assignments/#writeup-20-points) page for full details
 
-* Share the final products
+**Must not** exceed five pages, double-spaced, w/standard margins and font size.
 
-* Discuss the progression along the way and why specific changes were made
+* Introduction: 2 points
 
+* Research Question(s): 2 points
+
+* Method: 5 points
+
+* Results: 5 points
+
+* Discussion: 3 points
+
+* General style: 3 points
 
 ---
 class: inverse-blue middle
@@ -689,69 +445,565 @@ class: inverse-blue middle
 
 ---
 # Points
-### 200 points total
-* 3 labs at 10 points each (30 points; 15%) 
-* 2 homework assignments at 20 points each (40 points; 20%) 
-* five-minute data visualization "in the wild" presentation (10 points; 5%) 
-* Final Project (120 points; 60%)
-  + Proposal (10 points; 5%)
-  + Draft (15 points; 7.5%)
-  + Peer review (25 points; 12.5%)
-  + Presentation (10 points; 10%)
-  + Product (60 points; 30%)
-
+### 100 points total
+* Participation (10 points total; one point per class)
+* 3 Homework assignments at 15 points each (45 points) 
+* Final project proposal/outline (5 points)
+* Final project script (20 points)
+* Final project writeup (20 points)
 
 ---
 
 # Grading
 
-
 |  **Lower percent** |**Lower point range**  | **Grade** | **Upper point range**  | **Upper percent**|
-|  :------: | :------   | :-:| :-------: | ----:|
-|  0.97     | (194 pts) | A+ |           |      |
-|  0.93     | (186 pts) | A  | (194 pts) | 0.97 |
-|  0.90     | (180 pts) | A- | (186 pts) | 0.93 |
-|  0.87     | (174 pts) | B+ | (180 pts) | 0.90 |
-|  0.83     | (166 pts) | B  | (174 pts) | 0.87 |
-|  0.80     | (160 pts) | B- | (166 pts) | 0.83 |
-|  0.77     | (154 pts) | C+ | (160 pts) | 0.80 |
-|  0.73     | (146 pts) | C  | (154 pts) | 0.77 |
-|  0.70     | (140 pts) | C- | (146 pts) | 0.73 |
-|           |           | F  | (140 pts) | 0.70 |
+|  :------: | :------  | :-:| :------: | ----:|
+|  0.97     | (97 pts) | A+ |          |      |
+|  0.93     | (93 pts) | A  | (97 pts) | 0.97 |
+|  0.90     | (90 pts) | A- | (93 pts) | 0.93 |
+|  0.87     | (87 pts) | B+ | (90 pts) | 0.90 |
+|  0.83     | (83 pts) | B  | (87 pts) | 0.87 |
+|  0.80     | (80 pts) | B- | (83 pts) | 0.83 |
+|  0.77     | (77 pts) | C+ | (80 pts) | 0.80 |
+|  0.73     | (73 pts) | C  | (77 pts) | 0.77 |
+|  0.70     | (70 pts) | C- | (73 pts) | 0.73 |
+|           |          | F  | (69 pts &lt; ) | 0.70 |
+
+---
+# A note on deadlines
+
+Life be cray - don't worry about any deadlines except the final project, and make sure you get all assignments in by the final.
+
+Note - if you do turn things in late, I may not have time to provide you with as detailed feedback as I might otherwise
+
+Do worry about the final project deadline - it can't be moved. I'd suggest starting on it ASAP. You can turn things like your proposal in anytime.
 
 ---
 class: inverse
 background-image:url(https://d194ip2226q57d.cloudfront.net/original_images/10_Tips_for_Workplace_Communication)
 background-size:contain
 
+---
+# A few final notes
+* This is the first time I've taught this course
+
+* I don't have a great feel for how long things will take
+
+* Please be patient with me if we end up needing to make some changes to the course schedule
+
+* I do plan on this being highly applied, with you running lots of models and playing with data immediately 
 
 ---
-class: inverse-green center bottom
-background-image:url(https://cdn-images-1.medium.com/max/1600/1*aFHTAkhTkyWD93-UGRttPw.png)
+# Differentiation
+* I know most of you, but not all
+
+* Please understand that there is a wide range of comfort levels in this class both with R and multilevel model
+
+  + Occasionally it may feel slow, or way too fast
+  + Please be patient in either case, but **do** speak up if you are feeling lost - formative feedback is much more difficult through zoom and I may not know I'm losing you if you don't speak up.
+
+
+---
+class: inverse
+background-image:url(https://images.pexels.com/photos/1887995/pexels-photo-1887995.jpeg?auto=compress&amp;cs=tinysrgb&amp;dpr=2&amp;h=650&amp;w=940)
 background-size:contain
 
-## Full lecture on Wednesday
 
-**My goal:** To make you the most prepared cohort with GitHub to date!
-
----
-# Demo
-* The [gitkraken](https://www.gitkraken.com) GUI
-* Creating a GitHub repo
-* Sharing access (or creating an organization)
-* Cloning the repo
-* stage, commit, push
-* pull
-* branching
-* forking and issues
 
 
 ---
-class:inverse-orange middle center
+class: inverse-red middle
 
+# My assumptions about you
+
+---
+# I assume you
+
+* Have a strong foundational knowledge of multiple regression
+
+  + Example: You can interpret two-way interactions without twisting your brain too much
+
+
+--
+* Understand how multilevel modeling extends the basic multiple regression model
+
+
+--
+* Can correctly interpret two- and three-level models
+
+
+--
+* Have at least a basic understanding of how multilevel modeling can be used to estimate change over time
+
+
+---
+# Pop quiz
+
+In groups, discuss each of the following, then we'll discuss as a class:
+
+* When is multilevel modeling preferred. Is it always better that multiple regression?
+* What does it mean for something to be **nested**. Can multilevel modeling be used if the data are not nested?
+* Describe the differences between multiple regression and a model with 
+  - Random intercepts
+  - Random slopes
+  - Random intercepts and slopes
+* Why does multilevel modeling allow you to investigate changes over time? What specifically makes it different?
+
+
+---
+
+<div class="countdown" id="timer_605bb144" style="top:0;right:0;bottom:0;left:0;font-size:13rem;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">07</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+
+---
+# Pop Quiz #2
+
+Describe the model below in plain words. 
+
+$$
+`\begin{aligned}
+\text{math}_{ijk} &amp;= \pi_{0jk} + \pi_{1jk}(week) + e_{ijk} \\\
+\pi_{0jk} &amp;= \beta_{00k} + \beta_{01k}(FRL) + r_{0jk} \\\
+\pi_{1jk} &amp;= \beta_{10k} + \beta_{11k}(FRL) + r_{1jk} \\\
+\beta_{00k} &amp;= \gamma_{000} + \gamma_{001}(Size) + u_{00k} \\\
+\beta_{01k} &amp;= \gamma_{010} + \gamma_{011}(Size) + u_{01k} \\\
+\beta_{10k} &amp;= \gamma_{100} + \gamma_{101}(Size) + u_{10k} \\\
+\beta_{11k} &amp;= \gamma_{110} 
+\end{aligned}`
+$$
+where `\(i\)`, `\(j\)`, and `\(k\)` index time points, students, and schools; `\(FRL\)` is free/reduced lunch eligibility, and `\(Size\)` is the school size
+
+
+---
+
+<div class="countdown" id="timer_605bb364" style="top:0;right:0;bottom:0;left:0;font-size:13rem;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# Fixed effects
+The model on the previous slide estimates:
+
+--
+* the relation between time and students' math scores in weekly units, `\(\gamma_{1000}\)` 
+
+  - .gray[Each week students gained, on average, X math points]
+
+
+--
+* the relation between FRL eligibility and students' initial math scores, `\(\gamma_{010}\)`, and their weekly rate of growth, `\(\gamma_{110}\)` .gray[(cross-level interaction)]
+
+
+--
+* the relation between school size and students' initial math achievement, `\(\gamma_{001}\)`, rate of growth, `\(\gamma_{101}\)`, and the school-size relation with student-level FRL eligibility on initial achievement, `\(\gamma_{011}\)` .gray[(cross-level interaction)]
+
+---
+# Random effects
+It also estimates:
+
+--
+* Between-student variability in initial math scores, `\(r_{0jk}\)` and rate of weekly change, `\(r_{1jk}\)`, *as well as their covariance .gray[(not shown)]*
+
+
+--
+* Between-school variability in initial math scores, `\(u_{00k}\)`, rate of weekly change, `\(u_{10k}\)`, and the relation between student FRL eligibility and initial achievement, `\(u_{10k}\)`, *as well as all covariances .gray[(not shown)]*
+
+---
+# Back to assumptions
+### Related to R: I assume you
+
+* Have a basic understanding of the R package ecosystem (how to find, install, load, and learn about them)
+
+
+--
+* Can read "flat" (i.e., rectangular) datasets into R 
+
+
+--
+* Know and use RStudio Projects &amp; the [{here}](https://github.com/r-lib/here) package
+
+    - See [Jenny Bryan's blog post](https://www.tidyverse.org/articles/2017/12/workflow-vs-script/) for why.
+
+---
+* Can perform basic data wrangling and transformations in R, using the
+tidyverse  
+
+  + Leverage appropriate functions for introductory data science tasks (pipeline)
+  + "clean up" the dataset using scripts and reproducible workflows
+
+
+--
+* Use R Markdown to create at least basic reproducible and dynamic documents
+
+---
+class: inverse-blue bottom
+background-image:url(https://3.bp.blogspot.com/-UvxqmChbel4/Tm7C2hlrc3I/AAAAAAAADMQ/FJMAlVF_dtE/s1600/CAPITAL-LETTER-R.png)
+background-size:contain
+
+# Let's go!
+
+---
+# Let's play with R
+* Open RStudio
+* Install any of the packages below you don't already have installed
+
+* General recommendation when installing packages - Type 1 at prompt to update old packages - select "no" if asked to compile from source
+
+```r
+install.package("tidyverse")
+install.packages("lme4")
+install.packages("equatiomatic")
+remotes::install_github("easystats/easystats")
+
+# Or for the latest and greatest features for equatiomatic
+remotes::install_github("datalorax/equatiomatic")
+```
+
+---
+Load **equatiomatic** and you should have access to the `hsb` dataset
+
+
+```r
+library(equatiomatic)
+head(hsb)
+```
+
+```
+##   sch.id   math size sector meanses minority female    ses
+## 1   1224  5.876  842      0  -0.428        0      1 -1.528
+## 2   1224 19.708  842      0  -0.428        0      1 -0.588
+## 3   1224 20.349  842      0  -0.428        0      0 -0.528
+## 4   1224  8.781  842      0  -0.428        0      0 -0.668
+## 5   1224 17.898  842      0  -0.428        0      0 -0.158
+## 6   1224  4.583  842      0  -0.428        0      0  0.022
+```
+
+---
+# HSB
+* I'm assuming you're all familiar with it. Perhaps painfully so.
+
+* We're just doing some basic R stuff here
+
+* Let's load the **tidyverse** and compute:
+  + mean math scores by school
+  + standard error of the mean, which is `\(\frac{\sigma}{\sqrt{n}}\)`
+
+---
+
+```r
+library(tidyverse)
+sch_means &lt;- hsb %&gt;% 
+  group_by(sch.id) %&gt;% 
+  summarize(sch_mean = mean(math, na.rm = TRUE),
+            sch_mean_se = sd(math, na.rm = TRUE)/sqrt(n()))
+sch_means
+```
+
+```
+## # A tibble: 160 x 3
+##    sch.id  sch_mean sch_mean_se
+##     &lt;int&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+##  1   1224  9.715447   1.107521 
+##  2   1288 13.5108     1.404369 
+##  3   1296  7.635958   0.7723605
+##  4   1308 16.2555     1.367186 
+##  5   1317 13.17769    0.7884564
+##  6   1358 11.20623    1.072893 
+##  7   1374  9.728464   1.579465 
+##  8   1433 19.71914    0.6551441
+##  9   1436 18.11161    0.6856883
+## 10   1461 16.84264    1.209306 
+## # … with 150 more rows
+```
+
+---
+# Plot the means only
+Not particularly helpful
+
+```r
+ggplot(sch_means, aes(sch_mean, sch.id)) +
+  geom_point()
+```
+
+![](w1p1_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+# Order schools
+
+
+```r
+sch_means %&gt;% 
+* mutate(sch.id = factor(sch.id),
+*        sch.id = reorder(sch.id, sch_mean)) %&gt;%
+  ggplot(aes(sch_mean, sch.id)) +
+  geom_point()
+```
+
+![](w1p1_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+# Add SE of mean
+
+
+```r
+sch_means %&gt;% 
+  mutate(sch.id = factor(sch.id),
+         sch.id = reorder(sch.id, sch_mean)) %&gt;% 
+  ggplot(aes(sch_mean, sch.id)) +
+* geom_errorbarh(
+*   aes(xmin = sch_mean - 1.96*sch_mean_se,
+*       xmax = sch_mean + 1.96*sch_mean_se),
+* ) +
+  geom_point(color = "#0aadff")
+```
+
+
+---
+# Add SE of mean
+
+![](w1p1_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+---
+# Add sample mean
+
+
+```r
+sch_means %&gt;% 
+  mutate(sch.id = factor(sch.id),
+         sch.id = reorder(sch.id, sch_mean)) %&gt;% 
+  ggplot(aes(sch_mean, sch.id)) +
+  geom_errorbarh(
+    aes(xmin = sch_mean - 1.96*sch_mean_se,
+        xmax = sch_mean + 1.96*sch_mean_se),
+    height = 0.3
+  ) + 
+  geom_point(color = "#0aadff") +
+* geom_vline(xintercept = mean(hsb$math, na.rm = TRUE),
+*            color = "#0affa5",
+*            size = 2)
+```
+
+---
+# Add sample mean
+
+![](w1p1_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+
+---
+# Why did we do this?
+We could make the prior plot prettier, but that's not really why we were doing this.
+
+
+--
+Do you think there's between-school variation in math scores?
+
+
+--
+Let's model it!
+
+---
+# Fit a basic model
+
+
+```r
+# install.packages("lme4")
+library(lme4)
+```
+
+--
+Can we fit a model equivalent to what we just did descriptively? 
+
+What would that look like? (I don't mean code, I mean statistically/conceptually)
+
+---
+# Unconditional model
+An unconditional model just estimates a mean score for each school. 
+
+
+--
+If we have no other variables in our model, the prediction for each student would equal the school mean
+
+
+--
+Using the Gelman and Hill notation, the unconditional model we want would look like this:
+
+$$
+`\begin{aligned}
+  \operatorname{math}_{i}  &amp;\sim N \left(\alpha_{j[i]}, \sigma^2 \right) \\
+    \alpha_{j}  &amp;\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for sch.id j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+which we'll get into more later.
+
+---
+# Estimate it!
+When we use **lme4** to estimate this model, it looks like this:
+
+
+```r
+m0 &lt;- lmer(math ~ 1 + (1|sch.id), hsb)
+```
+
+--
+We learn more about this model with `summary(m0)`.
+
+
+--
+If you're used to the HLM software, this will seem *blazingly* fast.
+
+---
+
+```r
+summary(m0)
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: math ~ 1 + (1 | sch.id)
+##    Data: hsb
+## 
+## REML criterion at convergence: 47116.8
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -3.0631 -0.7539  0.0267  0.7606  2.7426 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  sch.id   (Intercept)  8.614   2.935   
+##  Residual             39.148   6.257   
+## Number of obs: 7185, groups:  sch.id, 160
+## 
+## Fixed effects:
+##             Estimate Std. Error t value
+## (Intercept)  12.6370     0.2444   51.71
+```
+
+---
+# In equation form
+$$
+`\begin{aligned}
+  \operatorname{\widehat{math}}_{i}  &amp;\sim N \left(12.64_{\alpha_{j[i]}}, 6.26 \right) \\
+    \alpha_{j}  &amp;\sim N \left(0, 2.93 \right)
+    \text{, for sch.id j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+
+--
+Part of why I like the above notation more is that it makes our assumptions explicit
+
+
+--
+What's your guess - how will our model-estimated school means compare to our descriptive stats?
+
+---
+# Pull estimated means
+We won't worry about the standard errors for now.
+
+
+```r
+estimated_means &lt;- coef(m0)$sch.id
+head(estimated_means)
+```
+
+```
+##      (Intercept)
+## 1224    9.973039
+## 1288   13.376384
+## 1296    8.068508
+## 1308   15.585491
+## 1317   13.130920
+## 1358   11.394462
+```
+
+---
+# Join them
+
+
+```r
+estimated_means &lt;- estimated_means %&gt;% 
+  mutate(sch.id = as.integer(rownames(.))) %&gt;% 
+  rename(intercept = `(Intercept)`)
+
+left_join(sch_means, estimated_means)
+```
+
+```
+## Joining, by = "sch.id"
+```
+
+```
+## # A tibble: 160 x 4
+##    sch.id  sch_mean sch_mean_se intercept
+##     &lt;int&gt;     &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+##  1   1224  9.715447   1.107521   9.973039
+##  2   1288 13.5108     1.404369  13.37638 
+##  3   1296  7.635958   0.7723605  8.068508
+##  4   1308 16.2555     1.367186  15.58549 
+##  5   1317 13.17769    0.7884564 13.13092 
+##  6   1358 11.20623    1.072893  11.39446 
+##  7   1374  9.728464   1.579465  10.13462 
+##  8   1433 19.71914    0.6551441 18.90522 
+##  9   1436 18.11161    0.6856883 17.59908 
+## 10   1461 16.84264    1.209306  16.33355 
+## # … with 150 more rows
+```
+
+---
+# Plot it
+
+
+```r
+left_join(sch_means, estimated_means) %&gt;% 
+  mutate(sch.id = factor(sch.id),
+         sch.id = reorder(sch.id, sch_mean)) %&gt;% 
+  ggplot(aes(sch_mean, sch.id)) +
+  geom_point(color = "#0aadff") +
+  geom_point(aes(x = intercept),
+             color = "#ff0ad6") +
+    geom_vline(xintercept = mean(hsb$math, na.rm = TRUE),
+             color = "#0affa5",
+             size = 2)
+```
+
+---
+class: center
+
+![](w1p1_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+
+Points are being pulled toward the grand mean
+
+---
+# ICC
+
+* We can estimate the ICC with the **performance** package
+* Part of **easystats**
+
+
+```r
+library(performance)
+icc(m0)
+```
+
+```
+## # Intraclass Correlation Coefficient
+## 
+##      Adjusted ICC: 0.180
+##   Conditional ICC: 0.180
+```
+
+So approximately 18% of the variability in math scores lies between schools.
+
+---
+class: inverse-green middle
 # Next time
-
-### Collaborating with GitHub
+* Data structuring - moving data to a longer format
+* Random intercepts, random slopes, multiple levels
+* Homework 1 is assigned - we'll hopefully have 30-45 minutes to work on it in class.
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

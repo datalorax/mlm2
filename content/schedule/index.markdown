@@ -19,10 +19,10 @@ Icons in the schedule link to specific chapters.
 {{< week "04-02" >}}
   {{< description "Introduction" "Introductions. Weekly schedule and topics. Fitting a basic model with lme4::lmer." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w1p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "syllabus/#final-project" "Prop" >}}
+{{< assigned "assignments/#final-project" "Prop" >}}
 {{< assigned "assignments/#final-project" "Final" >}}
 {{< /wrap >}}
   {{< wrap >}}
@@ -44,7 +44,7 @@ Icons in the schedule link to specific chapters.
 {{< week "04-09" >}}
   {{< description "Basic data structuring issues and fitting models" "We will begin the day discussing the format lme4 expects the data to be in for fitting models. We'll fit a few models with the data already in this format. We'll then move to "messy" data in different formats and discussion moving them to the correct format. We will focus primarily on two issues: (a) moving data from a wider format to a longer format, and (b) joining data from different levels into a single dataset. Not that it is assumed this is mostly review. If it is not, additional readings will be asigned." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w2p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< assigned "assignments" "hw1" >}}
