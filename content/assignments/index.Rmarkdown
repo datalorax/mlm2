@@ -11,8 +11,8 @@ knitr::opts_chunk$set(message = FALSE,
 
 Participation in class is expected and will be scored at one point per class,
 for a total of 10 points, which is 10% of your total grade. There will also
-be three homework assignments at 15 points each, a final project proposal 
-(5 points), and the final project itself (40 points).
+be three homework assignments at 15 points each (45 points), a final project proposal 
+(5 points), and the final project itself (40 points), for 100 total points.
 
 #### A note on deadlines
 I would like to, as much a possible, stick to the deadlines below so we can go over them together as a group *after* everyone has submitted their assignment. However, **if you need additional time for any reason** please just send me a note letting me know. You do not need to justify why. I would just ask that you not attend class during the time we are going over the assignment (but please attend the rest of the class if you are able).
@@ -24,7 +24,7 @@ your code to note these would be helpful. Other time, I will ask you to follow
 along with me, and you can turn in your script from this time.
 
 ## Homework
-Each homework assignment is worth 10 points. Please do not turn in partial work. Instead, please ask for help and, if needed, an extension on the deadline. 
+Each homework assignment is worth 15 points. Please do not turn in partial work. Instead, please ask for help and, if needed, an extension on the deadline. 
 
 ```{r }
 library(tidyverse)
