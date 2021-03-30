@@ -89,20 +89,20 @@ curran
 
 ```
 ## # A tibble: 405 x 15
-##       id anti1 anti2 anti3 anti4    read1 read2     read3     read4 kidgen momage
-##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-##  1    22     1     2    NA    NA 2.1        3.9 NA        NA             0     28
-##  2    34     3     6     4     5 2.1        2.9  4.5       4.5           1     28
-##  3    58     0     2     0     1 2.300000   4.5  4.2       4.600000      0     28
-##  4   122     0     3     1     1 3.7        8   NA        NA             1     28
-##  5   125     1     1     2     1 2.300000   3.8  4.3       6.2           0     29
-##  6   133     3     4     3     5 1.8        2.6  4.100000  4             1     28
-##  7   163     5     4     5     5 3.5        4.8  5.8       7.5           1     28
-##  8   190     0    NA    NA     0 2.9        6.1 NA        NA             0     28
-##  9   227     0     0     2     1 1.8        3.8  4        NA             0     29
-## 10   248     1     2     2     0 3.5        5.7  7         6.9           0     28
-## # … with 395 more rows, and 4 more variables: kidage &lt;dbl&gt;, homecog &lt;dbl&gt;,
-## #   homeemo &lt;dbl&gt;, nmis &lt;dbl&gt;
+##       id anti1 anti2 anti3 anti4    read1 read2     read3     read4 kidgen
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;
+##  1    22     1     2    NA    NA 2.1        3.9 NA        NA             0
+##  2    34     3     6     4     5 2.1        2.9  4.5       4.5           1
+##  3    58     0     2     0     1 2.300000   4.5  4.2       4.600000      0
+##  4   122     0     3     1     1 3.7        8   NA        NA             1
+##  5   125     1     1     2     1 2.300000   3.8  4.3       6.2           0
+##  6   133     3     4     3     5 1.8        2.6  4.100000  4             1
+##  7   163     5     4     5     5 3.5        4.8  5.8       7.5           1
+##  8   190     0    NA    NA     0 2.9        6.1 NA        NA             0
+##  9   227     0     0     2     1 1.8        3.8  4        NA             0
+## 10   248     1     2     2     0 3.5        5.7  7         6.9           0
+## # … with 395 more rows, and 5 more variables: momage &lt;dbl&gt;, kidage &lt;dbl&gt;,
+## #   homecog &lt;dbl&gt;, homeemo &lt;dbl&gt;, nmis &lt;dbl&gt;
 ```
 
 ---
@@ -177,7 +177,7 @@ read
 | 122|   3.7|   8.0|    NA|    NA|
 ]
 
-<div class="countdown" id="timer_605bb2f2" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_605d0995" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -442,7 +442,7 @@ There are, again, multiple ways to do this, including only through pivot_longer
 ## # … with 3,230 more rows
 ```
 
-<div class="countdown" id="timer_605bb2fb" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_605d08f4" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -468,7 +468,7 @@ Our data is probably still not in the format we want. Can you get it in the form
 ## # … with 1,610 more rows
 ```
 
-<div class="countdown" id="timer_605bb09d" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_605d0b32" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -485,20 +485,21 @@ ls
 
 ```
 ## # A tibble: 962 x 13
-##    county       distid dist_name          instid inst_name          inst_type asian
-##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt;     &lt;dbl&gt;
-##  1 All Counties   9999 Statewide            9999 Statewide          State      11.8
-##  2 Baker          1894 Baker SD 5J          1894 Baker SD 5J        District   NA  
-##  3 Baker          1895 Huntington SD 16J    1895 Huntington SD 16J  District   NA  
-##  4 Baker          1896 Burnt River SD 30J   1896 Burnt River SD 30J District   NA  
-##  5 Baker          1897 Pine Eagle SD 61     1897 Pine Eagle SD 61   District   NA  
-##  6 Benton         1898 Monroe SD 1J         1898 Monroe SD 1J       District   NA  
-##  7 Benton         1899 Alsea SD 7J          1899 Alsea SD 7J        District   NA  
-##  8 Benton         1900 Philomath SD 17J     1900 Philomath SD 17J   District   NA  
-##  9 Benton         1901 Corvallis SD 509J    1901 Corvallis SD 509J  District   13.8
-## 10 Clackamas      1902 Clackamas ESD        1902 Clackamas ESD      District   NA  
-## # … with 952 more rows, and 6 more variables: black_african_american &lt;dbl&gt;,
-## #   hispanic_latino &lt;dbl&gt;, american_indian_alaska_native &lt;dbl&gt;, multi_racial &lt;dbl&gt;,
+##    county       distid dist_name          instid inst_name          inst_type
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt;    
+##  1 All Counties   9999 Statewide            9999 Statewide          State    
+##  2 Baker          1894 Baker SD 5J          1894 Baker SD 5J        District 
+##  3 Baker          1895 Huntington SD 16J    1895 Huntington SD 16J  District 
+##  4 Baker          1896 Burnt River SD 30J   1896 Burnt River SD 30J District 
+##  5 Baker          1897 Pine Eagle SD 61     1897 Pine Eagle SD 61   District 
+##  6 Benton         1898 Monroe SD 1J         1898 Monroe SD 1J       District 
+##  7 Benton         1899 Alsea SD 7J          1899 Alsea SD 7J        District 
+##  8 Benton         1900 Philomath SD 17J     1900 Philomath SD 17J   District 
+##  9 Benton         1901 Corvallis SD 509J    1901 Corvallis SD 509J  District 
+## 10 Clackamas      1902 Clackamas ESD        1902 Clackamas ESD      District 
+## # … with 952 more rows, and 7 more variables: asian &lt;dbl&gt;,
+## #   black_african_american &lt;dbl&gt;, hispanic_latino &lt;dbl&gt;,
+## #   american_indian_alaska_native &lt;dbl&gt;, multi_racial &lt;dbl&gt;,
 ## #   native_hawaiian_pacific_islander &lt;dbl&gt;, white &lt;dbl&gt;
 ```
 
@@ -512,7 +513,7 @@ ls
 
 * Try structuring this data so you could estimate between-district variability, while accounting for  race/ethnicity
 
-<div class="countdown" id="timer_605bb1c9" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_605d0a3b" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -531,24 +532,24 @@ selfreg
 
 ```
 ## # A tibble: 6,734 x 13
-##    county       distid dist_name   instid inst_name   inst_type selfreg_score Asian
-##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;             &lt;dbl&gt; &lt;dbl&gt;
-##  1 All Counties   9999 Statewide     9999 Statewide   State               3.7     1
-##  2 All Counties   9999 Statewide     9999 Statewide   State               3.3     0
-##  3 All Counties   9999 Statewide     9999 Statewide   State               3.4     0
-##  4 All Counties   9999 Statewide     9999 Statewide   State               3.3     0
-##  5 All Counties   9999 Statewide     9999 Statewide   State               3.5     0
-##  6 All Counties   9999 Statewide     9999 Statewide   State               3.4     0
-##  7 All Counties   9999 Statewide     9999 Statewide   State               3.5     0
-##  8 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA       1
-##  9 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA       0
-## 10 Baker          1894 Baker SD 5J   1894 Baker SD 5J District            3.9     0
-## # … with 6,724 more rows, and 5 more variables: Black.African.American &lt;dbl&gt;,
-## #   Hispanic.Latino &lt;dbl&gt;, Multi.Racial &lt;dbl&gt;,
+##    county       distid dist_name   instid inst_name   inst_type selfreg_score
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;             &lt;dbl&gt;
+##  1 All Counties   9999 Statewide     9999 Statewide   State               3.7
+##  2 All Counties   9999 Statewide     9999 Statewide   State               3.3
+##  3 All Counties   9999 Statewide     9999 Statewide   State               3.4
+##  4 All Counties   9999 Statewide     9999 Statewide   State               3.3
+##  5 All Counties   9999 Statewide     9999 Statewide   State               3.5
+##  6 All Counties   9999 Statewide     9999 Statewide   State               3.4
+##  7 All Counties   9999 Statewide     9999 Statewide   State               3.5
+##  8 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA  
+##  9 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA  
+## 10 Baker          1894 Baker SD 5J   1894 Baker SD 5J District            3.9
+## # … with 6,724 more rows, and 6 more variables: Asian &lt;dbl&gt;,
+## #   Black.African.American &lt;dbl&gt;, Hispanic.Latino &lt;dbl&gt;, Multi.Racial &lt;dbl&gt;,
 ## #   Native.Hawaiian.Pacific.Islander &lt;dbl&gt;, White &lt;dbl&gt;
 ```
 
-<div class="countdown" id="timer_605bb2a6" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_605d0aab" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -931,6 +932,92 @@ $$
 
 
 ---
+# P values
+The **{lme4}** package does not report `\(p\)`-values. This is because its author, [Douglas Bates](http://pages.stat.wisc.edu/~bates/), believes they are [fundamentally flawed](https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html) for multilevel models.
+
+The link above is worth reading through, but basically it is not straightforward to calculate the denominator degrees of freedom for an `\(F\)` test. The methods that are used are approximations and, although generally accepted, are not guaranteed to be correct.
+
+---
+# Alternatives
+There are two primary work-arounds here: 
+
+* Don't use `\(p\)`-values, and instead just interpret the confidence intervals, or 
+
+* Use the same approximation that others use via [**{lmerTest}**](https://github.com/runehaubo/lmerTestR) package.
+
+---
+# Confidence intervals
+Multiple options, but profiled or bootstrap confidence intervals are generally preferred, though computationally intensive. Note that these provide CIs for the variance components as well.
+
+
+```r
+confint(m_slopes)
+```
+
+```
+## Computing profile confidence intervals ...
+```
+
+```
+##                  2.5 %    97.5 %
+## .sig01      0.67961051 0.8365439
+## .sig02      0.06898955 0.5434982
+## .sig03      0.22282787 0.3213734
+## .sigma      0.55548063 0.6238545
+## (Intercept) 2.60721096 2.7850364
+## timepoint   1.07653165 1.1622218
+```
+
+---
+# lmerTest
+
+
+```r
+library(lmerTest)
+# refit model
+m_slopes2 &lt;- lmer(read ~ timepoint + (timepoint|id),
+                     data = d)
+```
+
+---
+# New summary
+
+```r
+summary(m_slopes2)
+```
+
+```
+## Linear mixed model fit by REML. t-tests use Satterthwaite's method [
+## lmerModLmerTest]
+## Formula: read ~ timepoint + (timepoint | id)
+##    Data: d
+## 
+## REML criterion at convergence: 3382
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.7161 -0.5201 -0.0220  0.4793  4.1847 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev. Corr
+##  id       (Intercept) 0.57309  0.7570       
+##           timepoint   0.07459  0.2731   0.29
+##  Residual             0.34584  0.5881       
+## Number of obs: 1325, groups:  id, 405
+## 
+## Fixed effects:
+##              Estimate Std. Error        df t value Pr(&gt;|t|)    
+## (Intercept)   2.69609    0.04530 400.87693   59.52   &lt;2e-16 ***
+## timepoint     1.11915    0.02169 308.40833   51.60   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Correlation of Fixed Effects:
+##           (Intr)
+## timepoint -0.155
+```
+
+---
 # Comparing models
 * How do we know which model is preferred?
 
@@ -1045,17 +1132,17 @@ Let's look at the predictions for a few individual participants
 
 --
 
-![](w2p1_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
+![](w2p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
 
 ---
 # Another 3 participants
 
-![](w2p1_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+![](w2p1_files/figure-html/unnamed-chunk-40-1.png)&lt;!-- --&gt;
 
 ---
 # One more set
 
-![](w2p1_files/figure-html/unnamed-chunk-38-1.png)&lt;!-- --&gt;
+![](w2p1_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
 
 ---
 # Conclusions

@@ -589,12 +589,51 @@ equatiomatic::extract_eq(m_slopes, use_coefs = TRUE)
 
 
 ---
+# P values
+The **{lme4}** package does not report $p$-values. This is because its author, [Douglas Bates](http://pages.stat.wisc.edu/~bates/), believes they are [fundamentally flawed](https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html) for multilevel models.
+
+The link above is worth reading through, but basically it is not straightforward to calculate the denominator degrees of freedom for an $F$ test. The methods that are used are approximations and, although generally accepted, are not guaranteed to be correct.
+
+---
+# Alternatives
+There are two primary work-arounds here: 
+
+* Don't use $p$-values, and instead just interpret the confidence intervals, or 
+
+* Use the same approximation that others use via [**{lmerTest}**](https://github.com/runehaubo/lmerTestR) package.
+
+---
+# Confidence intervals
+Multiple options, but profiled or bootstrap confidence intervals are generally preferred, though computationally intensive. Note that these provide CIs for the variance components as well.
+
+```{r }
+confint(m_slopes)
+```
+
+---
+# lmerTest
+
+```{r message = FALSE}
+library(lmerTest)
+
+# refit model
+m_slopes2 <- lmer(read ~ timepoint + (timepoint|id),
+                     data = d)
+```
+
+---
+# New summary
+```{r }
+summary(m_slopes2)
+```
+
+---
 # Comparing models
 * How do we know which model is preferred?
 
 
 --
-* We won't want to overfit, but we also don't want to underfit
+* We don't want to overfit, but we also don't want to underfit
   + What do these terms mean again?
 
 
