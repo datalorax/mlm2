@@ -47,7 +47,7 @@ Icons in the schedule link to specific chapters.
 {{< slides "w2p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "assignments" "hw1" >}}
+{{< assigned "homework-1" "hw1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 
@@ -97,7 +97,7 @@ Icons in the schedule link to specific chapters.
 {{< assigned "assignments" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "hw1" >}}
+{{< due "assignments" "homework-1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/extensions.html#residual-structure" "" >}}

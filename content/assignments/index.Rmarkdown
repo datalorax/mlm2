@@ -35,7 +35,7 @@ labs <- tibble(
   Lab = 1:3,
   `Date Assigned` = mdy(c("4/9/21", "4/23/21", "5/7/21")),
   `Date Due` = mdy(c("4/23/21", "5/7/21", "5/21/21")),
-  Topic = c("Basic multilevel modeling with R",
+  Topic = c("[Basic multilevel modeling with R](../homework-1)",
             "Growth models and variance-covariance matrices",
             "Bayesian estimation & multilevel logistic regression models")
 ) %>% 
