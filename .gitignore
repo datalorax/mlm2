@@ -41,3 +41,5 @@ vignettes/*.pdf
 *.knit.md
 
 website-data/~$course-schedule.xlsx
+
+scripts/g345V2.Rda
