@@ -1,0 +1,978 @@
+---
+title: "Predictions and visualizations"
+author: "Daniel Anderson "
+date: "Week 3"
+output:
+  xaringan::moon_reader:
+    css: ["default", "new.css"]
+    lib_dir: libs
+    nature:
+      navigation:
+        scroll: false
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "https://platform.twitter.com/widgets.js"
+    includes:
+      in_header: "load-feather.html"
+---
+
+```{r include = FALSE, results = "asis"}
+source(here::here("static", "slides", "slide-setup.R"))
+xaringanExtra::use_clipboard()
+library(tidyverse)
+theme_set(theme_minimal(25))
+knitr::opts_chunk$set(fig.width = 13)
+update_geom_defaults('errorbarh', list(size = 2))
+update_geom_defaults('path', list(size = 3))
+update_geom_defaults('point', list(size = 5))
+update_geom_defaults('text', list(size = 9))
+```
+
+`r setup("w3p1")`
+
+---
+# Agenda
+* Fitting some basic models
+
+* Coefficient plots
+
+* Using the coefficients to make predictions "by hand"
+  + contrast with results from `predict()`
+
+* Building predictions for new data
+
+* Marginal effects
+
+---
+# Read in the data
+Let's read in the popularity data so we can fit some really basic models.
+
+You try first
+
+`r countdown::countdown(2)`
+
+--
+```{r message = FALSE}
+library(tidyverse)
+popular <- read_csv(here::here("data", "popularity.csv"))
+popular
+```
+
+---
+# Fit a basic model
+
+Fit each of the following models
+
+* `popular` as the outcome, with a random intercept for `class`
+
+* `popular` as the outcome, with `sex` included as a fixed effect and a random intercept for `class`
+
+* `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
+
+`r countdown::countdown(4)`
+
+---
+# Models
+
+```{r message = FALSE}
+library(lme4)
+m0 <- lmer(popular ~ 1 + (1|class), popular)
+m1 <- lmer(popular ~ sex + (1|class), popular)
+m2 <- lmer(popular ~ sex + (sex|class), popular)
+```
+
+---
+# Compare performance
+Use whatever tests you'd like, and come up with the model you think fits the data best
+
+`r countdown::countdown(4)`
+
+--
+```{r }
+library(performance)
+compare_performance(m0, m1, m2) %>% 
+  print_md()
+```
+
+---
+# Test of the Log-likelihood 
+
+```{r message = FALSE}
+test_likelihoodratio(m0, m1) %>% 
+  print_md()
+test_likelihoodratio(m1, m2) %>% 
+  print_md()
+```
+
+Pretty good evidence that `m1` displays the best fit
+
+---
+class: inverse-blue middle
+
+# Coefficient plots
+
+
+---
+# Package options
+
+The [**{parameters}**](https://easystats.github.io/parameters/) package (part of the [**{easystats}**](https://github.com/easystats) ecosystem) will get you where you want to be. 
+
+Alternatively, you could use the [**{broom.mixed}**](https://github.com/bbolker/broom.mixed) package (which is a spin-off of the [**{broom}**](https://github.com/tidymodels/broom) package) which requires slightly less code.
+
+I'll illustrate both
+
+```{r eval = FALSE}
+install.packages("broom.mixed")
+```
+
+---
+# {broom.mixed}
+
+```{r message = FALSE}
+library(broom.mixed)
+tidy(m0)
+```
+
+--
+Or get just the fixed effects
+
+```{r }
+tidy(m0, effects = "fixed")
+```
+
+---
+# Across models
+Let's tidy all three models, extracting just the fixed effects, and **adding in a 95% confidence interval**
+
+--
+```{r }
+models <- bind_rows(
+  tidy(m0, effects = "fixed", conf.int = TRUE),
+  tidy(m1, effects = "fixed", conf.int = TRUE),
+  tidy(m2, effects = "fixed", conf.int = TRUE),
+  .id = "model"
+  ) %>% 
+  mutate(model = as.numeric(model) - 1)
+models
+```
+
+---
+# Plot
+
+```{r fig.height = 6}
+pd <- position_dodge(0.5)
+ggplot(models, aes(estimate, term, color = factor(model))) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd)
+```
+
+---
+# Standardization
+The nice thing about tidying the model output, is that the code on the previous slides *will always work* regardless of the model(s) you've fit.
+
+--
+## Caveat
+I don't actually think the prior plot is all that useful.
+
+* Occasionally helpful to visualize differences between coefficients, but you'll usually want to omit the intercept
+
+* Be careful about scales
+
+* If you were to publish the prior plot, make it prettier and more accessible first
+
+---
+# {parameters}
+
+To get basically the same output from parameters:
+```{r }
+library(parameters)
+parameters(m0) %>% 
+  as_tibble()
+
+models2 <- bind_rows(
+  as_tibble(parameters(m0)),
+  as_tibble(parameters(m1)),
+  as_tibble(parameters(m2)),
+  .id = "model"
+  ) %>% 
+  mutate(model = as.numeric(model) - 1)
+```
+
+---
+```{r fig.height = 6}
+pd <- position_dodge(0.5)
+ggplot(models2, aes(Coefficient, Parameter, 
+                    color = factor(model))) +
+  geom_errorbarh(aes(xmin = CI_low, xmax = CI_high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd)
+```
+
+---
+# Other parts of the model
+From here on out, I'll just be using **{broom.mixed}** but either package should work, with minor tweaks.
+
+--
+## Variance components
+Notice that, by default, we don't have any uncertainty
+
+```{r }
+tidy(m0)
+```
+
+--
+We can fix this by using bootstrap or profiled CIs
+
+---
+# Bootstrap CIs
+
+```{r }
+tidy(
+  m0,
+  effects = "ran_pars", 
+  conf.int = TRUE, 
+  conf.method = "boot"
+)
+```
+
+---
+# m2
+Note this takes a bit of time, even though the model is pretty simple. Also these are standard deviations and a correlation, not variances/covariances
+
+```{r warning = FALSE}
+tidy(
+  m2,
+  effects = "ran_pars", 
+  conf.int = TRUE, 
+  conf.method = "boot"
+)
+```
+
+
+
+---
+# Quick challenge
+Can you make a dotplot with uncertainty for the variance components? 
+
+What about a plot showing both fixed effects and variance components?
+
+`r countdown::countdown(6)`
+
+---
+# One approach
+
+```{r cache = TRUE}
+pull_model_results <- function(model) {
+  tidy(
+    model,
+    conf.int = TRUE, 
+    conf.method = "boot"
+  )
+}
+full_models <- bind_rows(
+  pull_model_results(m0),
+  pull_model_results(m1),
+  pull_model_results(m2),
+  .id = "model"
+)
+```
+
+---
+```{r }
+ggplot(full_models, aes(estimate, term, color = factor(model))) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd) +
+  facet_wrap(~effect, scales = "free_y") +
+  theme(legend.position = "bottom")
+```
+
+---
+# Random effects
+## Pop Quiz
+What's the difference between the output from below and the output on the next slide?
+
+```{r }
+tidy(m0, effects = "ran_vals")
+```
+
+---
+```{r }
+tidy(m0, effects = "ran_coefs")
+```
+
+---
+# Answer
+The output from `ran_vals` provides the estimate from $\alpha_j \sim N(0, \sigma)$.
+
+The output from `ran_coefs` provides the class-level predictions, i.e., in this case, the intercept + the estimated `ran_vals`. 
+
+--
+## Example
+
+```{r}
+tidy(m0, effects = "ran_vals")$estimate[1:5] + fixef(m0)[1]
+tidy(m0, effects = "ran_coefs")$estimate[1:5]
+```
+
+---
+# Let's plot the `ran_vals`
+
+```{r fig.height = 5}
+m0_ranvals <- tidy(m0, effects = "ran_vals", conf.int = TRUE)
+ggplot(m0_ranvals, aes(level, estimate)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.2) +
+  geom_point() +
+  geom_hline(yintercept = 0, size = 2, color = "magenta")
+```
+
+Not super helpful
+
+---
+# Try again
+Let's reorder the `level` according to the estimate
+
+```{r eval = FALSE}
+m0_ranvals %>% 
+  mutate(level = reorder(factor(level), estimate)) %>% #<<
+  ggplot(aes(level, estimate)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.5) +
+  geom_point() +
+  geom_hline(yintercept = 0, size = 2, color = "magenta")
+```
+
+---
+```{r echo = FALSE, fig.height = 9}
+m0_ranvals %>% 
+  mutate(level = reorder(factor(level), estimate)) %>% 
+  ggplot(aes(level, estimate)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.5) +
+  geom_point() +
+  geom_hline(yintercept = 0, size = 2, color = "magenta")
+```
+
+---
+# Wrapping up coef plots
+* Coefficient plots are generally fairly easy to produce, but often not the most informative
+
+* Random effects plots are probs more informative than the fixed effects/variance components plots
+
+* You can make either a lot more fancy, accessible, etc., and probably should if you're going to use it for publication.
+
+---
+class: inverse-red midle
+# Making predictions "by hand"
+
+---
+# Reminder
+Our raw data looks like this
+```{r }
+popular
+```
+
+---
+# Thinking back 
+## to standard regression
+let's say we fit a model like this
+
+```{r }
+m <- lm(popular ~ 1 + sex, data = popular)
+```
+
+--
+Our estimated model is
+
+```{r }
+equatiomatic::extract_eq(m, use_coef = TRUE)
+```
+
+---
+# Making a prediction
+What would our model on the prior slide predict for the first student?
+
+```{r }
+pupil1 <- popular[1, ]
+pupil1
+```
+
+--
+```{r }
+coef(m)[1] + # intercept
+  coef(m)[2] * (pupil1$sex == "girl")
+```
+
+--
+
+```{r }
+predict(m)[1]
+```
+
+---
+# What about this model?
+If we use the predict function for `m2`, we get
+
+```{r}
+predict(m2)[1]
+```
+
+### How does the model come up with this prediction?
+
+Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
+
+`r countdown::countdown(3)`
+
+---
+# Thinking through the model
+* We have classroom random effects for the intercept and slope
+
+* This means the prediction for an individual is made up of:
+
+  + Overall intercept `+`
+  + Overall slope `+`
+  + Classroom intercept offset (diff of classroom intercept from overall intercept) `+`
+  + Classroom slope offset (diff of classroom slope from overall slope)
+
+---
+# Do it!
+## First look back at the data
+```{r }
+popular[1, ]
+```
+
+---
+## Next extract the `ran_vals` for the coresponding class
+
+```{r }
+m2_ranvals <- tidy(m2, effects = "ran_vals")
+class1_ranvals <- m2_ranvals %>% 
+  filter(group == "class" & level == 1)
+class1_ranvals
+```
+
+---
+# Make prediction
+```{r }
+fixef(m2)
+fixef(m2)[1] + fixef(m2)[2]*(popular[1, ]$sex == "girl") +
+  class1_ranvals$estimate[1] + class1_ranvals$estimate[2]
+```
+
+--
+Confirm
+```{r }
+predict(m2)[1]
+```
+
+---
+# Challenge
+* Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
+
+`r countdown::countdown(5)`
+
+--
+```{r }
+class10_ranvals <- m2_ranvals %>% 
+  filter(group == "class" & level == 10)
+
+fixef(m2)[1] + class10_ranvals$estimate[1]
+```
+
+---
+# Confirm with `predict()`
+
+```{r }
+test <- popular %>% 
+  mutate(pred = predict(m2)) %>% 
+  filter(class == 10 & sex == "boy") 
+test
+```
+
+---
+# More on the predict function
+
+* Once you have the model parameters, you can predict for any values of those parameters
+
+
+--
+Let's fit a slightly more complicated model, using a different longitudinal file than what you used (or are using) in the homework
+
+--
+```{r }
+library(equatiomatic)
+head(sim_longitudinal)
+```
+
+---
+# Model
+### You try first
+* Fit a model with `wave` and `treatment` as predictors of students' `score`. Allow the intercept and the relation between `wave` and `score` to vary by student.
+
+--
+```{r }
+m <- lmer(score ~ wave + treatment + (wave|sid),
+          data = sim_longitudinal)
+
+```
+
+---
+# Plot predictions
+Let's first just limit our data to the first three students.
+
+```{r }
+first_three <- sim_longitudinal %>% 
+  ungroup() %>% #<<
+  filter(sid %in% 1:3)
+```
+
+--
+Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
+
+`r countdown::countdown(2)`
+
+---
+```{r }
+first_three %>% 
+  mutate(model_pred = predict(m, newdata = first_three))
+```
+
+---
+# Plot
+Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
+
+`r countdown::countdown(3)`
+
+---
+
+```{r }
+first_three %>% 
+  mutate(model_pred = predict(m, newdata = first_three)) %>% 
+  ggplot(aes(wave, score, color = treatment)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = model_pred)) +
+  facet_wrap(~sid)
+```
+
+---
+# Predictions outside our data
+Student 2 has a considerably lower intercept. What would we predict the trend would look like if they had been in the treatment group?
+
+
+--
+Try to make this prediction on your own for all time points
+
+`r countdown::countdown(2)`
+
+---
+```{r }
+stu2_trt <- data.frame(
+  sid = 2,
+  wave = 0:9,
+  treatment = factor("1", levels = c(0, 1))
+)
+
+predict(m, newdata = stu2_trt)
+```
+
+---
+# Compare
+
+```{r eval = FALSE}
+sim_longitudinal %>% 
+  filter(sid == 2) %>% 
+  mutate(model_pred = predict(m, newdata = .),
+         trt_pred = predict(m, newdata = stu2_trt)) %>% 
+  ggplot(aes(wave, score)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = model_pred)) +
+  geom_line(aes(y = trt_pred),
+            color = "firebrick") +
+  annotate(
+    "text", 
+    x = 6, 
+    y = 81, 
+    hjust = 0, 
+    color = "firebrick", 
+    label = "Predicted slope if student\nwas in treatment group"
+  )
+```
+
+
+---
+```{r echo = FALSE, fig.height = 10}
+sim_longitudinal %>% 
+  filter(sid == 2) %>% 
+  mutate(model_pred = predict(m, newdata = .),
+         trt_pred = predict(m, newdata = stu2_trt)) %>% 
+  ggplot(aes(wave, score)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = model_pred)) +
+  geom_line(aes(y = trt_pred),
+            color = "firebrick") +
+  annotate("text", x = 6, y = 81, 
+           hjust = 0, 
+           color = "firebrick", 
+           label = "Predicted slope if student\nwas in treatment group")
+```
+
+---
+# Wait... negative?
+
+--
+Yes...
+
+```{r }
+arm::display(m)
+```
+
+.gray[Note - I'm just using an alternative function here to get it to fit on the slides easier]
+
+---
+# Other projections
+We have a *linear* model. This means we can just extend the line to $\infty$ if we wanted to
+
+
+--
+.realbig[🤪]
+
+```{r }
+newdata_stu2 <- data.frame(
+  sid = 2,
+  wave = rep(-500:500, 2),
+  treatment = factor(rep(c(0, 1), each = length(-500:500)))
+)
+```
+
+---
+```{r }
+newdata_stu2 %>% 
+  mutate(pred = predict(m, newdata = newdata_stu2)) %>% 
+  ggplot(aes(wave, pred)) +
+  geom_line(aes(color = treatment))
+```
+
+---
+class: inverse-blue middle
+# Uncertainty
+
+---
+# What to predict?
+Let's say we want to predict what time points 10, 11, and 12 would look like for
+the first three students.
+
+
+--
+First, create the prediction data frame
+
+```{r }
+pred_frame <- data.frame(
+  sid = rep(1:3, each = 13),
+  wave = rep(0:12),
+  treatment = factor(rep(c(1, 0, 1), each = 13))
+)
+
+head(pred_frame)
+```
+
+---
+# merTools
+Next, load the [**{merTools}**](https://github.com/jknowles/merTools) package
+
+```{r message = FALSE}
+library(merTools)
+```
+
+--
+Create a prediction interval with `predictInterval()`, using simulation to obtain the prediction interval
+
+```{r }
+m_pred_interval <- predictInterval(m, newdata = pred_frame, level = 0.95)
+m_pred_interval
+```
+
+---
+# Binding data together
+Let's add these predictions back to our prediction data frame, then plot them
+
+```{r }
+bind_cols(pred_frame, m_pred_interval)
+```
+
+---
+# Plot
+
+```{r }
+bind_cols(pred_frame, m_pred_interval) %>% 
+  ggplot(aes(wave, fit)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.4) +
+  geom_line(color = "magenta") +
+  facet_wrap(~sid)
+```
+
+
+---
+# How?
+What's really going on here?
+
+See [here](https://cran.rstudio.com/web/packages/merTools/vignettes/Using_predictInterval.html) for a full description, but basically:
+
+1. Creates a simulated (with `n.sim` samples) distribution for each model parameter
+2. Computes a distribution of predictions
+3. Returns the specifics of the prediction distribution, as requested (e.g., `fit` is the mean or median, and `upr` and `lwr` are the corresponding quaniteles for the uncertainty range)
+
+
+---
+# Disclaimer
+According to the **{lme4}** authors
+
+> There is no option for computing standard errors of predictions because it is difficult to define an efficient method that incorporates uncertainty in the variance parameters; we recommend lme4::bootMer() for this task.
+
+
+--
+The `predictInterval()` function is an approximation, while `bootMer()` is the "gold standard" (it just takes a long time)
+
+---
+# Boostrapping
+
+Write a function to compute make the predictions for each bootstrap resmple
+
+```{r }
+pred_fun <- function(fit) {
+  predict(fit, newdata = pred_frame)
+}
+```
+
+Notice we're using the same prediction data frame
+
+---
+# Now create BS Estimates
+
+Note this takes a few seconds, and for bigger models may take a *long* time
+
+```{r cache = TRUE}
+b <- bootMer(m, nsim = 1000, FUN = pred_fun, use.u = TRUE, seed = 42)
+```
+
+--
+The predictions are stored in a matrix `t`
+
+```{r label, options}
+dim(b$t)
+```
+
+Each row of the matrix is the prediction for the given bootstrap estimate
+
+---
+# Lots of options
+There are lots of things you could do with this now.  I'll move it to a data frame first
+
+--
+```{r }
+bd <- as.data.frame(t(b$t)) %>% 
+  mutate(sid = rep(1:3, each = 13),
+         wave = rep(0:12, 3)) %>% 
+  pivot_longer(
+    starts_with("V"),
+    names_to = "bootstrap_sample",
+    names_prefix = "V",
+    names_transform = list(bootstrap_sample = as.numeric),
+    values_to = "score"
+  ) %>% 
+  arrange(sid, bootstrap_sample, wave)
+```
+
+---
+```{r }
+bd
+```
+
+---
+# Plot
+
+```{r }
+ggplot(bd, aes(wave, score)) +
+  geom_line(aes(group = bootstrap_sample),
+            size = 0.1,
+            alpha = 0.5,
+            color = "cornflowerblue") +
+  facet_wrap(~sid)
+```
+
+---
+# Prefer ribbons?
+
+```{r message = FALSE}
+bd_ribbons <- bd %>% 
+  group_by(sid, wave) %>% 
+  summarize(quantile = quantile(score, c(0.025, 0.975)),
+            group = c("lower", "upper")) %>% 
+  pivot_wider(names_from = "group", values_from = "quantile")
+bd_ribbons
+```
+
+---
+# Join with real data
+
+```{r }
+bd_ribbons <- left_join(first_three, bd_ribbons) %>% 
+  mutate(pred = predict(m, newdata = first_three))
+
+```
+
+---
+# Plot again
+
+```{r }
+ggplot(bd_ribbons, aes(wave, score)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper),
+              alpha = 0.5) +
+  geom_line(aes(y = pred), size = 1, color = "magenta") +
+  geom_point() +
+  facet_wrap(~sid)
+```
+
+---
+# Important
+There are different types of bootstrap resampling you can choose from
+
+* Do you want to randomly sample from the random effects also? `use.u = FALSE`
+
+* Do you want to assume the random effect estimates are true, and just sample the rest? `use.u = TRUE`
+
+
+--
+Honestly - this is a bit confusing to me, and the results from `use.u = FALSE` didn't make much sense to me.
+
+---
+class: inverse-blue middle
+# More complications
+
+---
+# Interactions
+
+Let's create an interaction between `treatment` and `wave`
+
+--
+### Conceptually: what would this mean?
+
+--
+Let's also add in a school-level random effect for the intercept
+
+
+---
+# Interactions
+Specified just like with `lm()`. Each of the below are equivalent
+
+```{r eval = FALSE}
+wave + treatment + wave:treatment
+```
+
+```{r eval = FALSE}
+wave * treatment
+```
+
+where the latter just expands out to the former. 
+
+---
+# Adding additional levels
+There are a few ways to do this:
+* Assume your IDs are all unique
+  + implicit nesting
+* Don't worry and the IDs, and specify the nesting through the formula
+  + Will result in equivalent estimates if the IDs are unique
+
+See [here](https://www.muscardinus.be/2017/07/lme4-random-effects/) for more examples
+
+---
+# Implicit nesting
+
+```{r }
+m1a <- lmer(score ~ wave*treatment + 
+              (wave|sid) + (1|school),
+            data = sim_longitudinal)
+arm::display(m1a)
+```
+
+---
+# Explicit nesting
+```{r }
+m1b <- lmer(score ~ wave*treatment + 
+              (wave|sid:school) + (1|school) ,
+            data = sim_longitudinal)
+arm::display(m1b)
+```
+
+---
+# Predictions 
+Let's randomly sample 5 students in the first four school and display the model predictions for those students.
+
+There are many ways to create the sample, here's one:
+
+```{r }
+samp <- sim_longitudinal %>% 
+  filter(school %in% 1:4) %>% 
+  group_by(school, sid) %>% 
+  nest()
+samp
+```
+
+---
+# Select 10 rows for each school
+
+```{r }
+set.seed(42)
+samp %>% 
+  group_by(school) %>% 
+  sample_n(5)
+```
+
+---
+# unnest
+
+
+```{r }
+set.seed(42)
+samp <- samp %>% 
+  group_by(school) %>% 
+  sample_n(5) %>% 
+  unnest(data) %>% 
+  ungroup()
+samp
+```
+
+---
+# Make prediction
+```{r }
+samp %>% 
+  mutate(pred = predict(m1a, newdata = samp))
+```
+
+---
+# Plot
+```{r }
+samp %>% 
+  mutate(pred = predict(m1a, newdata = samp)) %>% 
+  ggplot(aes(wave, pred, group = sid)) +
+  geom_line() +
+  facet_wrap(~school)
+```
+
+---
+class: inverse-green middle
+
+# Next time
+* Digging into the variance-covariance matrix of the random effects
+
+* Finally discussing Gelman & Hill notation in more depth
+
+* Homework 1 is due, Homework 2 assigned

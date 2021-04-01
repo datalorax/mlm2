@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Predictions and visualizations</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Daniel Anderson" />
+    <script src="libs/header-attrs-2.7.4/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <link href="libs/countdown-0.3.5/countdown.css" rel="stylesheet" />
+    <script src="libs/countdown-0.3.5/countdown.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="new.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Predictions and visualizations
+### Daniel Anderson
+### Week 3
+
+---
+
+
+
+
+layout: true
+
+  &lt;script&gt;
+    feather.replace()
+  &lt;/script&gt;
+  
+  &lt;div class="slides-footer"&gt;
+  &lt;span&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w3p1.pdf"&gt;
+    &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w3p1.html"&gt;
+    &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2"&gt;
+    &lt;i class = "footer-icon" data-feather="github"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;/span&gt;
+  &lt;/div&gt;
+  
+
+---
+# Agenda
+* Fitting some basic models
+
+* Coefficient plots
+
+* Using the coefficients to make predictions "by hand"
+  + contrast with results from `predict()`
+
+* Building predictions for new data
+
+* Marginal effects
+
+---
+# Read in the data
+Let's read in the popularity data so we can fit some really basic models.
+
+You try first
+
+<div class="countdown" id="timer_60665f82" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+```r
+library(tidyverse)
+popular &lt;- read_csv(here::here("data", "popularity.csv"))
+popular
+```
+
+```
+## # A tibble: 2,000 x 7
+##    pupil class extrav sex    texp popular popteach
+##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1     1      5 girl     24     6.3        6
+##  2     2     1      7 boy      24     4.9        5
+##  3     3     1      4 girl     24     5.3        6
+##  4     4     1      3 girl     24     4.7        5
+##  5     5     1      5 girl     24     6          6
+##  6     6     1      4 boy      24     4.7        5
+##  7     7     1      5 boy      24     5.9        5
+##  8     8     1      4 boy      24     4.2        5
+##  9     9     1      5 boy      24     5.2        5
+## 10    10     1      5 boy      24     3.9        3
+## # … with 1,990 more rows
+```
+
+---
+# Fit a basic model
+
+Fit each of the following models
+
+* `popular` as the outcome, with a random intercept for `class`
+
+* `popular` as the outcome, with `sex` included as a fixed effect and a random intercept for `class`
+
+* `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
+
+<div class="countdown" id="timer_60665fab" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# Models
+
+
+```r
+library(lme4)
+m0 &lt;- lmer(popular ~ 1 + (1|class), popular)
+m1 &lt;- lmer(popular ~ sex + (1|class), popular)
+m2 &lt;- lmer(popular ~ sex + (sex|class), popular)
+```
+
+---
+# Compare performance
+Use whatever tests you'd like, and come up with the model you think fits the data best
+
+<div class="countdown" id="timer_60665e0e" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+```r
+library(performance)
+compare_performance(m0, m1, m2) %&gt;% 
+  print_md()
+```
+
+
+
+Table: Comparison of Model Performance Indices
+
+|Name |   Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
+|:----|:-------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
+|m0   | lmerMod | 6336.51 | 6353.31 |       0.36 |       0.00 | 0.36 | 1.08 |  1.11 |
+|m1   | lmerMod | 5572.07 | 5594.48 |       0.53 |       0.26 | 0.37 | 0.89 |  0.91 |
+|m2   | lmerMod | 5571.05 | 5604.66 |       0.54 |       0.26 | 0.38 | 0.88 |  0.90 |
+
+---
+# Test of the Log-likelihood 
+
+
+```r
+test_likelihoodratio(m0, m1) %&gt;% 
+  print_md()
+```
+
+
+
+|Name |  Model | df| df_diff|   Chi2|         p|
+|:----|:-------|--:|-------:|------:|---------:|
+|m0   |lmerMod |  3|        |       |          |
+|m1   |lmerMod |  4|       1| 766.44| 1.07e-168|
+
+```r
+test_likelihoodratio(m1, m2) %&gt;% 
+  print_md()
+```
+
+
+
+|Name |  Model | df| df_diff| Chi2|    p|
+|:----|:-------|--:|-------:|----:|----:|
+|m1   |lmerMod |  4|        |     |     |
+|m2   |lmerMod |  6|       2| 5.02| 0.08|
+
+Pretty good evidence that `m1` displays the best fit
+
+---
+class: inverse-blue middle
+
+# Coefficient plots
+
+
+---
+# Package options
+
+The [**{parameters}**](https://easystats.github.io/parameters/) package (part of the [**{easystats}**](https://github.com/easystats) ecosystem) will get you where you want to be. 
+
+Alternatively, you could use the [**{broom.mixed}**](https://github.com/bbolker/broom.mixed) package (which is a spin-off of the [**{broom}**](https://github.com/tidymodels/broom) package) which requires slightly less code.
+
+I'll illustrate both
+
+
+```r
+install.packages("broom.mixed")
+```
+
+---
+# {broom.mixed}
+
+
+```r
+library(broom.mixed)
+tidy(m0)
+```
+
+```
+## # A tibble: 3 x 6
+##   effect   group    term             estimate   std.error statistic
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278
+## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA      
+## 3 ran_pars Residual sd__Observation 1.105348  NA           NA
+```
+
+--
+Or get just the fixed effects
+
+
+```r
+tidy(m0, effects = "fixed")
+```
+
+```
+## # A tibble: 1 x 5
+##   effect term        estimate  std.error statistic
+##   &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+## 1 fixed  (Intercept) 5.077860 0.08739443  58.10278
+```
+
+---
+# Across models
+Let's tidy all three models, extracting just the fixed effects, and **adding in a 95% confidence interval**
+
+--
+
+```r
+models &lt;- bind_rows(
+  tidy(m0, effects = "fixed", conf.int = TRUE),
+  tidy(m1, effects = "fixed", conf.int = TRUE),
+  tidy(m2, effects = "fixed", conf.int = TRUE),
+  .id = "model"
+  ) %&gt;% 
+  mutate(model = as.numeric(model) - 1)
+models
+```
+
+```
+## # A tibble: 5 x 8
+##   model effect term        estimate  std.error statistic conf.low conf.high
+##   &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1     0 fixed  (Intercept) 5.077860 0.08739443  58.10278 4.906570  5.249150
+## 2     1 fixed  (Intercept) 4.394460 0.07586494  57.92478 4.245767  4.543152
+## 3     1 fixed  sexgirl     1.350102 0.04403301  30.66113 1.263799  1.436405
+## 4     2 fixed  (Intercept) 4.396820 0.08012978  54.87123 4.239768  4.553871
+## 5     2 fixed  sexgirl     1.352175 0.05029920  26.88263 1.253590  1.450760
+```
+
+---
+# Plot
+
+
+```r
+pd &lt;- position_dodge(0.5)
+ggplot(models, aes(estimate, term, color = factor(model))) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+# Standardization
+The nice thing about tidying the model output, is that the code on the previous slides *will always work* regardless of the model(s) you've fit.
+
+--
+## Caveat
+I don't actually think the prior plot is all that useful.
+
+* Occasionally helpful to visualize differences between coefficients, but you'll usually want to omit the intercept
+
+* Be careful about scales
+
+* If you were to publish the prior plot, make it prettier and more accessible first
+
+---
+# {parameters}
+
+To get basically the same output from parameters:
+
+```r
+library(parameters)
+parameters(m0) %&gt;% 
+  as_tibble()
+```
+
+```
+## # A tibble: 1 x 10
+##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error
+##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt;
+## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997
+## # … with 2 more variables: p &lt;dbl&gt;, Effects &lt;chr&gt;
+```
+
+```r
+models2 &lt;- bind_rows(
+  as_tibble(parameters(m0)),
+  as_tibble(parameters(m1)),
+  as_tibble(parameters(m2)),
+  .id = "model"
+  ) %&gt;% 
+  mutate(model = as.numeric(model) - 1)
+```
+
+---
+
+```r
+pd &lt;- position_dodge(0.5)
+ggplot(models2, aes(Coefficient, Parameter, 
+                    color = factor(model))) +
+  geom_errorbarh(aes(xmin = CI_low, xmax = CI_high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+
+---
+# Other parts of the model
+From here on out, I'll just be using **{broom.mixed}** but either package should work, with minor tweaks.
+
+--
+## Variance components
+Notice that, by default, we don't have any uncertainty
+
+
+```r
+tidy(m0)
+```
+
+```
+## # A tibble: 3 x 6
+##   effect   group    term             estimate   std.error statistic
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278
+## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA      
+## 3 ran_pars Residual sd__Observation 1.105348  NA           NA
+```
+
+--
+We can fix this by using bootstrap or profiled CIs
+
+---
+# Bootstrap CIs
+
+
+```r
+tidy(
+  m0,
+  effects = "ran_pars", 
+  conf.int = TRUE, 
+  conf.method = "boot"
+)
+```
+
+```
+## Computing bootstrap confidence intervals ...
+```
+
+```
+## # A tibble: 2 x 6
+##   effect   group    term             estimate  conf.low conf.high
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7080964 0.9770007
+## 2 ran_pars Residual sd__Observation 1.105348  1.070106  1.140767
+```
+
+---
+# m2
+Note this takes a bit of time, even though the model is pretty simple. Also these are standard deviations and a correlation, not variances/covariances
+
+
+```r
+tidy(
+  m2,
+  effects = "ran_pars", 
+  conf.int = TRUE, 
+  conf.method = "boot"
+)
+```
+
+```
+## Computing bootstrap confidence intervals ...
+```
+
+```
+## 
+## 46 message(s): boundary (singular) fit: see ?isSingular
+## 9 warning(s): Model failed to converge with max|grad| = 0.00203683 (tol = 0.002, component 1) (and others)
+```
+
+```
+## # A tibble: 4 x 6
+##   effect   group    term                       estimate    conf.low  conf.high
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;
+## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6080367  0.8756282 
+## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000   0.06869743
+## 3 ran_pars class    sd__sexgirl               0.2336921  0.03033356 0.3793648 
+## 4 ran_pars Residual sd__Observation           0.9049626  0.8745766  0.9327013
+```
+
+
+
+---
+# Quick challenge
+Can you make a dotplot with uncertainty for the variance components? 
+
+What about a plot showing both fixed effects and variance components?
+
+<div class="countdown" id="timer_60666065" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# One approach
+
+
+```r
+pull_model_results &lt;- function(model) {
+  tidy(
+    model,
+    conf.int = TRUE, 
+    conf.method = "boot"
+  )
+}
+full_models &lt;- bind_rows(
+  pull_model_results(m0),
+  pull_model_results(m1),
+  pull_model_results(m2),
+  .id = "model"
+)
+```
+
+```
+## Computing bootstrap confidence intervals ...
+## Computing bootstrap confidence intervals ...
+## Computing bootstrap confidence intervals ...
+## Computing bootstrap confidence intervals ...
+## Computing bootstrap confidence intervals ...
+```
+
+```
+## 
+## 30 message(s): boundary (singular) fit: see ?isSingular
+## 13 warning(s): Model failed to converge with max|grad| = 0.00215039 (tol = 0.002, component 1) (and others)
+```
+
+```
+## Computing bootstrap confidence intervals ...
+```
+
+```
+## 
+## 30 message(s): boundary (singular) fit: see ?isSingular
+## 9 warning(s): Model failed to converge with max|grad| = 0.00203702 (tol = 0.002, component 1) (and others)
+```
+
+---
+
+```r
+ggplot(full_models, aes(estimate, term, color = factor(model))) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), 
+                 position = pd,
+                 height = 0.2) +
+  geom_point(position = pd) +
+  facet_wrap(~effect, scales = "free_y") +
+  theme(legend.position = "bottom")
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+
+---
+# Random effects
+## Pop Quiz
+What's the difference between the output from below and the output on the next slide?
+
+
+```r
+tidy(m0, effects = "ran_vals")
+```
+
+```
+## # A tibble: 100 x 6
+##    effect   group level term            estimate std.error
+##    &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;              &lt;dbl&gt;     &lt;dbl&gt;
+##  1 ran_vals class 1     (Intercept) -0.002630828 0.2370649
+##  2 ran_vals class 2     (Intercept) -0.8949875   0.2370649
+##  3 ran_vals class 3     (Intercept) -0.3496155   0.2487845
+##  4 ran_vals class 4     (Intercept)  0.3318175   0.2222273
+##  5 ran_vals class 5     (Intercept)  0.1919485   0.2317938
+##  6 ran_vals class 6     (Intercept) -0.6833977   0.2370649
+##  7 ran_vals class 7     (Intercept) -0.8062842   0.2317938
+##  8 ran_vals class 8     (Intercept) -1.019181    0.2370649
+##  9 ran_vals class 9     (Intercept) -0.3844123   0.2370649
+## 10 ran_vals class 10    (Intercept)  0.2226622   0.2178678
+## # … with 90 more rows
+```
+
+---
+
+```r
+tidy(m0, effects = "ran_coefs")
+```
+
+```
+## # A tibble: 100 x 5
+##    effect    group level term        estimate
+##    &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;          &lt;dbl&gt;
+##  1 ran_coefs class 1     (Intercept) 5.075229
+##  2 ran_coefs class 2     (Intercept) 4.182872
+##  3 ran_coefs class 3     (Intercept) 4.728244
+##  4 ran_coefs class 4     (Intercept) 5.409677
+##  5 ran_coefs class 5     (Intercept) 5.269808
+##  6 ran_coefs class 6     (Intercept) 4.394462
+##  7 ran_coefs class 7     (Intercept) 4.271575
+##  8 ran_coefs class 8     (Intercept) 4.058678
+##  9 ran_coefs class 9     (Intercept) 4.693447
+## 10 ran_coefs class 10    (Intercept) 5.300522
+## # … with 90 more rows
+```
+
+---
+# Answer
+The output from `ran_vals` provides the estimate from `\(\alpha_j \sim N(0, \sigma)\)`.
+
+The output from `ran_coefs` provides the class-level predictions, i.e., in this case, the intercept + the estimated `ran_vals`. 
+
+--
+## Example
+
+
+```r
+tidy(m0, effects = "ran_vals")$estimate[1:5] + fixef(m0)[1]
+```
+
+```
+## [1] 5.075229 4.182872 4.728244 5.409677 5.269808
+```
+
+```r
+tidy(m0, effects = "ran_coefs")$estimate[1:5]
+```
+
+```
+## [1] 5.075229 4.182872 4.728244 5.409677 5.269808
+```
+
+---
+# Let's plot the `ran_vals`
+
+
+```r
+m0_ranvals &lt;- tidy(m0, effects = "ran_vals", conf.int = TRUE)
+ggplot(m0_ranvals, aes(level, estimate)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.2) +
+  geom_point() +
+  geom_hline(yintercept = 0, size = 2, color = "magenta")
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+
+Not super helpful
+
+---
+# Try again
+Let's reorder the `level` according to the estimate
+
+
+```r
+m0_ranvals %&gt;% 
+* mutate(level = reorder(factor(level), estimate)) %&gt;%
+  ggplot(aes(level, estimate)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.5) +
+  geom_point() +
+  geom_hline(yintercept = 0, size = 2, color = "magenta")
+```
+
+---
+![](w3p1_files/figure-html/unnamed-chunk-23-1.png)&lt;!-- --&gt;
+
+---
+# Wrapping up coef plots
+* Coefficient plots are generally fairly easy to produce, but often not the most informative
+
+* Random effects plots are probs more informative than the fixed effects/variance components plots
+
+* You can make either a lot more fancy, accessible, etc., and probably should if you're going to use it for publication.
+
+---
+class: inverse-red midle
+# Making predictions "by hand"
+
+---
+# Reminder
+Our raw data looks like this
+
+```r
+popular
+```
+
+```
+## # A tibble: 2,000 x 7
+##    pupil class extrav sex    texp popular popteach
+##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1     1      5 girl     24     6.3        6
+##  2     2     1      7 boy      24     4.9        5
+##  3     3     1      4 girl     24     5.3        6
+##  4     4     1      3 girl     24     4.7        5
+##  5     5     1      5 girl     24     6          6
+##  6     6     1      4 boy      24     4.7        5
+##  7     7     1      5 boy      24     5.9        5
+##  8     8     1      4 boy      24     4.2        5
+##  9     9     1      5 boy      24     5.2        5
+## 10    10     1      5 boy      24     3.9        3
+## # … with 1,990 more rows
+```
+
+---
+# Thinking back 
+## to standard regression
+let's say we fit a model like this
+
+
+```r
+m &lt;- lm(popular ~ 1 + sex, data = popular)
+```
+
+--
+Our estimated model is
+
+
+```r
+equatiomatic::extract_eq(m, use_coef = TRUE)
+```
+
+$$
+\operatorname{\widehat{popular}} = 4.28 + 1.57(\operatorname{sex}_{\operatorname{girl}})
+$$
+
+---
+# Making a prediction
+What would our model on the prior slide predict for the first student?
+
+
+```r
+pupil1 &lt;- popular[1, ]
+pupil1
+```
+
+```
+## # A tibble: 1 x 7
+##   pupil class extrav sex    texp popular popteach
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1     1      5 girl     24     6.3        6
+```
+
+--
+
+```r
+coef(m)[1] + # intercept
+  coef(m)[2] * (pupil1$sex == "girl")
+```
+
+```
+## (Intercept) 
+##    5.853314
+```
+
+--
+
+
+```r
+predict(m)[1]
+```
+
+```
+##        1 
+## 5.853314
+```
+
+---
+# What about this model?
+If we use the predict function for `m2`, we get
+
+
+```r
+predict(m2)[1]
+```
+
+```
+##        1 
+## 5.732849
+```
+
+### How does the model come up with this prediction?
+
+Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
+
+<div class="countdown" id="timer_60665e4d" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# Thinking through the model
+* We have classroom random effects for the intercept and slope
+
+* This means the prediction for an individual is made up of:
+
+  + Overall intercept `+`
+  + Overall slope `+`
+  + Classroom intercept offset (diff of classroom intercept from overall intercept) `+`
+  + Classroom slope offset (diff of classroom slope from overall slope)
+
+---
+# Do it!
+## First look back at the data
+
+```r
+popular[1, ]
+```
+
+```
+## # A tibble: 1 x 7
+##   pupil class extrav sex    texp popular popteach
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1     1      5 girl     24     6.3        6
+```
+
+---
+## Next extract the `ran_vals` for the coresponding class
+
+
+```r
+m2_ranvals &lt;- tidy(m2, effects = "ran_vals")
+class1_ranvals &lt;- m2_ranvals %&gt;% 
+  filter(group == "class" &amp; level == 1)
+class1_ranvals
+```
+
+```
+## # A tibble: 2 x 6
+##   effect   group level term           estimate std.error
+##   &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;
+## 1 ran_vals class 1     (Intercept)  0.02657986 0.2240683
+## 2 ran_vals class 1     sexgirl     -0.04272575 0.1956483
+```
+
+---
+# Make prediction
+
+```r
+fixef(m2)
+```
+
+```
+## (Intercept)     sexgirl 
+##    4.396820    1.352175
+```
+
+```r
+fixef(m2)[1] + fixef(m2)[2]*(popular[1, ]$sex == "girl") +
+  class1_ranvals$estimate[1] + class1_ranvals$estimate[2]
+```
+
+```
+## (Intercept) 
+##    5.732849
+```
+
+--
+Confirm
+
+```r
+predict(m2)[1]
+```
+
+```
+##        1 
+## 5.732849
+```
+
+---
+# Challenge
+* Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
+
+<div class="countdown" id="timer_60665fe4" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+```r
+class10_ranvals &lt;- m2_ranvals %&gt;% 
+  filter(group == "class" &amp; level == 10)
+
+fixef(m2)[1] + class10_ranvals$estimate[1]
+```
+
+```
+## (Intercept) 
+##    4.675822
+```
+
+---
+# Confirm with `predict()`
+
+
+```r
+test &lt;- popular %&gt;% 
+  mutate(pred = predict(m2)) %&gt;% 
+  filter(class == 10 &amp; sex == "boy") 
+test
+```
+
+```
+## # A tibble: 12 x 8
+##    pupil class extrav sex    texp  popular popteach     pred
+##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1    10      5 boy      21 5.4             5 4.675822
+##  2     3    10      5 boy      21 3.4             3 4.675822
+##  3     5    10      5 boy      21 5.100000        7 4.675822
+##  4     7    10      5 boy      21 5.4             4 4.675822
+##  5     8    10      5 boy      21 4.9             4 4.675822
+##  6    11    10      6 boy      21 4.4             6 4.675822
+##  7    12    10      6 boy      21 4.9             5 4.675822
+##  8    14    10      6 boy      21 4.8             3 4.675822
+##  9    15    10      3 boy      21 3.6             3 4.675822
+## 10    16    10      5 boy      21 5               6 4.675822
+## 11    17    10      3 boy      21 5.5             5 4.675822
+## 12    18    10      6 boy      21 5               4 4.675822
+```
+
+---
+# More on the predict function
+
+* Once you have the model parameters, you can predict for any values of those parameters
+
+
+--
+Let's fit a slightly more complicated model, using a different longitudinal file than what you used (or are using) in the homework
+
+--
+
+```r
+library(equatiomatic)
+head(sim_longitudinal)
+```
+
+```
+## # A tibble: 6 x 8
+## # Groups:   school [1]
+##     sid school district group  treatment  prop_low  wave    score
+##   &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1      1        1 medium 1         0.1428571     0 102.2686
+## 2     1      1        1 medium 1         0.1428571     1 102.0135
+## 3     1      1        1 medium 1         0.1428571     2 102.5216
+## 4     1      1        1 medium 1         0.1428571     3 102.2792
+## 5     1      1        1 medium 1         0.1428571     4 102.2834
+## 6     1      1        1 medium 1         0.1428571     5 102.7963
+```
+
+---
+# Model
+### You try first
+* Fit a model with `wave` and `treatment` as predictors of students' `score`. Allow the intercept and the relation between `wave` and `score` to vary by student.
+
+--
+
+```r
+m &lt;- lmer(score ~ wave + treatment + (wave|sid),
+          data = sim_longitudinal)
+```
+
+---
+# Plot predictions
+Let's first just limit our data to the first three students.
+
+
+```r
+first_three &lt;- sim_longitudinal %&gt;% 
+* ungroup() %&gt;%
+  filter(sid %in% 1:3)
+```
+
+--
+Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
+
+<div class="countdown" id="timer_60665e69" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+
+```r
+first_three %&gt;% 
+  mutate(model_pred = predict(m, newdata = first_three))
+```
+
+```
+## # A tibble: 30 x 9
+##      sid school district group  treatment  prop_low  wave    score model_pred
+##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1     1      1        1 medium 1         0.1428571     0 102.2686   101.9955
+##  2     1      1        1 medium 1         0.1428571     1 102.0135   102.1572
+##  3     1      1        1 medium 1         0.1428571     2 102.5216   102.3189
+##  4     1      1        1 medium 1         0.1428571     3 102.2792   102.4806
+##  5     1      1        1 medium 1         0.1428571     4 102.2834   102.6423
+##  6     1      1        1 medium 1         0.1428571     5 102.7963   102.8040
+##  7     1      1        1 medium 1         0.1428571     6 103.0441   102.9657
+##  8     1      1        1 medium 1         0.1428571     7 102.8868   103.1274
+##  9     1      1        1 medium 1         0.1428571     8 103.9101   103.2891
+## 10     1      1        1 medium 1         0.1428571     9 103.2392   103.4508
+## # … with 20 more rows
+```
+
+---
+# Plot
+Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
+
+<div class="countdown" id="timer_60665d5c" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+
+
+```r
+first_three %&gt;% 
+  mutate(model_pred = predict(m, newdata = first_three)) %&gt;% 
+  ggplot(aes(wave, score, color = treatment)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = model_pred)) +
+  facet_wrap(~sid)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
+
+---
+# Predictions outside our data
+Student 2 has a considerably lower intercept. What would we predict the trend would look like if they had been in the treatment group?
+
+
+--
+Try to make this prediction on your own for all time points
+
+<div class="countdown" id="timer_60666037" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+
+```r
+stu2_trt &lt;- data.frame(
+  sid = 2,
+  wave = 0:9,
+  treatment = factor("1", levels = c(0, 1))
+)
+
+predict(m, newdata = stu2_trt)
+```
+
+```
+##        1        2        3        4        5        6        7        8 
+## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 
+##        9       10 
+## 82.30506 82.76607
+```
+
+---
+# Compare
+
+
+```r
+sim_longitudinal %&gt;% 
+  filter(sid == 2) %&gt;% 
+  mutate(model_pred = predict(m, newdata = .),
+         trt_pred = predict(m, newdata = stu2_trt)) %&gt;% 
+  ggplot(aes(wave, score)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = model_pred)) +
+  geom_line(aes(y = trt_pred),
+            color = "firebrick") +
+  annotate(
+    "text", 
+    x = 6, 
+    y = 81, 
+    hjust = 0, 
+    color = "firebrick", 
+    label = "Predicted slope if student\nwas in treatment group"
+  )
+```
+
+
+---
+![](w3p1_files/figure-html/unnamed-chunk-44-1.png)&lt;!-- --&gt;
+
+---
+# Wait... negative?
+
+--
+Yes...
+
+
+```r
+arm::display(m)
+```
+
+```
+## lmer(formula = score ~ wave + treatment + (wave | sid), data = sim_longitudinal)
+##             coef.est coef.se
+## (Intercept) 97.95     1.38  
+## wave         0.17     0.03  
+## treatment1  -1.54     1.92  
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  sid      (Intercept) 9.74           
+##           wave        0.29     -0.16 
+##  Residual             0.44           
+## ---
+## number of obs: 1000, groups: sid, 100
+## AIC = 2407.7, DIC = 2393.1
+## deviance = 2393.4
+```
+
+.gray[Note - I'm just using an alternative function here to get it to fit on the slides easier]
+
+---
+# Other projections
+We have a *linear* model. This means we can just extend the line to `\(\infty\)` if we wanted to
+
+
+--
+.realbig[🤪]
+
+
+```r
+newdata_stu2 &lt;- data.frame(
+  sid = 2,
+  wave = rep(-500:500, 2),
+  treatment = factor(rep(c(0, 1), each = length(-500:500)))
+)
+```
+
+---
+
+```r
+newdata_stu2 %&gt;% 
+  mutate(pred = predict(m, newdata = newdata_stu2)) %&gt;% 
+  ggplot(aes(wave, pred)) +
+  geom_line(aes(color = treatment))
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-47-1.png)&lt;!-- --&gt;
+
+---
+class: inverse-blue middle
+# Uncertainty
+
+---
+# What to predict?
+Let's say we want to predict what time points 10, 11, and 12 would look like for
+the first three students.
+
+
+--
+First, create the prediction data frame
+
+
+```r
+pred_frame &lt;- data.frame(
+  sid = rep(1:3, each = 13),
+  wave = rep(0:12),
+  treatment = factor(rep(c(1, 0, 1), each = 13))
+)
+
+head(pred_frame)
+```
+
+```
+##   sid wave treatment
+## 1   1    0         1
+## 2   1    1         1
+## 3   1    2         1
+## 4   1    3         1
+## 5   1    4         1
+## 6   1    5         1
+```
+
+---
+# merTools
+Next, load the [**{merTools}**](https://github.com/jknowles/merTools) package
+
+
+```r
+library(merTools)
+```
+
+--
+Create a prediction interval with `predictInterval()`, using simulation to obtain the prediction interval
+
+
+```r
+m_pred_interval &lt;- predictInterval(m, newdata = pred_frame, level = 0.95)
+m_pred_interval
+```
+
+```
+##          fit       upr       lwr
+## 1  102.03177 104.79509  98.86414
+## 2  102.15216 104.97696  99.26034
+## 3  102.34243 105.05111  99.44510
+## 4  102.48549 105.19384  99.53030
+## 5  102.63907 105.43736  99.80511
+## 6  102.80859 105.46327  99.95988
+## 7  102.91631 105.59323  99.95441
+## 8  103.13406 105.92409 100.28988
+## 9  103.31206 106.08574 100.27208
+## 10 103.45232 106.31952 100.37732
+## 11 103.55998 106.40416 100.52793
+## 12 103.72293 106.38519 100.83743
+## 13 103.84320 106.79266 101.06203
+## 14  80.12695  82.92541  77.35653
+## 15  80.53119  83.38940  77.92424
+## 16  80.98347  83.90480  78.43249
+## 17  81.48231  84.37822  78.61483
+## 18  81.92044  84.77120  79.36757
+## 19  82.40433  85.40691  79.57957
+## 20  82.86580  85.76596  80.21219
+## 21  83.29571  86.22905  80.67421
+## 22  83.78922  86.76896  81.09382
+## 23  84.29343  87.28842  81.49950
+## 24  84.74095  87.58938  82.00256
+## 25  85.15667  88.15780  82.41808
+## 26  85.59852  88.72804  82.79172
+## 27 102.37459 105.05551  99.51547
+## 28 102.31246 105.15792  99.40339
+## 29 102.36770 105.11290  99.46960
+## 30 102.27570 105.06947  99.29924
+## 31 102.20380 104.85837  99.43132
+## 32 102.26674 104.75564  99.23902
+## 33 102.13415 104.93852  99.08914
+## 34 102.07792 104.78934  99.15189
+## 35 102.05663 104.78639  99.13015
+## 36 102.04814 104.80571  99.04552
+## 37 101.94059 104.83729  99.01058
+## 38 101.85077 104.59056  98.85461
+## 39 101.83746 104.77396  98.82891
+```
+
+---
+# Binding data together
+Let's add these predictions back to our prediction data frame, then plot them
+
+
+```r
+bind_cols(pred_frame, m_pred_interval)
+```
+
+```
+##    sid wave treatment       fit       upr       lwr
+## 1    1    0         1 102.03177 104.79509  98.86414
+## 2    1    1         1 102.15216 104.97696  99.26034
+## 3    1    2         1 102.34243 105.05111  99.44510
+## 4    1    3         1 102.48549 105.19384  99.53030
+## 5    1    4         1 102.63907 105.43736  99.80511
+## 6    1    5         1 102.80859 105.46327  99.95988
+## 7    1    6         1 102.91631 105.59323  99.95441
+## 8    1    7         1 103.13406 105.92409 100.28988
+## 9    1    8         1 103.31206 106.08574 100.27208
+## 10   1    9         1 103.45232 106.31952 100.37732
+## 11   1   10         1 103.55998 106.40416 100.52793
+## 12   1   11         1 103.72293 106.38519 100.83743
+## 13   1   12         1 103.84320 106.79266 101.06203
+## 14   2    0         0  80.12695  82.92541  77.35653
+## 15   2    1         0  80.53119  83.38940  77.92424
+## 16   2    2         0  80.98347  83.90480  78.43249
+## 17   2    3         0  81.48231  84.37822  78.61483
+## 18   2    4         0  81.92044  84.77120  79.36757
+## 19   2    5         0  82.40433  85.40691  79.57957
+## 20   2    6         0  82.86580  85.76596  80.21219
+## 21   2    7         0  83.29571  86.22905  80.67421
+## 22   2    8         0  83.78922  86.76896  81.09382
+## 23   2    9         0  84.29343  87.28842  81.49950
+## 24   2   10         0  84.74095  87.58938  82.00256
+## 25   2   11         0  85.15667  88.15780  82.41808
+## 26   2   12         0  85.59852  88.72804  82.79172
+## 27   3    0         1 102.37459 105.05551  99.51547
+## 28   3    1         1 102.31246 105.15792  99.40339
+## 29   3    2         1 102.36770 105.11290  99.46960
+## 30   3    3         1 102.27570 105.06947  99.29924
+## 31   3    4         1 102.20380 104.85837  99.43132
+## 32   3    5         1 102.26674 104.75564  99.23902
+## 33   3    6         1 102.13415 104.93852  99.08914
+## 34   3    7         1 102.07792 104.78934  99.15189
+## 35   3    8         1 102.05663 104.78639  99.13015
+## 36   3    9         1 102.04814 104.80571  99.04552
+## 37   3   10         1 101.94059 104.83729  99.01058
+## 38   3   11         1 101.85077 104.59056  98.85461
+## 39   3   12         1 101.83746 104.77396  98.82891
+```
+
+---
+# Plot
+
+
+```r
+bind_cols(pred_frame, m_pred_interval) %&gt;% 
+  ggplot(aes(wave, fit)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.4) +
+  geom_line(color = "magenta") +
+  facet_wrap(~sid)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-52-1.png)&lt;!-- --&gt;
+
+
+---
+# How?
+What's really going on here?
+
+See [here](https://cran.rstudio.com/web/packages/merTools/vignettes/Using_predictInterval.html) for a full description, but basically:
+
+1. Creates a simulated (with `n.sim` samples) distribution for each model parameter
+2. Computes a distribution of predictions
+3. Returns the specifics of the prediction distribution, as requested (e.g., `fit` is the mean or median, and `upr` and `lwr` are the corresponding quaniteles for the uncertainty range)
+
+
+---
+# Disclaimer
+According to the **{lme4}** authors
+
+&gt; There is no option for computing standard errors of predictions because it is difficult to define an efficient method that incorporates uncertainty in the variance parameters; we recommend lme4::bootMer() for this task.
+
+
+--
+The `predictInterval()` function is an approximation, while `bootMer()` is the "gold standard" (it just takes a long time)
+
+---
+# Boostrapping
+
+Write a function to compute make the predictions for each bootstrap resmple
+
+
+```r
+pred_fun &lt;- function(fit) {
+  predict(fit, newdata = pred_frame)
+}
+```
+
+Notice we're using the same prediction data frame
+
+---
+# Now create BS Estimates
+
+Note this takes a few seconds, and for bigger models may take a *long* time
+
+
+```r
+b &lt;- bootMer(m, nsim = 1000, FUN = pred_fun, use.u = TRUE, seed = 42)
+```
+
+--
+The predictions are stored in a matrix `t`
+
+
+```r
+dim(b$t)
+```
+
+```
+## [1] 1000   39
+```
+
+Each row of the matrix is the prediction for the given bootstrap estimate
+
+---
+# Lots of options
+There are lots of things you could do with this now.  I'll move it to a data frame first
+
+--
+
+```r
+bd &lt;- as.data.frame(t(b$t)) %&gt;% 
+  mutate(sid = rep(1:3, each = 13),
+         wave = rep(0:12, 3)) %&gt;% 
+  pivot_longer(
+    starts_with("V"),
+    names_to = "bootstrap_sample",
+    names_prefix = "V",
+    names_transform = list(bootstrap_sample = as.numeric),
+    values_to = "score"
+  ) %&gt;% 
+  arrange(sid, bootstrap_sample, wave)
+```
+
+---
+
+```r
+bd
+```
+
+```
+## # A tibble: 39,000 x 4
+##      sid  wave bootstrap_sample    score
+##    &lt;int&gt; &lt;int&gt;            &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1     0                1 102.1749
+##  2     1     1                1 102.3497
+##  3     1     2                1 102.5245
+##  4     1     3                1 102.6992
+##  5     1     4                1 102.8740
+##  6     1     5                1 103.0488
+##  7     1     6                1 103.2235
+##  8     1     7                1 103.3983
+##  9     1     8                1 103.5731
+## 10     1     9                1 103.7478
+## # … with 38,990 more rows
+```
+
+---
+# Plot
+
+
+```r
+ggplot(bd, aes(wave, score)) +
+  geom_line(aes(group = bootstrap_sample),
+            size = 0.1,
+            alpha = 0.5,
+            color = "cornflowerblue") +
+  facet_wrap(~sid)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-57-1.png)&lt;!-- --&gt;
+
+---
+# Prefer ribbons?
+
+
+```r
+bd_ribbons &lt;- bd %&gt;% 
+  group_by(sid, wave) %&gt;% 
+  summarize(quantile = quantile(score, c(0.025, 0.975)),
+            group = c("lower", "upper")) %&gt;% 
+  pivot_wider(names_from = "group", values_from = "quantile")
+bd_ribbons
+```
+
+```
+## # A tibble: 39 x 4
+## # Groups:   sid, wave [39]
+##      sid  wave    lower    upper
+##    &lt;int&gt; &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1     0 101.4553 102.4854
+##  2     1     1 101.7114 102.5782
+##  3     1     2 101.9408 102.6748
+##  4     1     3 102.1633 102.7898
+##  5     1     4 102.3576 102.9110
+##  6     1     5 102.5236 103.0809
+##  7     1     6 102.6428 103.2611
+##  8     1     7 102.7468 103.4728
+##  9     1     8 102.8555 103.6996
+## 10     1     9 102.9428 103.9153
+## # … with 29 more rows
+```
+
+---
+# Join with real data
+
+
+```r
+bd_ribbons &lt;- left_join(first_three, bd_ribbons) %&gt;% 
+  mutate(pred = predict(m, newdata = first_three))
+```
+
+```
+## Joining, by = c("sid", "wave")
+```
+
+---
+# Plot again
+
+
+```r
+ggplot(bd_ribbons, aes(wave, score)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper),
+              alpha = 0.5) +
+  geom_line(aes(y = pred), size = 1, color = "magenta") +
+  geom_point() +
+  facet_wrap(~sid)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
+
+---
+# Important
+There are different types of bootstrap resampling you can choose from
+
+* Do you want to randomly sample from the random effects also? `use.u = FALSE`
+
+* Do you want to assume the random effect estimates are true, and just sample the rest? `use.u = TRUE`
+
+
+--
+Honestly - this is a bit confusing to me, and the results from `use.u = FALSE` didn't make much sense to me.
+
+---
+class: inverse-blue middle
+# More complications
+
+---
+# Interactions
+
+Let's create an interaction between `treatment` and `wave`
+
+--
+### Conceptually: what would this mean?
+
+--
+Let's also add in a school-level random effect for the intercept
+
+
+---
+# Interactions
+Specified just like with `lm()`. Each of the below are equivalent
+
+
+```r
+wave + treatment + wave:treatment
+```
+
+
+```r
+wave * treatment
+```
+
+where the latter just expands out to the former. 
+
+---
+# Adding additional levels
+There are a few ways to do this:
+* Assume your IDs are all unique
+  + implicit nesting
+* Don't worry and the IDs, and specify the nesting through the formula
+  + Will result in equivalent estimates if the IDs are unique
+
+See [here](https://www.muscardinus.be/2017/07/lme4-random-effects/) for more examples
+
+---
+# Implicit nesting
+
+
+```r
+m1a &lt;- lmer(score ~ wave*treatment + 
+              (wave|sid) + (1|school),
+            data = sim_longitudinal)
+arm::display(m1a)
+```
+
+```
+## lmer(formula = score ~ wave * treatment + (wave | sid) + (1 | 
+##     school), data = sim_longitudinal)
+##                 coef.est coef.se
+## (Intercept)     96.80     1.57  
+## wave             0.40     0.03  
+## treatment1       0.61     1.88  
+## wave:treatment1 -0.45     0.04  
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  sid      (Intercept) 9.16           
+##           wave        0.19     -0.13 
+##  school   (Intercept) 3.27           
+##  Residual             0.44           
+## ---
+## number of obs: 1000, groups: sid, 100; school, 15
+## AIC = 2330, DIC = 2301.2
+## deviance = 2306.6
+```
+
+---
+# Explicit nesting
+
+```r
+m1b &lt;- lmer(score ~ wave*treatment + 
+              (wave|sid:school) + (1|school) ,
+            data = sim_longitudinal)
+arm::display(m1b)
+```
+
+```
+## lmer(formula = score ~ wave * treatment + (wave | sid:school) + 
+##     (1 | school), data = sim_longitudinal)
+##                 coef.est coef.se
+## (Intercept)     96.80     1.57  
+## wave             0.40     0.03  
+## treatment1       0.61     1.88  
+## wave:treatment1 -0.45     0.04  
+## 
+## Error terms:
+##  Groups     Name        Std.Dev. Corr  
+##  sid:school (Intercept) 9.16           
+##             wave        0.19     -0.13 
+##  school     (Intercept) 3.27           
+##  Residual               0.44           
+## ---
+## number of obs: 1000, groups: sid:school, 100; school, 15
+## AIC = 2330, DIC = 2301.2
+## deviance = 2306.6
+```
+
+---
+# Predictions 
+Let's randomly sample 5 students in the first four school and display the model predictions for those students.
+
+There are many ways to create the sample, here's one:
+
+
+```r
+samp &lt;- sim_longitudinal %&gt;% 
+  filter(school %in% 1:4) %&gt;% 
+  group_by(school, sid) %&gt;% 
+  nest()
+samp
+```
+
+```
+## # A tibble: 28 x 3
+## # Groups:   sid, school [28]
+##      sid school data             
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
+##  1     1      1 &lt;tibble [10 × 6]&gt;
+##  2    33      3 &lt;tibble [10 × 6]&gt;
+##  3    34      4 &lt;tibble [10 × 6]&gt;
+##  4    46      1 &lt;tibble [10 × 6]&gt;
+##  5    61      1 &lt;tibble [10 × 6]&gt;
+##  6    77      2 &lt;tibble [10 × 6]&gt;
+##  7    78      3 &lt;tibble [10 × 6]&gt;
+##  8    91      1 &lt;tibble [10 × 6]&gt;
+##  9    93      3 &lt;tibble [10 × 6]&gt;
+## 10     2      2 &lt;tibble [10 × 6]&gt;
+## # … with 18 more rows
+```
+
+---
+# Select 10 rows for each school
+
+
+```r
+set.seed(42)
+samp %&gt;% 
+  group_by(school) %&gt;% 
+  sample_n(5)
+```
+
+```
+## # A tibble: 20 x 3
+## # Groups:   school [4]
+##      sid school data             
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
+##  1     1      1 &lt;tibble [10 × 6]&gt;
+##  2    76      1 &lt;tibble [10 × 6]&gt;
+##  3    31      1 &lt;tibble [10 × 6]&gt;
+##  4    16      1 &lt;tibble [10 × 6]&gt;
+##  5    46      1 &lt;tibble [10 × 6]&gt;
+##  6    62      2 &lt;tibble [10 × 6]&gt;
+##  7     2      2 &lt;tibble [10 × 6]&gt;
+##  8    92      2 &lt;tibble [10 × 6]&gt;
+##  9    77      2 &lt;tibble [10 × 6]&gt;
+## 10    47      2 &lt;tibble [10 × 6]&gt;
+## 11    63      3 &lt;tibble [10 × 6]&gt;
+## 12    18      3 &lt;tibble [10 × 6]&gt;
+## 13    33      3 &lt;tibble [10 × 6]&gt;
+## 14    48      3 &lt;tibble [10 × 6]&gt;
+## 15    78      3 &lt;tibble [10 × 6]&gt;
+## 16    19      4 &lt;tibble [10 × 6]&gt;
+## 17    49      4 &lt;tibble [10 × 6]&gt;
+## 18     4      4 &lt;tibble [10 × 6]&gt;
+## 19    79      4 &lt;tibble [10 × 6]&gt;
+## 20    94      4 &lt;tibble [10 × 6]&gt;
+```
+
+---
+# unnest
+
+
+
+```r
+set.seed(42)
+samp &lt;- samp %&gt;% 
+  group_by(school) %&gt;% 
+  sample_n(5) %&gt;% 
+  unnest(data) %&gt;% 
+  ungroup()
+samp
+```
+
+```
+## # A tibble: 200 x 8
+##      sid school district group  treatment  prop_low  wave    score
+##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1      1        1 medium 1         0.1428571     0 102.2686
+##  2     1      1        1 medium 1         0.1428571     1 102.0135
+##  3     1      1        1 medium 1         0.1428571     2 102.5216
+##  4     1      1        1 medium 1         0.1428571     3 102.2792
+##  5     1      1        1 medium 1         0.1428571     4 102.2834
+##  6     1      1        1 medium 1         0.1428571     5 102.7963
+##  7     1      1        1 medium 1         0.1428571     6 103.0441
+##  8     1      1        1 medium 1         0.1428571     7 102.8868
+##  9     1      1        1 medium 1         0.1428571     8 103.9101
+## 10     1      1        1 medium 1         0.1428571     9 103.2392
+## # … with 190 more rows
+```
+
+---
+# Make prediction
+
+```r
+samp %&gt;% 
+  mutate(pred = predict(m1a, newdata = samp))
+```
+
+```
+## # A tibble: 200 x 9
+##      sid school district group  treatment  prop_low  wave    score     pred
+##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1      1        1 medium 1         0.1428571     0 102.2686 102.0541
+##  2     1      1        1 medium 1         0.1428571     1 102.0135 102.2029
+##  3     1      1        1 medium 1         0.1428571     2 102.5216 102.3516
+##  4     1      1        1 medium 1         0.1428571     3 102.2792 102.5004
+##  5     1      1        1 medium 1         0.1428571     4 102.2834 102.6492
+##  6     1      1        1 medium 1         0.1428571     5 102.7963 102.7980
+##  7     1      1        1 medium 1         0.1428571     6 103.0441 102.9468
+##  8     1      1        1 medium 1         0.1428571     7 102.8868 103.0955
+##  9     1      1        1 medium 1         0.1428571     8 103.9101 103.2443
+## 10     1      1        1 medium 1         0.1428571     9 103.2392 103.3931
+## # … with 190 more rows
+```
+
+---
+# Plot
+
+```r
+samp %&gt;% 
+  mutate(pred = predict(m1a, newdata = samp)) %&gt;% 
+  ggplot(aes(wave, pred, group = sid)) +
+  geom_line() +
+  facet_wrap(~school)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-69-1.png)&lt;!-- --&gt;
+
+---
+class: inverse-green middle
+
+# Next time
+* Digging into the variance-covariance matrix of the random effects
+
+* Finally discussing Gelman &amp; Hill notation in more depth
+
+* Homework 1 is due, Homework 2 assigned
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"navigation": {
+"scroll": false
+},
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

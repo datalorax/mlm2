@@ -68,7 +68,7 @@ Icons in the schedule link to specific chapters.
 {{< week "04-16" >}}
   {{< description "Basic models, predictions, and visualizations" "Walking through how the basic two- and three-level models make predictions and visualizing the difference between these predictions and the observed data." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w3p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 
@@ -97,7 +97,7 @@ Icons in the schedule link to specific chapters.
 {{< assigned "assignments" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "homework-1" >}}
+{{< due "homework-1" "hw1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/extensions.html#residual-structure" "" >}}
