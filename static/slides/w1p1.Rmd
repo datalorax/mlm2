@@ -36,7 +36,7 @@ xaringanExtra::use_clipboard()
 ]
 
 .pull-right[
-![](../edld629-logo.png)
+![](edld629-logo.png)
 ]
 
 ---

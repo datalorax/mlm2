@@ -45,6 +45,10 @@ layout: true
     &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
+  &lt;a class = "footer-icon-link" href = "https://mlm2-2021.netlify.app"&gt;
+    &lt;i class = "footer-icon" data-feather="globe"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
   &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2"&gt;
     &lt;i class = "footer-icon" data-feather="github"&gt;&lt;/i&gt;
   &lt;/a&gt;
@@ -72,7 +76,7 @@ Let's read in the popularity data so we can fit some really basic models.
 
 You try first
 
-<div class="countdown" id="timer_60665f82" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606744bf" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -112,7 +116,7 @@ Fit each of the following models
 
 * `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
 
-<div class="countdown" id="timer_60665fab" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606744b9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -131,7 +135,7 @@ m2 &lt;- lmer(popular ~ sex + (sex|class), popular)
 # Compare performance
 Use whatever tests you'd like, and come up with the model you think fits the data best
 
-<div class="countdown" id="timer_60665e0e" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6067443e" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -147,11 +151,11 @@ compare_performance(m0, m1, m2) %&gt;%
 
 Table: Comparison of Model Performance Indices
 
-|Name |   Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
-|:----|:-------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
-|m0   | lmerMod | 6336.51 | 6353.31 |       0.36 |       0.00 | 0.36 | 1.08 |  1.11 |
-|m1   | lmerMod | 5572.07 | 5594.48 |       0.53 |       0.26 | 0.37 | 0.89 |  0.91 |
-|m2   | lmerMod | 5571.05 | 5604.66 |       0.54 |       0.26 | 0.38 | 0.88 |  0.90 |
+|Name |           Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
+|:----|:---------------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
+|m0   | lmerModLmerTest | 6336.51 | 6353.31 |       0.36 |       0.00 | 0.36 | 1.08 |  1.11 |
+|m1   | lmerModLmerTest | 5572.07 | 5594.48 |       0.53 |       0.26 | 0.37 | 0.89 |  0.91 |
+|m2   | lmerModLmerTest | 5571.05 | 5604.66 |       0.54 |       0.26 | 0.38 | 0.88 |  0.90 |
 
 ---
 # Test of the Log-likelihood 
@@ -164,10 +168,10 @@ test_likelihoodratio(m0, m1) %&gt;%
 
 
 
-|Name |  Model | df| df_diff|   Chi2|         p|
-|:----|:-------|--:|-------:|------:|---------:|
-|m0   |lmerMod |  3|        |       |          |
-|m1   |lmerMod |  4|       1| 766.44| 1.07e-168|
+|Name |          Model | df| df_diff|   Chi2|         p|
+|:----|:---------------|--:|-------:|------:|---------:|
+|m0   |lmerModLmerTest |  3|        |       |          |
+|m1   |lmerModLmerTest |  4|       1| 766.44| 1.07e-168|
 
 ```r
 test_likelihoodratio(m1, m2) %&gt;% 
@@ -176,10 +180,10 @@ test_likelihoodratio(m1, m2) %&gt;%
 
 
 
-|Name |  Model | df| df_diff| Chi2|    p|
-|:----|:-------|--:|-------:|----:|----:|
-|m1   |lmerMod |  4|        |     |     |
-|m2   |lmerMod |  6|       2| 5.02| 0.08|
+|Name |          Model | df| df_diff| Chi2|    p|
+|:----|:---------------|--:|-------:|----:|----:|
+|m1   |lmerModLmerTest |  4|        |     |     |
+|m2   |lmerModLmerTest |  6|       2| 5.02| 0.08|
 
 Pretty good evidence that `m1` displays the best fit
 
@@ -213,12 +217,12 @@ tidy(m0)
 ```
 
 ```
-## # A tibble: 3 x 6
-##   effect   group    term             estimate   std.error statistic
-##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278
-## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA      
-## 3 ran_pars Residual sd__Observation 1.105348  NA           NA
+## # A tibble: 3 x 8
+##   effect   group    term             estimate   std.error statistic       df       p.value
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;         &lt;dbl&gt;
+## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278 98.90973  2.932037e-78
+## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA       NA       NA           
+## 3 ran_pars Residual sd__Observation 1.105348  NA           NA       NA       NA
 ```
 
 --
@@ -230,10 +234,10 @@ tidy(m0, effects = "fixed")
 ```
 
 ```
-## # A tibble: 1 x 5
-##   effect term        estimate  std.error statistic
-##   &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
-## 1 fixed  (Intercept) 5.077860 0.08739443  58.10278
+## # A tibble: 1 x 7
+##   effect term        estimate  std.error statistic       df      p.value
+##   &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;        &lt;dbl&gt;
+## 1 fixed  (Intercept) 5.077860 0.08739443  58.10278 98.90973 2.932037e-78
 ```
 
 ---
@@ -254,14 +258,14 @@ models
 ```
 
 ```
-## # A tibble: 5 x 8
-##   model effect term        estimate  std.error statistic conf.low conf.high
-##   &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-## 1     0 fixed  (Intercept) 5.077860 0.08739443  58.10278 4.906570  5.249150
-## 2     1 fixed  (Intercept) 4.394460 0.07586494  57.92478 4.245767  4.543152
-## 3     1 fixed  sexgirl     1.350102 0.04403301  30.66113 1.263799  1.436405
-## 4     2 fixed  (Intercept) 4.396820 0.08012978  54.87123 4.239768  4.553871
-## 5     2 fixed  sexgirl     1.352175 0.05029920  26.88263 1.253590  1.450760
+## # A tibble: 5 x 10
+##   model effect term        estimate  std.error statistic         df       p.value conf.low conf.high
+##   &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;         &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1     0 fixed  (Intercept) 5.077860 0.08739443  58.10278   98.90973 2.932037e- 78 4.906570  5.249150
+## 2     1 fixed  (Intercept) 4.394460 0.07586494  57.92478  117.5192  2.904907e- 88 4.245767  4.543152
+## 3     1 fixed  sexgirl     1.350102 0.04403301  30.66113 1947.042   8.653340e-169 1.263799  1.436405
+## 4     2 fixed  (Intercept) 4.396820 0.08012978  54.87123   90.95661 1.657215e- 71 4.239768  4.553871
+## 5     2 fixed  sexgirl     1.352175 0.05029920  26.88263   82.74945 1.190437e- 42 1.253590  1.450760
 ```
 
 ---
@@ -306,10 +310,9 @@ parameters(m0) %&gt;%
 
 ```
 ## # A tibble: 1 x 10
-##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error
-##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt;
-## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997
-## # … with 2 more variables: p &lt;dbl&gt;, Effects &lt;chr&gt;
+##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error     p Effects
+##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;  
+## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997     0 fixed
 ```
 
 ```r
@@ -350,12 +353,12 @@ tidy(m0)
 ```
 
 ```
-## # A tibble: 3 x 6
-##   effect   group    term             estimate   std.error statistic
-##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278
-## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA      
-## 3 ran_pars Residual sd__Observation 1.105348  NA           NA
+## # A tibble: 3 x 8
+##   effect   group    term             estimate   std.error statistic       df       p.value
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;         &lt;dbl&gt;
+## 1 fixed    &lt;NA&gt;     (Intercept)     5.077860   0.08739443  58.10278 98.90973  2.932037e-78
+## 2 ran_pars class    sd__(Intercept) 0.8379169 NA           NA       NA       NA           
+## 3 ran_pars Residual sd__Observation 1.105348  NA           NA       NA       NA
 ```
 
 --
@@ -382,8 +385,8 @@ tidy(
 ## # A tibble: 2 x 6
 ##   effect   group    term             estimate  conf.low conf.high
 ##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7080964 0.9770007
-## 2 ran_pars Residual sd__Observation 1.105348  1.070106  1.140767
+## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7223927 0.9570069
+## 2 ran_pars Residual sd__Observation 1.105348  1.070679  1.137716
 ```
 
 ---
@@ -406,18 +409,18 @@ tidy(
 
 ```
 ## 
-## 46 message(s): boundary (singular) fit: see ?isSingular
-## 9 warning(s): Model failed to converge with max|grad| = 0.00203683 (tol = 0.002, component 1) (and others)
+## 37 message(s): boundary (singular) fit: see ?isSingular
+## 10 warning(s): Model failed to converge with max|grad| = 0.00254628 (tol = 0.002, component 1) (and others)
 ```
 
 ```
 ## # A tibble: 4 x 6
-##   effect   group    term                       estimate    conf.low  conf.high
-##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6080367  0.8756282 
-## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000   0.06869743
-## 3 ran_pars class    sd__sexgirl               0.2336921  0.03033356 0.3793648 
-## 4 ran_pars Residual sd__Observation           0.9049626  0.8745766  0.9327013
+##   effect   group    term                       estimate    conf.low   conf.high
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;
+## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6309374   0.8454491 
+## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000   -0.04726568
+## 3 ran_pars class    sd__sexgirl               0.2336921  0.04654788  0.3622473 
+## 4 ran_pars Residual sd__Observation           0.9049626  0.8767538   0.9344965
 ```
 
 
@@ -428,7 +431,7 @@ Can you make a dotplot with uncertainty for the variance components?
 
 What about a plot showing both fixed effects and variance components?
 
-<div class="countdown" id="timer_60666065" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606741d0" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -719,7 +722,7 @@ predict(m2)[1]
 
 Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
 
-<div class="countdown" id="timer_60665e4d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606744b1" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -806,7 +809,7 @@ predict(m2)[1]
 # Challenge
 * Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
 
-<div class="countdown" id="timer_60665fe4" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606741c5" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -908,7 +911,7 @@ first_three &lt;- sim_longitudinal %&gt;%
 --
 Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
 
-<div class="countdown" id="timer_60665e69" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606741e9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -940,7 +943,7 @@ first_three %&gt;%
 # Plot
 Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
 
-<div class="countdown" id="timer_60665d5c" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60674408" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -967,7 +970,7 @@ Student 2 has a considerably lower intercept. What would we predict the trend wo
 --
 Try to make this prediction on your own for all time points
 
-<div class="countdown" id="timer_60666037" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6067453e" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -984,10 +987,8 @@ predict(m, newdata = stu2_trt)
 ```
 
 ```
-##        1        2        3        4        5        6        7        8 
-## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 
-##        9       10 
-## 82.30506 82.76607
+##        1        2        3        4        5        6        7        8        9       10 
+## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 82.30506 82.76607
 ```
 
 ---

@@ -17,6 +17,10 @@ setup <- function(slides) {
     <i class = "footer-icon" data-feather="link"></i>
   </a>
   
+  <a class = "footer-icon-link" href = "https://mlm2-2021.netlify.app">
+    <i class = "footer-icon" data-feather="globe"></i>
+  </a>
+  
   <a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2">
     <i class = "footer-icon" data-feather="github"></i>
   </a>
