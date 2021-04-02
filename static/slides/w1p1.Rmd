@@ -459,7 +459,6 @@ class: inverse-blue middle
 
 Life be cray - don't worry about any deadlines except the final project, and make sure you get all assignments in by the final.
 
-Note - if you do turn things in late, I may not have time to provide you with as detailed feedback as I might otherwise
 
 Do worry about the final project deadline - it can't be moved. I'd suggest starting on it ASAP. You can turn things like your proposal in anytime.
 
@@ -478,6 +477,24 @@ background-size:contain
 
 * I do plan on this being highly applied, with you running lots of models and playing with data immediately 
 
+
+---
+# My approach
+The first basically half of the quarter will be on 
+
+* Moving to R
+
+* Deepening your current understanding
+
+--
+This means that for many of you, there probably won't be a lot of completely "new" content at first (e.g., Bayesian approaches)
+
+
+--
+That will come, but I want to focus on depth of understanding first
+
+
+
 ---
 # Differentiation
 * I know most of you, but not all
@@ -487,6 +504,11 @@ background-size:contain
   + Occasionally it may feel slow, or way too fast
   + Please be patient in either case, but **do** speak up if you are feeling lost - formative feedback is much more difficult through zoom and I may not know I'm losing you if you don't speak up.
 
+
+---
+class: inverse-red
+# Final note
+This is a long class - we'll try to take at least one 5-minute break each time
 
 ---
 class: inverse
@@ -686,7 +708,12 @@ sch_means
 ```
 
 ---
-# Plot the means only
+# Plot the means by school
+
+`r countdown::countdown(2)`
+
+--
+
 Not particularly helpful
 ```{r fig.height = 5}
 ggplot(sch_means, aes(sch_mean, sch.id)) +
