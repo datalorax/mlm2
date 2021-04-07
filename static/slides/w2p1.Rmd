@@ -19,6 +19,10 @@ output:
 ```{r include = FALSE, results = "asis"}
 source(here::here("static", "slides", "slide-setup.R"))
 xaringanExtra::use_clipboard()
+
+library(tidyverse)
+theme_set(theme_minimal(25))
+knitr::opts_chunk$set(fig.width = 9, fig.height = 6)
 ```
 
 `r setup("w2p1")`
@@ -35,6 +39,15 @@ xaringanExtra::use_clipboard()
 
 * Homework 1
 
+
+---
+# Learning objectives
+* Understand the basics of moving data from a wider form to a longer form
+
+* Understand the basics of the `lme4::lmer()` syntax
+
+
+
 --
 ## Today will be highly applied, and (I hope) mostly review
 The only real difference is it will be in R
@@ -50,8 +63,7 @@ class: inverse-blue middle
 
 ```{r message = FALSE}
 library(tidyverse)
-theme_set(theme_minimal(25))
-knitr::opts_chunk$set(fig.width = 9, fig.height = 6)
+
 curran <- read_csv(here::here("data", "curran.csv"))
 curran
 ```
@@ -82,7 +94,7 @@ background-size:contain
 .footnote[Image from [R for Data Science](https://r4ds.had.co.nz/tidy-data.html)]
 
 ---
-# Let's start it easy
+# Let's start easy
 
 First, let's select just the ID variable and the reading scores
 
@@ -106,7 +118,7 @@ knitr::kable(read[1:4, ])
 ```
 ]
 
-`r countdown::countdown(2, left = 0)`
+`r countdown::countdown(2, left = 0, right = 1)`
 
 ---
 # Moving to longer
@@ -163,7 +175,9 @@ read %>%
   pivot_longer(-id,
                names_to = "timepoint",
                values_to = "score",
-               names_transform = list(timepoint = parse_number)) #<<
+               names_transform = list( #<<
+                 timepoint = parse_number) #<<
+               ) #<<
 ```
 
 ---
@@ -232,7 +246,7 @@ curran %>%
                names_transform = list(timepoint = sub1))
 ```
 
-`r countdown::countdown(6, left = 0)`
+`r countdown::countdown(6, left = 0, right = 1)`
 
 ---
 # More transforming
