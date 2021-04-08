@@ -94,7 +94,7 @@ Icons in the schedule link to specific chapters.
 {{< slides "w4p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "assignments" "hw2" >}}
+
 {{< /wrap >}}
   {{< wrap >}}
 {{< due "homework-1" "hw1" >}}
@@ -119,7 +119,7 @@ Icons in the schedule link to specific chapters.
 {{< slides "" >}}
 {{< /wrap >}}
   {{< wrap >}}
-
+{{< assigned "assignments" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< due "assignments/#final-project" "Prop" >}}
@@ -143,10 +143,10 @@ Icons in the schedule link to specific chapters.
 {{< slides "" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "assignments" "hw3" >}}
+
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "hw2" >}}
+
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "clark2" "https://m-clark.github.io/bayesian-basics/" "NA" >}}
@@ -166,10 +166,10 @@ Icons in the schedule link to specific chapters.
 {{< slides "" >}}
 {{< /wrap >}}
   {{< wrap >}}
-
+{{< assigned "assignments" "hw3" >}}
 {{< /wrap >}}
   {{< wrap >}}
-
+{{< due "assignments" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "gh" "https://canvas.uoregon.edu/files/10667771/download?download_frd=1" "5" >}}
@@ -193,7 +193,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "hw3" >}}
+
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "other" "https://bookdown.org/marklhc/notes/simulating-multilevel-data.html" "NA" >}}
@@ -216,7 +216,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-
+{{< due "assignments" "hw3" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "sw" "" "" >}}
