@@ -208,3 +208,9 @@ left_join(sim_d, seasons) %>%
 link <- "https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%2013/estrone/estrone.sav"
 estrogen <- haven::read_sav(link)
 write_csv(estrogen, here::here("data", "estrogen.csv"))
+
+# Willett data
+willett_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/opposites_pp.txt"
+willett <- read_csv(willett_link) %>% 
+  select(id:cog)
+write_csv(willett, here::here("data", "willett-1988.csv"))

@@ -1,0 +1,1063 @@
+---
+title: "Variance-Covariance Matrices"
+author: "Daniel Anderson "
+date: "Week 4"
+output:
+  xaringan::moon_reader:
+    css: ["default", "new.css"]
+    lib_dir: libs
+    nature:
+      navigation:
+        scroll: false
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "https://platform.twitter.com/widgets.js"
+    includes:
+      in_header: "load-feather.html"
+---
+
+```{r include = FALSE, results = "asis"}
+source(here::here("static", "slides", "slide-setup.R"))
+xaringanExtra::use_clipboard()
+library(tidyverse)
+theme_set(theme_minimal(25))
+knitr::opts_chunk$set(fig.width = 13)
+update_geom_defaults('errorbarh', list(size = 2))
+update_geom_defaults('path', list(size = 3))
+update_geom_defaults('point', list(size = 5))
+update_geom_defaults('text', list(size = 9))
+```
+
+`r setup("w4p1")`
+
+---
+# Agenda
+
+* Review Homework 1
+
+* Discuss Gelmand and Hill notation - contrast with Raudenbush and Bryk
+
+* Unstructured VCV Matrices and alternatives
+
+* Homework 2
+
+---
+# Learning Objectives
+
+* Understand at least the basics of the GH notation and why I view it as preferable
+
+* Gain a deeper understanding of how the residual structure is different in multilevel models
+
+* Understand that there are methods for changing the residual structure, and understand when and why this might be preferable
+
+* Have a basic understanding of implementing alternative methods
+
+---
+class: inverse-blue middle
+
+# Review Homework 1
+
+---
+class: inverse-blue middle
+
+# Gelman and Hill notation
+
+---
+# Standard regression
+
+Imagine we have a model like this
+
+```{r }
+m <- lm(mpg ~ disp + hp + drat, data = mtcars)
+```
+
+
+
+--
+We would probably display this model like this
+
+
+$$
+\begin{equation}
+\operatorname{mpg} = \alpha + \beta_{1}(\operatorname{disp}) + \beta_{2}(\operatorname{hp}) + \beta_{3}(\operatorname{drat}) + \epsilon
+\end{equation}
+$$
+
+--
+What we often don't show, is the distributional assumption of the residuals
+
+$$
+\epsilon \sim N\left(0, \sigma \right)
+$$
+
+---
+# A different view
+
+The model on the previous slide could also be displayed  like this
+
+$$
+\begin{aligned}
+\hat{y} &= \alpha + \beta_{1}(\operatorname{disp}) + \beta_{2}(\operatorname{hp}) + \beta_{3}(\operatorname{drat}) \\\
+\operatorname{mpg} &\sim N\left(\hat{y}, \sigma \right)
+\end{aligned}
+$$
+
+--
+This makes the distributional assumptions clearer
+
+
+--
+Each `mpg` value is assumed generated from a normal distribution, with a mean structure according to $\hat{y}$, and an unknown standard deviation, $\sigma$.
+
+---
+# Simulate
+If we have a solid understanding of the distributional properties, we can simulate new data from the model
+
+--
+First let's set some population parameters
+
+```{r }
+n <- 1000
+intercept <- 100
+b1 <- 5
+b2 <- -3
+b3 <- 0.5
+sigma <- 4.5
+```
+
+---
+# Simulate
+
+Next create some variables. The standard deviations relate to the standard errors - more variance in the predictor leads to lower standard errors.
+
+```{r }
+set.seed(123)
+x1 <- rnorm(n, sd = 1)
+x2 <- rnorm(n, sd = 2)
+x3 <- rnorm(n, sd = 4)
+```
+
+--
+## Create y-hat
+
+```{r }
+yhat <- intercept + b1*x1 + b2*x2 + b3*x3
+```
+
+---
+# Generate data & test
+```{r }
+sim <- rnorm(n, yhat, sigma)
+summary(lm(sim ~ x1 + x2 + x3))
+```
+
+---
+# Generalizing
+We can generalize this same basic approach to multilevel models
+
+This is helpful because the error structure is more complicated
+
+Using this approach helps us better understand the distributional assumptions of our model
+
+---
+# Simple example
+I know we hate the HSB data but bear with me for a minute.
+
+Consider this simple model
+```{r message = FALSE}
+library(lme4)
+library(equatiomatic)
+hsb_m0 <- lmer(math ~ ses + (1|sch.id), data = hsb)
+```
+
+---
+# R&B
+In Raudenbush and Bryk notation, the model on the prior slide would look like this
+
+$$
+\begin{aligned}
+\text{math}_{ij} &= \beta_{0j} + \beta_{1j}(\text{ses}) + e_{ij} \\\
+\beta_{0j} &= \gamma_{00} + u_{0j} \\\
+\beta_{1j} &= \gamma_{10}
+\end{aligned}
+$$
+
+--
+
+.pull-left[
+
+Generally, the distributional part is omitted, which in this case is
+
+$$
+\begin{aligned}
+&E\left(e_{ij} \right) = 0, \text{Var}\left(e_{ij} \right) = \sigma^2 \\\
+&E\left(u_{0j} \right) = 0, \text{Var}\left(u_{0j} \right) = \tau_{00}
+\end{aligned}
+$$
+]
+
+
+--
+
+.pull-right[
+
+Put differently
+
+$$
+\begin{aligned}
+e_{ij} &\sim N\left(0, \sigma^2 \right) \\\
+u_{0j} &\sim N\left(0, \tau_{00} \right)
+\end{aligned}
+$$
+
+]
+
+---
+# G&H
+In Gelman & Hill notation, this same model can be communicated as
+
+```{r message = FALSE, echo = FALSE}
+extract_eq(hsb_m0)
+```
+
+--
+This notation communicates the distributional assumptions
+
+
+--
+We can also still easily see what levels the predictors are at
+
+
+--
+It does look a little more complex, but it's not hiding anything
+
+
+--
+If you properly understand the notation, you can simultate data assuming this data generating process (which we'll do later)
+
+---
+# Bonus
+It works really well to communicate model results
+
+```{r echo = FALSE}
+extract_eq(hsb_m0, use_coef = TRUE)
+```
+
+--
+### Extra bonus!
+You can use equatiomatic to give you the model formula. The above was generated with `extract_eq(hsb_m0, use_coef = TRUE)`
+
+---
+# Quick simulation
+We'll go over this in more detail later, but I want to give you the general idea.
+
+First, set some parameters
+```{r }
+j <- 30 # 30 schools
+nj <- 50 # 50 students per school
+```
+
+Next, simulate the school distribution
+
+```{r}
+# School distribution
+a_j <- rnorm(j, 0, 2.18)
+```
+
+---
+For each school, simulate nj obs from leve 1 model, adding in the school deviation
+
+There are lots of ways to do this - I'm using a `for()` loop here in an effort to be transparent
+
+```{r }
+school_scores <- vector("list", j)
+ses <- vector("list", j)
+
+for(i in 1:j) {
+  ses[[i]] <- rnorm(nj)
+  school_scores[[i]] <- rnorm(nj, 
+                              12.66 + 2.39*ses[[i]] + a_j[i], 
+                              6.09)
+}
+sim_df <- data.frame(
+  scid = rep(1:j, each = nj),
+  ses = unlist(ses),
+  score = unlist(school_scores)
+)
+```
+
+---
+# Test it out
+```{r }
+sim_m0 <- lmer(score ~ ses + (1|scid), data = sim_df)
+summary(sim_m0)
+```
+
+
+---
+# Expanding the model
+Let's add a school-level predictor
+
+--
+
+```{r }
+hsb_m1 <- lmer(math ~ ses + sector + (1|sch.id), data = hsb)
+```
+
+--
+```{r }
+extract_eq(hsb_m1)
+```
+
+---
+# Add in a random slope
+
+.small80[
+```{r }
+hsb_m2 <- lmer(math ~ ses + sector + (ses|sch.id), data = hsb)
+extract_eq(hsb_m2)
+```
+]
+
+---
+# Include interaction
+Include `sector` as a predictor of the relation between `ses` and `math`
+
+.small80[
+```{r }
+hsb_m3 <- lmer(math ~ ses * sector + (ses|sch.id), data = hsb,
+               control = lmerControl(optimizer = "nmkbw"))
+extract_eq(hsb_m3)
+```
+]
+
+---
+# Even more complicated
+
+This model doesn't actually fit well - I omitted some convergence warnings
+
+.small50[
+```{r warning = FALSE, message = FALSE}
+hsb_m4 <- lmer(
+  math ~ ses * sector + minority + female + meanses + size +
+    (ses + minority + female|sch.id), 
+  data = hsb
+)
+
+extract_eq(hsb_m4)
+```
+
+]
+
+---
+# Multiple levels
+Let's go to a different dataset from equatiomatic
+
+```{r }
+head(sim_longitudinal)
+```
+
+---
+# Four levels
+Model doesn't really fit again
+
+.small70[
+```{r message = FALSE}
+sl_m <- lmer(
+  score ~ wave*treatment + group + prop_low +
+    (wave|sid) + (wave + treatment| school) + (1|district),
+  data = sim_longitudinal
+)
+extract_eq(sl_m)
+```
+]
+---
+class: inverse-blue middle
+
+# Residual structures
+
+---
+# Data
+[Willett, 1988](https://www.jstor.org/stable/1167368?seq=1#metadata_info_tab_contents)
+
+* $n$ = 35 people
+* Each completed a cognitive inventory on "opposites naming"
+* At first time point, participants also completed a general cognitive measure
+
+---
+# Read in data
+
+```{r message = FALSE}
+willett <- read_csv(here::here("data", "willett-1988.csv"))
+willett
+```
+
+---
+# Standard OLS 
+
+* We have four observations per participant. 
+
+* If we fit a standard OLS model, it would look like this
+
+```{r }
+bad <- lm(opp ~ time, data = willett)
+summary(bad)
+```
+
+---
+# Assumptions
+As we discussed previously, this model looks like this
+
+$$
+\operatorname{opp} = \alpha + \beta_{1}(\operatorname{time}) + \epsilon
+$$
+
+where
+
+$$
+\epsilon \sim \left(0, \sigma \right)
+$$
+
+---
+# Individual level residuals
+We can expand our notation, so it looks like a multivariate normal distribution
+
+$$
+\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_1 \\\
+      \epsilon_2 \\\
+      \epsilon_3 \\\
+      \vdots \\\
+      \epsilon_n
+    \end{array}
+  \right)
+\sim
+  \left(
+    \left[
+      \begin{array}{c}
+        0\\\
+        0\\\
+        0\\\
+        \vdots \\\
+        0
+    \end{array}
+    \right],
+    \left[
+      \begin{array}{ccccc}
+        \sigma_{\epsilon} & 0 & 0 & \dots & 0 \\\
+        0 & \sigma_{\epsilon} & 0 & 0 & 0 \\\
+        0 & 0 & \sigma_{\epsilon} & 0 & 0 \\\
+        \vdots & 0 & 0 & \ddots & \vdots \\\
+        0 & 0 & 0 & \dots & \sigma_{\epsilon}
+      \end{array}
+    \right]
+  \right)
+\end{equation}
+$$
+
+This is where the $i.i.d.$ part comes in. The residuals are assumed $i$ndependent and $i$dentically $d$istributed.
+
+---
+# Multilevel model
+Very regularly, there are reasons to believe the $i.i.d.$ assumption is violated. Consider our current case, with 4 time points for each individual.
+
+* Is an observation for one time point for one individual *independent* from the other observations for that individual?
+
+
+--
+* Rather than estimating a single residual variance, we estimate an additional components associated with individuals, leading to a *block* diagonal structure
+
+---
+# Block diagonal
+
+.small70[
+$$
+\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_{11} \\
+      \epsilon_{12} \\
+      \epsilon_{13} \\
+      \epsilon_{14} \\
+      \epsilon_{21} \\
+      \epsilon_{22} \\
+      \epsilon_{23} \\
+      \epsilon_{24} \\
+      \vdots \\
+      \epsilon_{n1} \\
+      \epsilon_{n2} \\
+      \epsilon_{n3} \\
+      \epsilon_{n4}
+    \end{array}
+  \right)
+\sim
+  \left(
+    \left[
+      \begin{array}{c}
+        \\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        \vdots \\
+        0\\
+        0\\
+        0\\
+        0
+      \end{array}
+    \right],
+    \left[
+      \begin{array}{{@{}*{13}c@{}}}
+      \\
+        \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44} & \dots  & 0 & 0 & 0 & 0 \\
+        \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \vdots \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44}
+      \end{array}
+    \right]
+  \right)
+\end{equation}
+$$
+]
+
+
+--
+Correlations for  off-diagonals estimated
+
+
+--
+Same variance components for all blocks
+
+
+--
+Off diagonals are still zero
+
+---
+# Homogeneity of variance
+As mentioned on the previous slide, we assume the same variance components across all student
+
+This is referred to as the homogeneity of variance assumption - although the block (often referred to as the composite residual) may be heteroscedastic and dependent **within** a grouping factor (i.e., people) the entire error structure is repeated identically across units (i.e., people)
+
+---
+# Block diagonal
+Because of the homogeneity of variance assumption, we can re-express our block diagonal design as follows
+
+$$
+\begin{equation}
+r \sim N \left(\boldsymbol{0}, 
+  \left[
+    \begin{array}{ccccc}
+      \boldsymbol{\Sigma_r} & \boldsymbol{0} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
+      \boldsymbol{0} & \boldsymbol{\Sigma_r} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
+      \boldsymbol{0} & \boldsymbol{0} & \boldsymbol{\Sigma_r} &  \dots & \boldsymbol{0} \\
+      \vdots & \vdots & \vdots & \ddots & \vdots & \\
+      \boldsymbol{0} & \boldsymbol{0} &  \boldsymbol{0} & \dots & \boldsymbol{\Sigma_r}
+    \end{array}
+  \right]
+\right)
+\end{equation}
+$$
+---
+# Composite residual
+We then define the composite residual, which is common across units
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} \\
+      \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} \\
+      \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} \\
+      \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44}
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+---
+# Let's try!
+
+Let's fit a parallel slopes model with the Willett data. You try first.
+
+`r countdown::countdown(2)`
+
+--
+```{r }
+w0 <- lmer(opp ~ time + (1|id), willett)
+```
+
+--
+What does the residual variance-covariance look like? Let's use **sundry** to pull it 
+
+```{r }
+library(sundry)
+w0_rvcv <- pull_residual_vcov(w0)
+```
+
+---
+# Image
+Sparse matrix - we can view it with `image()`
+
+```{r }
+image(w0_rvcv)
+```
+
+---
+# Pull first few rows/cols
+
+```{r }
+w0_rvcv[1:8, 1:8]
+```
+
+---
+# Structure
+On the previous slide, note the values on the diagonal are all the same, as are all the off-diagonals
+
+* This is because we've only estimated one additional variance component
+
+
+---
+# Understanding these numbers
+Let's look at the model output
+
+```{r }
+arm::display(w0)
+```
+
+---
+The diagonal values were $`r w0_rvcv[1, 1]`$ while the off diagonal values were $`r w0_rvcv[1, 2]`$
+
+Let's extract the variance components from our model.
+
+```{r }
+vars_w0 <- as.data.frame(VarCorr(w0))
+vars_w0
+```
+
+--
+
+Notice anything?
+
+
+--
+
+The diagonals are given by `sum(vars_w0)$vcov` while the off-diagonals are just the intercept variance
+
+
+---
+# Including more complexity
+
+Try estimating this model now, then look at the residual variance-covariance matrix again
+
+```{r echo = FALSE}
+w1 <- lmer(opp ~ time + (time|id), willett)
+extract_eq(w1)
+```
+
+`r countdown::countdown(4)`
+
+---
+# The composite residual
+```{r }
+w1 <- lmer(opp ~ time + (time|id), willett)
+w1_rvcv <- pull_residual_vcov(w1)
+w1_rvcv[1:4, 1:4]
+```
+
+
+--
+### Unstructured
+
+The model we fit has an *unstructured* variance co-variance matrix. While each
+block is the same, every element of the block is now estimated.
+
+
+---
+# What are these numbers?
+They are the variance components, re-expressed as a composite residual
+
+
+--
+The diagonal is given by
+
+$$
+\begin{equation}
+\sigma^2 + \sigma^2_{\alpha_j} + 2\sigma^2_{01}w_i + \sigma^2_{\beta_1}w^2_i 
+\end{equation}
+$$
+
+
+where $w$ represents the given wave (for our example)
+
+
+--
+Let's do this "by hand"
+
+---
+# Get the pieces
+
+```{r }
+vars_w1 <- as.data.frame(VarCorr(w1))
+
+# get the pieces
+int_var <- vars_w1$vcov[1]
+slope_var <- vars_w1$vcov[2]
+covar <- vars_w1$vcov[3]
+residual <- vars_w1$vcov[4]
+```
+
+---
+# Calculate
+
+```{r }
+diag(w1_rvcv[1:4, 1:4])
+residual + int_var
+residual + int_var + 2*covar + slope_var
+residual + int_var + (2*covar)*2 + slope_var*2^2
+residual + int_var + (2*covar)*3 + slope_var*3^2
+```
+
+
+---
+# Off-diagonals
+
+The off-diagonals are given by
+
+$$
+\begin{equation}
+\sigma^2_{\alpha_j} + \sigma_{01}(t_i + t_i') + \sigma^2_{\beta_1}t_it_i'
+\end{equation}
+$$
+---
+# Calculate a few
+```{r label, options}
+w1_rvcv[1:4, 1:4]
+int_var + covar*(1 + 0) + slope_var*1*0
+int_var + covar*(2 + 1) + slope_var*2*1
+int_var + covar*(3 + 2) + slope_var*3*2
+int_var + covar*(2 + 0) + slope_var*2*0
+```
+
+---
+class: inverse-red middle
+# Positing other structures
+
+---
+# The possibilities
+There are a number of alternative structures. We'll talk about a few here.
+
+
+--
+If you want to go deeper, I suggest Singer & Willett, Chapter 7
+
+
+--
+Code to fit models with each type of structure, using the same Willett data we're using today, is available [here](https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-7/)
+
+---
+# Structures we'll fit
+
+* Unstructured (default with **lme4**, we've already seen this)
+
+* Autoregressive
+
+* Heterogeneous autoregressive
+
+* Toeplitz
+
+
+--
+Outside of unstructured, we'll need to use the **nlme** package to estimate other structures
+
+
+--
+We'll also use a generalized least squares estimator, rather than maximum likelihood
+
+
+---
+class: inverse-orange middle
+# Autoregressive
+
+---
+# Autoregressive
+* There are many types of autoregressive structures
+  + If you took a class on time-series data you'd learn about others
+  
+* What we'll talk about is referred to as an AR1 structure
+
+* Variances (on the diagonal) are constant
+
+* Includes constant "band-diagonals"
+
+
+---
+# Autoregressive
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 & \sigma^2\rho & \sigma^2\rho^2 & \sigma^2\rho^3 \\
+      \sigma^2\rho & \sigma^2 & \sigma^2\rho & \sigma^2\rho^2 \\
+      \sigma^2\rho^2 & \sigma^2\rho & \sigma^2 & \sigma^2\rho \\
+      \sigma^2\rho^3 & \sigma^2\rho^2 & \sigma^2\rho & \sigma^2
+    \end{array}
+  \right]
+\end{equation}
+$$
+* Each band is forced to be lower than the prior by a constant fraction
+  + estimated autocorrelation parameter $\rho$. The error variance is multiplied by $\rho$ for the first diagonal, by $\rho^2$ for the second, etc.
+
+* Uses only two variance components
+
+
+---
+# Fit
+
+First load **nlme**
+
+```{r message = FALSE}
+library(nlme)
+```
+
+
+--
+We'll use the `gls()` function. The interface is, overall, fairly similar to **lme4**
+
+--
+```{r }
+ar <- gls(opp ~ time, 
+          data = willett,
+          correlation = corAR1(form = ~ 1|id))
+```
+
+---
+# Summary
+```{r }
+summary(ar)
+```
+
+---
+# Extract composite residual
+
+```{r }
+cm_ar <- corMatrix(ar$modelStruct$corStruct) # all of them
+cr_ar <- cm_ar[[1]] # just the first (they're all the same)
+cr_ar
+```
+
+
+--
+
+Multiply the correlation matrix by the model residual variance to get the covariance matrix
+
+```{r }
+cr_ar * sigma(ar)^2
+```
+
+---
+# Confirming calculations
+
+```{r}
+sigma(ar)^2
+sigma(ar)^2*0.8249118
+sigma(ar)^2*0.8249118^2
+sigma(ar)^2*0.8249118^3
+```
+
+---
+# Heterogenous autoregressive
+* Same as autorgressive but allows each variance to differ
+
+* Still one $\rho$ estimated
+
+  + Same "decay" across band diagonals
+
+* Band diagonals no longer equivalent, because different variances
+
+---
+# Heterogenous autoregressive
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2_1 & \sigma_1\sigma_2\rho & \sigma_1\sigma_3\rho^2 & \sigma_1\sigma_4\rho^2 \\
+      \sigma_2\sigma_1\rho & \sigma^2_2 & \sigma_2\sigma_3\rho & \sigma_2\sigma_4\rho^2 \\
+      \sigma_3\sigma_1\rho^2 & \sigma_3\sigma_2\rho & \sigma^2_3 & \sigma_3\sigma_4\rho \\
+      \sigma_4\sigma_1\rho^3 & \sigma_4\sigma_2\rho^2 & \sigma_4\sigma_3\rho & \sigma^2_4
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+---
+# Fit
+Note - `varIdent` specifies different variances for each wave (variances of the [identity matrix](https://en.wikipedia.org/wiki/Identity_matrix))
+
+```{r }
+har <- gls(
+  opp ~ time,
+  data = willett,
+  correlation = corAR1(form = ~ 1|id),
+  weights = varIdent(form = ~1|time)
+)
+```
+
+---
+# Summary
+```{r }
+summary(har)
+```
+
+---
+# Extract/compute composite residual
+
+The below is fairly complicated, but you can work it out if you go line by line
+
+```{r }
+cm_har <- corMatrix(har$modelStruct$corStruct)[[1]] 
+var_struct <- har$modelStruct$varStruct
+vars <- coef(var_struct, unconstrained = FALSE, allCoef = TRUE)
+vars <- matrix(vars, ncol = 1)
+
+cm_har * sigma(har)^2 * 
+  (vars %*% t(vars)) # multiply by a mat of vars
+```
+
+---
+# Toeplitz
+
+* Constant variance
+
+* Has identical band-diagonals, like autoregressive
+
+* Relaxes assumption of each band being a parallel by a common fraction of the prior band
+
+  + Each band determined empirically by the data
+
+
+--
+A bit of a compromise between prior two
+
+---
+# Toeplitz
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 & \sigma^2_1 & \sigma^2_2 & \sigma^2_3 \\
+      \sigma^2_1 & \sigma^2 & \sigma^2_1 & \sigma^2_2 \\
+      \sigma^2_2 & \sigma^2_1 & \sigma^2 & \sigma^2_1 \\
+      \sigma^2_2 & \sigma^2_2 & \sigma^2_1 & \sigma^2
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+--
+## Fit
+
+```{r }
+toep <- gls(opp ~ time, 
+            data = willett,
+            correlation = corARMA(form = ~ 1|id, p = 3))
+```
+
+---
+# Summary
+```{r }
+summary(toep)
+```
+
+---
+# Extract/compute composite residual
+Same as with autoregressive - just multiply the correlation matrix by the residual variance
+
+```{r }
+cr_toep <- corMatrix(toep$modelStruct$corStruct)[[1]] 
+cr_toep * sigma(toep)^2
+```
+
+
+---
+# Comparing fits
+
+```{r }
+library(performance)
+compare_performance(ar, har, toep, w1, 
+                    metrics = c("AIC", "BIC"),
+                    rank = TRUE) %>% 
+  as_tibble()
+```
+
+We have slight evidence here that the Toeplitz structure fits better than the unstructured version, which was slightly better than the autoregressive model.
+
+---
+
+```{r echo = FALSE}
+modelsummary::modelsummary(list(
+  "Unstructured" = w1,
+  "Autoregressive (AR)" = ar, 
+  "Heterogeneous AR" = har,
+  "Toeplitz" = toep
+  )
+)
+```
+
+
+---
+class: inverse-red middle
+# Stepping back
+### Why do we care about all of this?
+
+---
+# Overfitting
+
+* If a simpler model fits the data just as well, it should be preferred
+
+* Models that are overfit have "learned too much" from the data and won't generalize well
+
+* Can think of it as fitting to the errors in the data, rather than the "true" patterns found in the population
+
+---
+# Convergence issues
+
+* As your models get increasingly complicated, you're likely to run into convergence issues. 
+
+* Simplifying your residual variance-covariance structure may help 
+  + Keeps the basic model structure intact
+
+
+--
+Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubleshooting) for convergence troubleshooting with **lme4**. The `allFit()` function is often helpful but very computationally intensive.
+
+
+---
+# Summary
+* As is probably fairly evident from the code - there are many more structures you could explore. However, most are not implemented through **lme4**.
+
+* Simplifying the residual variance-covariance can sometimes lead to better fitting models
+
+* May also be helpful with convergence and avoid overfitting
+
+---
+class: inverse-green middle
+# Homework 2
+### Next time: Modeling growth
