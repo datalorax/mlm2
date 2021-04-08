@@ -91,7 +91,7 @@ Icons in the schedule link to specific chapters.
 {{< week "04-23" >}}
   {{< description "Variance-covariance matrices & intro to Gelman & Hill notation" "Contrasting unstructured variance-covariance matrices with alternative specifications (e.g., independent, Toeplitz). We will also discuss the Gelman & Hill notation for multilevel models and practice writing and interpreting model equations." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w4p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< assigned "assignments" "hw2" >}}

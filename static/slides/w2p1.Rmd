@@ -54,6 +54,15 @@ The only real difference is it will be in R
 
 
 ---
+# Schedule announcement 
+
+* I've moved back when Homework 2 and 3 are assigned by one week
+
+* I felt like this worked better with the topics (gave us more time for variance-covariance matrices and intro to Bayes)
+
+* Now assigned weeks 5 & 7, and due weeks 7 & 9
+
+---
 class: inverse-blue middle
 
 # Restructuring data 

@@ -1059,5 +1059,5 @@ Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubl
 
 ---
 class: inverse-green middle
-# Homework 2
-### Next time: Modeling growth
+# Next time: Modeling growth (part 1)
+### Also Homework 2

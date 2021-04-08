@@ -364,7 +364,7 @@ summary(sim_m0)
 ```
 
 ```
-## Linear mixed model fit by REML ['lmerMod']
+## Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
 ## Formula: score ~ ses + (1 | scid)
 ##    Data: sim_df
 ## 
@@ -381,9 +381,11 @@ summary(sim_m0)
 ## Number of obs: 1500, groups:  scid, 30
 ## 
 ## Fixed effects:
-##             Estimate Std. Error t value
-## (Intercept)  12.3901     0.4622   26.81
-## ses           2.4682     0.1562   15.80
+##              Estimate Std. Error        df t value Pr(&gt;|t|)    
+## (Intercept)   12.3901     0.4622   28.9920   26.81   &lt;2e-16 ***
+## ses            2.4682     0.1562 1473.1549   15.80   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Correlation of Fixed Effects:
 ##     (Intr)
@@ -924,7 +926,7 @@ $$
 
 Let's fit a parallel slopes model with the Willett data. You try first.
 
-<div class="countdown" id="timer_606e51f9" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e5608" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1071,7 +1073,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_606e5285" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e53ba" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1673,12 +1675,12 @@ compare_performance(ar, har, toep, w1,
 
 ```
 ## # A tibble: 4 x 5
-##   Name  Model        AIC      BIC Performance_Score
-##   &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
-## 1 toep  gls     1277.979 1295.543         0.9094409
-## 2 w1    lmerMod 1278.823 1296.473         0.8196721
-## 3 ar    gls     1281.465 1293.174         0.7759608
-## 4 har   gls     1285.760 1306.250         0
+##   Name  Model                AIC      BIC Performance_Score
+##   &lt;chr&gt; &lt;chr&gt;              &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
+## 1 toep  gls             1277.979 1295.543         0.9094409
+## 2 w1    lmerModLmerTest 1278.823 1296.473         0.8196721
+## 3 ar    gls             1281.465 1293.174         0.7759608
+## 4 har   gls             1285.760 1306.250         0
 ```
 
 We have slight evidence here that the Toeplitz structure fits better than the unstructured version, which was slightly better than the autoregressive model.
@@ -1821,8 +1823,8 @@ Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubl
 
 ---
 class: inverse-green middle
-# Homework 2
-### Next time: Modeling growth
+# Next time: Modeling growth (part 1)
+### Also Homework 2
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
