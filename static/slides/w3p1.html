@@ -4,7 +4,7 @@
     <title>Predictions and visualizations</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
-    <script src="libs/header-attrs-2.7.4/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.7.7/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
     <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
@@ -71,12 +71,21 @@ layout: true
 * Marginal effects
 
 ---
+# Learning objectives
+* Understand how to pull different pieces out of the model
+
+* Understand how multilevel models make their predictions for individual observations
+  + And specifically how they differ from single-level regression models
+  
+* Be able to use the output from model objects to visualize different parts of the model.
+
+---
 # Read in the data
 Let's read in the popularity data so we can fit some really basic models.
 
 You try first
 
-<div class="countdown" id="timer_606744bf" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e52df" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -116,7 +125,7 @@ Fit each of the following models
 
 * `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
 
-<div class="countdown" id="timer_606744b9" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e5101" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -135,7 +144,7 @@ m2 &lt;- lmer(popular ~ sex + (sex|class), popular)
 # Compare performance
 Use whatever tests you'd like, and come up with the model you think fits the data best
 
-<div class="countdown" id="timer_6067443e" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e50c2" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -431,7 +440,7 @@ Can you make a dotplot with uncertainty for the variance components?
 
 What about a plot showing both fixed effects and variance components?
 
-<div class="countdown" id="timer_606741d0" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e50a1" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -722,7 +731,7 @@ predict(m2)[1]
 
 Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
 
-<div class="countdown" id="timer_606744b1" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e51fd" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -809,7 +818,7 @@ predict(m2)[1]
 # Challenge
 * Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
 
-<div class="countdown" id="timer_606741c5" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e513a" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -911,7 +920,7 @@ first_three &lt;- sim_longitudinal %&gt;%
 --
 Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
 
-<div class="countdown" id="timer_606741e9" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e518e" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -943,7 +952,7 @@ first_three %&gt;%
 # Plot
 Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
 
-<div class="countdown" id="timer_60674408" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e5120" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -970,7 +979,7 @@ Student 2 has a considerably lower intercept. What would we predict the trend wo
 --
 Try to make this prediction on your own for all time points
 
-<div class="countdown" id="timer_6067453e" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_606e524a" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1536,6 +1545,93 @@ arm::display(m1b)
 ```
 
 ---
+# Predictions "by hand"
+This is now a three-level model. How does it differ from two-level models in terms of model predictions?
+
+
+--
+Let's make a prediction for the first student at the fourth time point:
+
+
+```r
+sim_longitudinal[4, ]
+```
+
+```
+## # A tibble: 1 x 8
+## # Groups:   school [1]
+##     sid school district group  treatment  prop_low  wave    score
+##   &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1      1        1 medium 1         0.1428571     3 102.2792
+```
+
+---
+# The pieces
+
+```r
+fixed &lt;- fixef(m1a)
+ranefs &lt;- ranef(m1a)
+fixed
+```
+
+```
+##     (Intercept)            wave      treatment1 wave:treatment1 
+##      96.7973387       0.4010222       0.6080336      -0.4459053
+```
+
+```r
+# Pull just the ranefs for sid 1 and school 1
+sid_ranefs &lt;- ranefs$sid[1, ] 
+sid_ranefs
+```
+
+```
+##   (Intercept)      wave
+## 1     1.85279 0.1936603
+```
+
+```r
+sch_ranefs &lt;- ranefs$school[1, ]
+sch_ranefs
+```
+
+```
+## [1] 2.795928
+```
+
+---
+# Putting it together
+
+
+```r
+(fixed[1] + sid_ranefs[1] + sch_ranefs) + # intercept
+  
+((fixed[2] + sid_ranefs[2]) * 3) + # fourth timepoint
+  
+(fixed[3] * 1) + # treatment effect
+
+(fixed[4] * 3)  # treatment by wave effect
+```
+
+```
+##   (Intercept)
+## 1    102.5004
+```
+
+---
+# Confirm
+
+
+```r
+predict(m1a, newdata = sim_longitudinal[4, ])
+```
+
+```
+##        1 
+## 102.5004
+```
+
+---
 # Predictions 
 Let's randomly sample 5 students in the first four school and display the model predictions for those students.
 
@@ -1553,18 +1649,18 @@ samp
 ```
 ## # A tibble: 28 x 3
 ## # Groups:   sid, school [28]
-##      sid school data             
-##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
-##  1     1      1 &lt;tibble [10 × 6]&gt;
-##  2    33      3 &lt;tibble [10 × 6]&gt;
-##  3    34      4 &lt;tibble [10 × 6]&gt;
-##  4    46      1 &lt;tibble [10 × 6]&gt;
-##  5    61      1 &lt;tibble [10 × 6]&gt;
-##  6    77      2 &lt;tibble [10 × 6]&gt;
-##  7    78      3 &lt;tibble [10 × 6]&gt;
-##  8    91      1 &lt;tibble [10 × 6]&gt;
-##  9    93      3 &lt;tibble [10 × 6]&gt;
-## 10     2      2 &lt;tibble [10 × 6]&gt;
+##      sid school data                 
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;               
+##  1     1      1 &lt;tibble[,6] [10 × 6]&gt;
+##  2    33      3 &lt;tibble[,6] [10 × 6]&gt;
+##  3    34      4 &lt;tibble[,6] [10 × 6]&gt;
+##  4    46      1 &lt;tibble[,6] [10 × 6]&gt;
+##  5    61      1 &lt;tibble[,6] [10 × 6]&gt;
+##  6    77      2 &lt;tibble[,6] [10 × 6]&gt;
+##  7    78      3 &lt;tibble[,6] [10 × 6]&gt;
+##  8    91      1 &lt;tibble[,6] [10 × 6]&gt;
+##  9    93      3 &lt;tibble[,6] [10 × 6]&gt;
+## 10     2      2 &lt;tibble[,6] [10 × 6]&gt;
 ## # … with 18 more rows
 ```
 
@@ -1582,28 +1678,28 @@ samp %&gt;%
 ```
 ## # A tibble: 20 x 3
 ## # Groups:   school [4]
-##      sid school data             
-##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
-##  1     1      1 &lt;tibble [10 × 6]&gt;
-##  2    76      1 &lt;tibble [10 × 6]&gt;
-##  3    31      1 &lt;tibble [10 × 6]&gt;
-##  4    16      1 &lt;tibble [10 × 6]&gt;
-##  5    46      1 &lt;tibble [10 × 6]&gt;
-##  6    62      2 &lt;tibble [10 × 6]&gt;
-##  7     2      2 &lt;tibble [10 × 6]&gt;
-##  8    92      2 &lt;tibble [10 × 6]&gt;
-##  9    77      2 &lt;tibble [10 × 6]&gt;
-## 10    47      2 &lt;tibble [10 × 6]&gt;
-## 11    63      3 &lt;tibble [10 × 6]&gt;
-## 12    18      3 &lt;tibble [10 × 6]&gt;
-## 13    33      3 &lt;tibble [10 × 6]&gt;
-## 14    48      3 &lt;tibble [10 × 6]&gt;
-## 15    78      3 &lt;tibble [10 × 6]&gt;
-## 16    19      4 &lt;tibble [10 × 6]&gt;
-## 17    49      4 &lt;tibble [10 × 6]&gt;
-## 18     4      4 &lt;tibble [10 × 6]&gt;
-## 19    79      4 &lt;tibble [10 × 6]&gt;
-## 20    94      4 &lt;tibble [10 × 6]&gt;
+##      sid school data                 
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;               
+##  1     1      1 &lt;tibble[,6] [10 × 6]&gt;
+##  2    76      1 &lt;tibble[,6] [10 × 6]&gt;
+##  3    31      1 &lt;tibble[,6] [10 × 6]&gt;
+##  4    16      1 &lt;tibble[,6] [10 × 6]&gt;
+##  5    46      1 &lt;tibble[,6] [10 × 6]&gt;
+##  6    62      2 &lt;tibble[,6] [10 × 6]&gt;
+##  7     2      2 &lt;tibble[,6] [10 × 6]&gt;
+##  8    92      2 &lt;tibble[,6] [10 × 6]&gt;
+##  9    77      2 &lt;tibble[,6] [10 × 6]&gt;
+## 10    47      2 &lt;tibble[,6] [10 × 6]&gt;
+## 11    63      3 &lt;tibble[,6] [10 × 6]&gt;
+## 12    18      3 &lt;tibble[,6] [10 × 6]&gt;
+## 13    33      3 &lt;tibble[,6] [10 × 6]&gt;
+## 14    48      3 &lt;tibble[,6] [10 × 6]&gt;
+## 15    78      3 &lt;tibble[,6] [10 × 6]&gt;
+## 16    19      4 &lt;tibble[,6] [10 × 6]&gt;
+## 17    49      4 &lt;tibble[,6] [10 × 6]&gt;
+## 18     4      4 &lt;tibble[,6] [10 × 6]&gt;
+## 19    79      4 &lt;tibble[,6] [10 × 6]&gt;
+## 20    94      4 &lt;tibble[,6] [10 × 6]&gt;
 ```
 
 ---
@@ -1674,7 +1770,277 @@ samp %&gt;%
   facet_wrap(~school)
 ```
 
-![](w3p1_files/figure-html/unnamed-chunk-69-1.png)&lt;!-- --&gt;
+![](w3p1_files/figure-html/unnamed-chunk-73-1.png)&lt;!-- --&gt;
+
+
+---
+class: inverse-blue middle
+# Marginal effects
+
+---
+# Marinal effect
+A marginal effect shows the relation between one variable in the model and the outcome, while averaging over the other predictors in the model
+
+
+--
+Let's start by making the models slightly more complicated
+
+--
+
+```r
+m2 &lt;- lmer(score ~ wave*treatment + group + prop_low +
+              (wave|sid) + (1|school) ,
+            data = sim_longitudinal)
+```
+
+---
+
+```r
+arm::display(m2, detail = TRUE)
+```
+
+```
+## lmer(formula = score ~ wave * treatment + group + prop_low + 
+##     (wave | sid) + (1 | school), data = sim_longitudinal)
+##                 coef.est coef.se t value
+## (Intercept)      97.62     4.70   20.78 
+## wave              0.40     0.03   14.38 
+## treatment1        0.82     1.91    0.43 
+## grouplow         -4.83     4.00   -1.21 
+## groupmedium      -3.61     3.75   -0.96 
+## prop_low          9.34    10.21    0.91 
+## wave:treatment1  -0.45     0.04  -11.42 
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  sid      (Intercept) 9.18           
+##           wave        0.19     -0.13 
+##  school   (Intercept) 3.41           
+##  Residual             0.44           
+## ---
+## number of obs: 1000, groups: sid, 100; school, 15
+## AIC = 2319.8, DIC = 2313.2
+## deviance = 2304.5
+```
+
+---
+# Marginal effect
+Let's look at the relation between `wave` and `score` by `treatment`, holding the other values constant. 
+
+
+--
+First, build a prediction data frame. We'll make population-level prediction - i.e., ignoring the random effects.
+
+
+```r
+marginal_frame1 &lt;- data.frame(
+  wave = rep(0:9, 2),
+  treatment = as.factor(rep(c(0, 1), each = 10)),
+  group = factor("high", levels = c("low", "medium", "high")),
+  prop_low = mean(sim_longitudinal$prop_low, na.rm = TRUE),
+  sid = -999,
+  school = -999
+)
+```
+
+--
+The length of each of these variables can sometimes get a little tricky
+
+---
+
+```r
+marginal_frame1
+```
+
+```
+##    wave treatment group prop_low  sid school
+## 1     0         0  high      0.3 -999   -999
+## 2     1         0  high      0.3 -999   -999
+## 3     2         0  high      0.3 -999   -999
+## 4     3         0  high      0.3 -999   -999
+## 5     4         0  high      0.3 -999   -999
+## 6     5         0  high      0.3 -999   -999
+## 7     6         0  high      0.3 -999   -999
+## 8     7         0  high      0.3 -999   -999
+## 9     8         0  high      0.3 -999   -999
+## 10    9         0  high      0.3 -999   -999
+## 11    0         1  high      0.3 -999   -999
+## 12    1         1  high      0.3 -999   -999
+## 13    2         1  high      0.3 -999   -999
+## 14    3         1  high      0.3 -999   -999
+## 15    4         1  high      0.3 -999   -999
+## 16    5         1  high      0.3 -999   -999
+## 17    6         1  high      0.3 -999   -999
+## 18    7         1  high      0.3 -999   -999
+## 19    8         1  high      0.3 -999   -999
+## 20    9         1  high      0.3 -999   -999
+```
+
+---
+# Make predictions!
+Note that we have to specify to allow new levels
+
+```r
+marginal_frame1 &lt;- marginal_frame1 %&gt;% 
+  mutate(pred = predict(m2, 
+                        newdata = marginal_frame1, 
+                        allow.new.levels = TRUE))
+marginal_frame1
+```
+
+```
+##    wave treatment group prop_low  sid school     pred
+## 1     0         0  high      0.3 -999   -999 100.4186
+## 2     1         0  high      0.3 -999   -999 100.8196
+## 3     2         0  high      0.3 -999   -999 101.2207
+## 4     3         0  high      0.3 -999   -999 101.6217
+## 5     4         0  high      0.3 -999   -999 102.0227
+## 6     5         0  high      0.3 -999   -999 102.4237
+## 7     6         0  high      0.3 -999   -999 102.8248
+## 8     7         0  high      0.3 -999   -999 103.2258
+## 9     8         0  high      0.3 -999   -999 103.6268
+## 10    9         0  high      0.3 -999   -999 104.0278
+## 11    0         1  high      0.3 -999   -999 101.2433
+## 12    1         1  high      0.3 -999   -999 101.1984
+## 13    2         1  high      0.3 -999   -999 101.1536
+## 14    3         1  high      0.3 -999   -999 101.1087
+## 15    4         1  high      0.3 -999   -999 101.0638
+## 16    5         1  high      0.3 -999   -999 101.0189
+## 17    6         1  high      0.3 -999   -999 100.9740
+## 18    7         1  high      0.3 -999   -999 100.9291
+## 19    8         1  high      0.3 -999   -999 100.8843
+## 20    9         1  high      0.3 -999   -999 100.8394
+```
+
+---
+# Plot it
+
+```r
+ggplot(marginal_frame1, aes(wave, pred, color = treatment)) +
+  geom_line()
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-79-1.png)&lt;!-- --&gt;
+
+---
+# Why do this?
+As the model gets more complicated, it can be increasingly difficult to understand the fixed effects.
+
+Plotting the marginal effects regularly helps (e.g., for interactions and non-linear terms)
+
+---
+# Try again
+This time, let's look at the same thing, but for all groups
+
+
+```r
+marginal_frame2 &lt;- data.frame(
+  wave = rep(0:9, 2*3),
+  treatment = as.factor(rep(c(0, 1), each = 10*3)),
+  group = factor(
+    rep(
+      rep(c("low", "medium", "high"), each = 10),
+      2
+    )
+  ),
+  prop_low = mean(sim_longitudinal$prop_low, na.rm = TRUE),
+  sid = -999,
+  school = -999
+)
+```
+
+---
+# Predict &amp; plot
+
+```r
+marginal_frame2 %&gt;% 
+  mutate(
+    pred = predict(m2, newdata = marginal_frame2, allow.new.levels = TRUE)
+  ) %&gt;% 
+  ggplot(aes(wave, pred, color = treatment)) +
+  geom_line() +
+  facet_wrap(~group)
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-81-1.png)&lt;!-- --&gt;
+
+---
+# Automated method
+We can build this up on our own with new data frames
+
+--
+
+```r
+library(ggeffects)
+ggpredict(m2, "wave")
+```
+
+```
+## # Predicted values of score
+## # x = wave
+## 
+## x | Predicted |          95% CI
+## -------------------------------
+## 0 |    100.42 | [93.05, 107.78]
+## 1 |    100.82 | [93.46, 108.18]
+## 2 |    101.22 | [93.86, 108.58]
+## 3 |    101.62 | [94.26, 108.98]
+## 5 |    102.42 | [95.07, 109.78]
+## 6 |    102.82 | [95.47, 110.18]
+## 7 |    103.23 | [95.87, 110.58]
+## 9 |    104.03 | [96.67, 111.39]
+## 
+## Adjusted for:
+## * treatment =    0
+## *     group = high
+## *  prop_low = 0.30
+## *       sid = 0 (population-level)
+## *    school = 0 (population-level)
+```
+
+
+---
+# Even automated plotting!
+
+
+```r
+ggpredict(m2, c("wave", "treatment")) %&gt;% 
+  plot()
+```
+
+![](w3p1_files/figure-html/unnamed-chunk-83-1.png)&lt;!-- --&gt;
+
+
+---
+# Individual observation
+We can get these prediction intervals for specific levels also
+
+
+```r
+ggpredict(m2, "wave", condition = c(sid = 1, school = 1))
+```
+
+```
+## # Predicted values of score
+## # x = wave
+## 
+## x | Predicted |          95% CI
+## -------------------------------
+## 0 |    100.42 | [93.05, 107.78]
+## 1 |    100.82 | [93.46, 108.18]
+## 2 |    101.22 | [93.86, 108.58]
+## 3 |    101.62 | [94.26, 108.98]
+## 5 |    102.42 | [95.07, 109.78]
+## 6 |    102.82 | [95.47, 110.18]
+## 7 |    103.23 | [95.87, 110.58]
+## 9 |    104.03 | [96.67, 111.39]
+## 
+## Adjusted for:
+## * treatment =    0
+## *     group = high
+## *  prop_low = 0.30
+```
+
 
 ---
 class: inverse-green middle

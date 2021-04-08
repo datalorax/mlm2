@@ -510,7 +510,7 @@ $$
     \end{aligned}
   \end{array}
 \right)
-  &\sim MVN \left(
+  &\sim N \left(
 \left(
   \begin{array}{c} 
     \begin{aligned}

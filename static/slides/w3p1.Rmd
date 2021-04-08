@@ -44,6 +44,15 @@ update_geom_defaults('text', list(size = 9))
 * Marginal effects
 
 ---
+# Learning objectives
+* Understand how to pull different pieces out of the model
+
+* Understand how multilevel models make their predictions for individual observations
+  + And specifically how they differ from single-level regression models
+  
+* Be able to use the output from model objects to visualize different parts of the model.
+
+---
 # Read in the data
 Let's read in the popularity data so we can fit some really basic models.
 
@@ -913,6 +922,52 @@ arm::display(m1b)
 ```
 
 ---
+# Predictions "by hand"
+This is now a three-level model. How does it differ from two-level models in terms of model predictions?
+
+
+--
+Let's make a prediction for the first student at the fourth time point:
+
+```{r }
+sim_longitudinal[4, ]
+```
+
+---
+# The pieces
+```{r }
+fixed <- fixef(m1a)
+ranefs <- ranef(m1a)
+fixed
+# Pull just the ranefs for sid 1 and school 1
+sid_ranefs <- ranefs$sid[1, ] 
+sid_ranefs
+sch_ranefs <- ranefs$school[1, ]
+sch_ranefs
+```
+
+---
+# Putting it together
+
+```{r }
+(fixed[1] + sid_ranefs[1] + sch_ranefs) + # intercept
+  
+((fixed[2] + sid_ranefs[2]) * 3) + # fourth timepoint
+  
+(fixed[3] * 1) + # treatment effect
+
+(fixed[4] * 3)  # treatment by wave effect
+
+```
+
+---
+# Confirm
+
+```{r }
+predict(m1a, newdata = sim_longitudinal[4, ])
+```
+
+---
 # Predictions 
 Let's randomly sample 5 students in the first four school and display the model predictions for those students.
 
@@ -966,6 +1021,143 @@ samp %>%
   geom_line() +
   facet_wrap(~school)
 ```
+
+
+---
+class: inverse-blue middle
+# Marginal effects
+
+---
+# Marinal effect
+A marginal effect shows the relation between one variable in the model and the outcome, while averaging over the other predictors in the model
+
+
+--
+Let's start by making the models slightly more complicated
+
+--
+```{r }
+m2 <- lmer(score ~ wave*treatment + group + prop_low +
+              (wave|sid) + (1|school) ,
+            data = sim_longitudinal)
+```
+
+---
+```{r }
+arm::display(m2, detail = TRUE)
+```
+
+---
+# Marginal effect
+Let's look at the relation between `wave` and `score` by `treatment`, holding the other values constant. 
+
+
+--
+First, build a prediction data frame. We'll make population-level prediction - i.e., ignoring the random effects.
+
+```{r }
+marginal_frame1 <- data.frame(
+  wave = rep(0:9, 2),
+  treatment = as.factor(rep(c(0, 1), each = 10)),
+  group = factor("high", levels = c("low", "medium", "high")),
+  prop_low = mean(sim_longitudinal$prop_low, na.rm = TRUE),
+  sid = -999,
+  school = -999
+)
+```
+
+--
+The length of each of these variables can sometimes get a little tricky
+
+---
+```{r }
+marginal_frame1
+```
+
+---
+# Make predictions!
+Note that we have to specify to allow new levels
+```{r }
+marginal_frame1 <- marginal_frame1 %>% 
+  mutate(pred = predict(m2, 
+                        newdata = marginal_frame1, 
+                        allow.new.levels = TRUE))
+marginal_frame1
+```
+
+---
+# Plot it
+```{r }
+ggplot(marginal_frame1, aes(wave, pred, color = treatment)) +
+  geom_line()
+```
+
+---
+# Why do this?
+As the model gets more complicated, it can be increasingly difficult to understand the fixed effects.
+
+Plotting the marginal effects regularly helps (e.g., for interactions and non-linear terms)
+
+---
+# Try again
+This time, let's look at the same thing, but for all groups
+
+```{r }
+marginal_frame2 <- data.frame(
+  wave = rep(0:9, 2*3),
+  treatment = as.factor(rep(c(0, 1), each = 10*3)),
+  group = factor(
+    rep(
+      rep(c("low", "medium", "high"), each = 10),
+      2
+    )
+  ),
+  prop_low = mean(sim_longitudinal$prop_low, na.rm = TRUE),
+  sid = -999,
+  school = -999
+)
+```
+
+---
+# Predict & plot
+```{r fig.height = 5}
+marginal_frame2 %>% 
+  mutate(
+    pred = predict(m2, newdata = marginal_frame2, allow.new.levels = TRUE)
+  ) %>% 
+  ggplot(aes(wave, pred, color = treatment)) +
+  geom_line() +
+  facet_wrap(~group)
+```
+
+---
+# Automated method
+We can build this up on our own with new data frames
+
+--
+```{r }
+library(ggeffects)
+ggpredict(m2, "wave")
+```
+
+
+---
+# Even automated plotting!
+
+```{r }
+ggpredict(m2, c("wave", "treatment")) %>% 
+  plot()
+```
+
+
+---
+# Individual observation
+We can get these prediction intervals for specific levels also
+
+```{r }
+ggpredict(m2, "wave", condition = c(sid = 1, school = 1))
+```
+
 
 ---
 class: inverse-green middle
