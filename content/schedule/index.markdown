@@ -101,7 +101,7 @@ Icons in the schedule link to specific chapters.
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "clark" "extensions.html#residual-structure" "" >}}
-{{< readings "sw" "" "7" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-7/" "7" >}}
 {{< readings "gh" "https://canvas.uoregon.edu/files/10667756/download?download_frd=1" "12.5-12.10" >}}
 {{< /wrap >}}
   {{< wrap >}}
@@ -125,8 +125,8 @@ Icons in the schedule link to specific chapters.
 {{< due "assignments/#final-project" "Prop" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "sw" "NA" "4" >}}
-{{< readings "sw" "NA" "5" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-4/" "4" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-5/" "5" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -219,7 +219,7 @@ Icons in the schedule link to specific chapters.
 {{< due "assignments" "hw3" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "sw" "" "" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-6/" "" >}}
 {{< readings "other" "https://www.sds.pub/nonlinearity.html" "6" >}}
 {{< /wrap >}}
   {{< wrap >}}
