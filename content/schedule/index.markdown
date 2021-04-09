@@ -29,7 +29,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/random_intercepts.html" "" >}}
+{{< readings "clark" "random_intercepts.html" "" >}}
 {{< readings "gh" "https://canvas.uoregon.edu/files/10667584/download?download_frd=1" "12.1-12.4" >}}
 {{< /wrap >}}
   {{< wrap >}}
@@ -53,8 +53,8 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "r4ds" "https://r4ds.had.co.nz/tidy-data.html" "12" >}}
-{{< readings "r4ds" "https://r4ds.had.co.nz/relational-data.html" "13" >}}
+{{< readings "r4ds" "tidy-data.html" "12" >}}
+{{< readings "r4ds" "relational-data.html" "13" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -77,7 +77,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/random_intercepts.html#standard-regression" "" >}}
+{{< readings "clark" "random_intercepts.html#standard-regression" "" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -100,7 +100,7 @@ Icons in the schedule link to specific chapters.
 {{< due "homework-1" "hw1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/extensions.html#residual-structure" "" >}}
+{{< readings "clark" "extensions.html#residual-structure" "" >}}
 {{< readings "sw" "" "7" >}}
 {{< readings "gh" "https://canvas.uoregon.edu/files/10667756/download?download_frd=1" "12.5-12.10" >}}
 {{< /wrap >}}
@@ -149,7 +149,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark2" "https://m-clark.github.io/bayesian-basics/" "NA" >}}
+{{< readings "clark2" "intro.html" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -243,7 +243,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark" "https://m-clark.github.io/mixed-models-with-R/extensions.html" "NA" >}}
+{{< readings "clark" "extensions.html" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
