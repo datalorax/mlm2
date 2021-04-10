@@ -57,7 +57,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "r4ds" "relational-data.html" "13" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/dlE_kpoPih0" >}}
 {{< /wrap >}}
 {{< /week >}}
 
