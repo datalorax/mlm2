@@ -85,7 +85,7 @@ Let's read in the popularity data so we can fit some really basic models.
 
 You try first
 
-<div class="countdown" id="timer_60789b61" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789eef" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -125,7 +125,7 @@ Fit each of the following models
 
 * `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
 
-<div class="countdown" id="timer_60789ac4" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789ed2" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -144,7 +144,7 @@ m2 &lt;- lmer(popular ~ sex + (sex|class), popular)
 # Compare performance
 Use whatever tests you'd like, and come up with the model you think fits the data best
 
-<div class="countdown" id="timer_60789cf5" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789f82" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -268,14 +268,13 @@ models
 
 ```
 ## # A tibble: 5 x 8
-##   model effect term        estimate  std.error statistic conf.low
-##   &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-## 1     0 fixed  (Intercept) 5.077860 0.08739443  58.10278 4.906570
-## 2     1 fixed  (Intercept) 4.394460 0.07586494  57.92478 4.245767
-## 3     1 fixed  sexgirl     1.350102 0.04403301  30.66113 1.263799
-## 4     2 fixed  (Intercept) 4.396820 0.08012978  54.87123 4.239768
-## 5     2 fixed  sexgirl     1.352175 0.05029920  26.88263 1.253590
-## # … with 1 more variable: conf.high &lt;dbl&gt;
+##   model effect term        estimate  std.error statistic conf.low conf.high
+##   &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;          &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1     0 fixed  (Intercept) 5.077860 0.08739443  58.10278 4.906570  5.249150
+## 2     1 fixed  (Intercept) 4.394460 0.07586494  57.92478 4.245767  4.543152
+## 3     1 fixed  sexgirl     1.350102 0.04403301  30.66113 1.263799  1.436405
+## 4     2 fixed  (Intercept) 4.396820 0.08012978  54.87123 4.239768  4.553871
+## 5     2 fixed  sexgirl     1.352175 0.05029920  26.88263 1.253590  1.450760
 ```
 
 ---
@@ -320,11 +319,10 @@ parameters(m0) %&gt;%
 
 ```
 ## # A tibble: 1 x 10
-##   Parameter   Coefficient         SE    CI   CI_low  CI_high
-##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150
-## # … with 4 more variables: t &lt;dbl&gt;, df_error &lt;int&gt;, p &lt;dbl&gt;,
-## #   Effects &lt;chr&gt;
+##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error
+##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt;
+## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997
+## # … with 2 more variables: p &lt;dbl&gt;, Effects &lt;chr&gt;
 ```
 
 ```r
@@ -397,8 +395,8 @@ tidy(
 ## # A tibble: 2 x 6
 ##   effect   group    term             estimate  conf.low conf.high
 ##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7223927 0.9570069
-## 2 ran_pars Residual sd__Observation 1.105348  1.070679  1.137716
+## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7035596 0.9605600
+## 2 ran_pars Residual sd__Observation 1.105348  1.072423  1.139665
 ```
 
 ---
@@ -421,19 +419,18 @@ tidy(
 
 ```
 ## 
-## 37 message(s): boundary (singular) fit: see ?isSingular
-## 10 warning(s): Model failed to converge with max|grad| = 0.00254628 (tol = 0.002, component 1) (and others)
+## 29 message(s): boundary (singular) fit: see ?isSingular
+## 4 warning(s): Model failed to converge with max|grad| = 0.00261508 (tol = 0.002, component 1) (and others)
 ```
 
 ```
 ## # A tibble: 4 x 6
-##   effect   group    term                       estimate    conf.low
-##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6309374 
-## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000  
-## 3 ran_pars class    sd__sexgirl               0.2336921  0.04654788
-## 4 ran_pars Residual sd__Observation           0.9049626  0.8767538 
-## # … with 1 more variable: conf.high &lt;dbl&gt;
+##   effect   group    term                       estimate    conf.low   conf.high
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;
+## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6343104   0.8519255 
+## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000   -0.06807098
+## 3 ran_pars class    sd__sexgirl               0.2336921  0.05827854  0.3592328 
+## 4 ran_pars Residual sd__Observation           0.9049626  0.8763434   0.9336944
 ```
 
 
@@ -444,7 +441,7 @@ Can you make a dotplot with uncertainty for the variance components?
 
 What about a plot showing both fixed effects and variance components?
 
-<div class="countdown" id="timer_60789d44" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789fc9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -626,6 +623,13 @@ m0_ranvals %&gt;%
 * You can make either a lot more fancy, accessible, etc., and probably should if you're going to use it for publication.
 
 ---
+class: inverse-green middle
+# Break
+<div class="countdown" id="timer_60789d60" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
 class: inverse-red midle
 # Making predictions "by hand"
 
@@ -730,7 +734,7 @@ predict(m2)[1]
 
 Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
 
-<div class="countdown" id="timer_60789b00" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789eaf" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -817,7 +821,7 @@ predict(m2)[1]
 # Challenge
 * Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
 
-<div class="countdown" id="timer_60789cdb" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789fcb" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -898,7 +902,7 @@ head(sim_longitudinal)
 ### You try first
 * Fit a model with `wave` and `treatment` as predictors of students' `score`. Allow the intercept and the relation between `wave` and `score` to vary by student.
 
-<div class="countdown" id="timer_60789c56" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789fa6" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -923,7 +927,7 @@ first_three &lt;- sim_longitudinal %&gt;%
 --
 Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
 
-<div class="countdown" id="timer_60789de9" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789d17" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -936,26 +940,26 @@ first_three %&gt;%
 
 ```
 ## # A tibble: 30 x 9
-##      sid school district group  treatment  prop_low  wave    score
-##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-##  1     1      1        1 medium 1         0.1428571     0 102.2686
-##  2     1      1        1 medium 1         0.1428571     1 102.0135
-##  3     1      1        1 medium 1         0.1428571     2 102.5216
-##  4     1      1        1 medium 1         0.1428571     3 102.2792
-##  5     1      1        1 medium 1         0.1428571     4 102.2834
-##  6     1      1        1 medium 1         0.1428571     5 102.7963
-##  7     1      1        1 medium 1         0.1428571     6 103.0441
-##  8     1      1        1 medium 1         0.1428571     7 102.8868
-##  9     1      1        1 medium 1         0.1428571     8 103.9101
-## 10     1      1        1 medium 1         0.1428571     9 103.2392
-## # … with 20 more rows, and 1 more variable: model_pred &lt;dbl&gt;
+##      sid school district group  treatment  prop_low  wave    score model_pred
+##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1     1      1        1 medium 1         0.1428571     0 102.2686   101.9955
+##  2     1      1        1 medium 1         0.1428571     1 102.0135   102.1572
+##  3     1      1        1 medium 1         0.1428571     2 102.5216   102.3189
+##  4     1      1        1 medium 1         0.1428571     3 102.2792   102.4806
+##  5     1      1        1 medium 1         0.1428571     4 102.2834   102.6423
+##  6     1      1        1 medium 1         0.1428571     5 102.7963   102.8040
+##  7     1      1        1 medium 1         0.1428571     6 103.0441   102.9657
+##  8     1      1        1 medium 1         0.1428571     7 102.8868   103.1274
+##  9     1      1        1 medium 1         0.1428571     8 103.9101   103.2891
+## 10     1      1        1 medium 1         0.1428571     9 103.2392   103.4508
+## # … with 20 more rows
 ```
 
 ---
 # Plot
 Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
 
-<div class="countdown" id="timer_60789bd5" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789e31" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -982,7 +986,7 @@ Student 2 has a considerably lower intercept. What would we predict the trend wo
 --
 Try to make this prediction on your own for all time points
 
-<div class="countdown" id="timer_60789e38" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60789ee9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -999,10 +1003,10 @@ predict(m, newdata = stu2_trt)
 ```
 
 ```
-##        1        2        3        4        5        6        7 
-## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 
-##        8        9       10 
-## 81.84406 82.30506 82.76607
+##        1        2        3        4        5        6        7        8 
+## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 
+##        9       10 
+## 82.30506 82.76607
 ```
 
 ---
@@ -1156,45 +1160,45 @@ m_pred_interval
 
 ```
 ##          fit       upr       lwr
-## 1  101.95689 104.70036  99.03111
-## 2  102.17041 104.96307  99.29545
-## 3  102.31672 105.01382  99.59005
-## 4  102.42744 105.31661  99.72277
-## 5  102.61729 105.47049  99.72868
-## 6  102.64753 105.47524 100.06621
-## 7  102.90062 105.87357 100.09517
-## 8  103.03138 105.90216 100.36947
-## 9  103.17964 106.06368 100.51516
-## 10 103.39789 106.23082 100.64110
-## 11 103.52691 106.48261 100.79241
-## 12 103.72071 106.62076 101.01362
-## 13 103.87428 106.73002 101.04166
-## 14  80.12363  82.93524  77.33830
-## 15  80.54194  83.40248  77.85161
-## 16  81.03919  83.85368  78.29290
-## 17  81.51923  84.29643  78.68700
-## 18  81.96064  84.76050  79.31539
-## 19  82.39628  85.15011  79.78035
-## 20  82.87241  85.60984  80.14835
-## 21  83.35440  86.13067  80.62113
-## 22  83.84665  86.64580  81.07926
-## 23  84.26309  87.14835  81.40556
-## 24  84.77568  87.72724  81.84552
-## 25  85.19993  88.08393  82.47386
-## 26  85.62036  88.65231  82.75436
-## 27 102.35278 105.34362  99.55996
-## 28 102.29610 105.13879  99.53978
-## 29 102.23735 105.12969  99.47496
-## 30 102.19291 105.02480  99.50828
-## 31 102.13710 105.04392  99.29324
-## 32 102.12446 105.00242  99.40803
-## 33 102.11633 104.88797  99.24269
-## 34 102.04954 104.87912  99.24319
-## 35 101.98236 104.80846  99.18306
-## 36 101.87915 104.78685  99.20886
-## 37 101.90824 104.79063  99.25645
-## 38 101.84638 104.72356  99.22232
-## 39 101.74102 104.62481  99.12203
+## 1  102.01207 104.72567  99.12815
+## 2  102.21023 104.90541  99.27463
+## 3  102.29546 105.12290  99.46212
+## 4  102.51889 105.24485  99.46114
+## 5  102.65108 105.36337  99.80513
+## 6  102.76418 105.52242  99.74719
+## 7  102.96957 105.60124  99.88279
+## 8  103.12596 105.79933 100.20903
+## 9  103.29646 105.97636 100.38468
+## 10 103.45665 106.11203 100.42733
+## 11 103.67235 106.41096 100.59995
+## 12 103.79786 106.50498 100.71008
+## 13 103.94205 106.78566 100.93741
+## 14  80.09841  82.96316  77.35830
+## 15  80.57764  83.33608  77.88836
+## 16  80.95438  83.81905  78.29942
+## 17  81.52330  84.29985  78.74763
+## 18  82.00058  84.70749  79.31407
+## 19  82.41634  85.17683  79.85975
+## 20  82.90433  85.69380  80.15920
+## 21  83.32670  86.17170  80.72806
+## 22  83.74488  86.63404  81.06728
+## 23  84.31655  87.24745  81.60025
+## 24  84.71815  87.79115  82.10399
+## 25  85.14727  88.28133  82.40308
+## 26  85.65959  88.65188  82.85234
+## 27 102.45376 105.27047  99.71076
+## 28 102.38756 105.17645  99.56086
+## 29 102.32892 105.19029  99.46407
+## 30 102.32501 104.91057  99.37041
+## 31 102.21161 104.91994  99.54185
+## 32 102.20953 104.91597  99.29393
+## 33 102.14807 104.84285  99.16836
+## 34 102.02224 104.84638  99.18406
+## 35 102.03473 104.67471  99.02696
+## 36 101.97196 104.73033  99.07564
+## 37 101.96588 104.69053  98.99436
+## 38 101.84893 104.56803  98.71735
+## 39 101.82603 104.67284  98.61854
 ```
 
 ---
@@ -1208,45 +1212,45 @@ bind_cols(pred_frame, m_pred_interval)
 
 ```
 ##    sid wave treatment       fit       upr       lwr
-## 1    1    0         1 101.95689 104.70036  99.03111
-## 2    1    1         1 102.17041 104.96307  99.29545
-## 3    1    2         1 102.31672 105.01382  99.59005
-## 4    1    3         1 102.42744 105.31661  99.72277
-## 5    1    4         1 102.61729 105.47049  99.72868
-## 6    1    5         1 102.64753 105.47524 100.06621
-## 7    1    6         1 102.90062 105.87357 100.09517
-## 8    1    7         1 103.03138 105.90216 100.36947
-## 9    1    8         1 103.17964 106.06368 100.51516
-## 10   1    9         1 103.39789 106.23082 100.64110
-## 11   1   10         1 103.52691 106.48261 100.79241
-## 12   1   11         1 103.72071 106.62076 101.01362
-## 13   1   12         1 103.87428 106.73002 101.04166
-## 14   2    0         0  80.12363  82.93524  77.33830
-## 15   2    1         0  80.54194  83.40248  77.85161
-## 16   2    2         0  81.03919  83.85368  78.29290
-## 17   2    3         0  81.51923  84.29643  78.68700
-## 18   2    4         0  81.96064  84.76050  79.31539
-## 19   2    5         0  82.39628  85.15011  79.78035
-## 20   2    6         0  82.87241  85.60984  80.14835
-## 21   2    7         0  83.35440  86.13067  80.62113
-## 22   2    8         0  83.84665  86.64580  81.07926
-## 23   2    9         0  84.26309  87.14835  81.40556
-## 24   2   10         0  84.77568  87.72724  81.84552
-## 25   2   11         0  85.19993  88.08393  82.47386
-## 26   2   12         0  85.62036  88.65231  82.75436
-## 27   3    0         1 102.35278 105.34362  99.55996
-## 28   3    1         1 102.29610 105.13879  99.53978
-## 29   3    2         1 102.23735 105.12969  99.47496
-## 30   3    3         1 102.19291 105.02480  99.50828
-## 31   3    4         1 102.13710 105.04392  99.29324
-## 32   3    5         1 102.12446 105.00242  99.40803
-## 33   3    6         1 102.11633 104.88797  99.24269
-## 34   3    7         1 102.04954 104.87912  99.24319
-## 35   3    8         1 101.98236 104.80846  99.18306
-## 36   3    9         1 101.87915 104.78685  99.20886
-## 37   3   10         1 101.90824 104.79063  99.25645
-## 38   3   11         1 101.84638 104.72356  99.22232
-## 39   3   12         1 101.74102 104.62481  99.12203
+## 1    1    0         1 102.01207 104.72567  99.12815
+## 2    1    1         1 102.21023 104.90541  99.27463
+## 3    1    2         1 102.29546 105.12290  99.46212
+## 4    1    3         1 102.51889 105.24485  99.46114
+## 5    1    4         1 102.65108 105.36337  99.80513
+## 6    1    5         1 102.76418 105.52242  99.74719
+## 7    1    6         1 102.96957 105.60124  99.88279
+## 8    1    7         1 103.12596 105.79933 100.20903
+## 9    1    8         1 103.29646 105.97636 100.38468
+## 10   1    9         1 103.45665 106.11203 100.42733
+## 11   1   10         1 103.67235 106.41096 100.59995
+## 12   1   11         1 103.79786 106.50498 100.71008
+## 13   1   12         1 103.94205 106.78566 100.93741
+## 14   2    0         0  80.09841  82.96316  77.35830
+## 15   2    1         0  80.57764  83.33608  77.88836
+## 16   2    2         0  80.95438  83.81905  78.29942
+## 17   2    3         0  81.52330  84.29985  78.74763
+## 18   2    4         0  82.00058  84.70749  79.31407
+## 19   2    5         0  82.41634  85.17683  79.85975
+## 20   2    6         0  82.90433  85.69380  80.15920
+## 21   2    7         0  83.32670  86.17170  80.72806
+## 22   2    8         0  83.74488  86.63404  81.06728
+## 23   2    9         0  84.31655  87.24745  81.60025
+## 24   2   10         0  84.71815  87.79115  82.10399
+## 25   2   11         0  85.14727  88.28133  82.40308
+## 26   2   12         0  85.65959  88.65188  82.85234
+## 27   3    0         1 102.45376 105.27047  99.71076
+## 28   3    1         1 102.38756 105.17645  99.56086
+## 29   3    2         1 102.32892 105.19029  99.46407
+## 30   3    3         1 102.32501 104.91057  99.37041
+## 31   3    4         1 102.21161 104.91994  99.54185
+## 32   3    5         1 102.20953 104.91597  99.29393
+## 33   3    6         1 102.14807 104.84285  99.16836
+## 34   3    7         1 102.02224 104.84638  99.18406
+## 35   3    8         1 102.03473 104.67471  99.02696
+## 36   3    9         1 101.97196 104.73033  99.07564
+## 37   3   10         1 101.96588 104.69053  98.99436
+## 38   3   11         1 101.84893 104.56803  98.71735
+## 39   3   12         1 101.82603 104.67284  98.61854
 ```
 
 ---
@@ -1763,19 +1767,19 @@ samp %&gt;%
 
 ```
 ## # A tibble: 200 x 9
-##      sid school district group  treatment  prop_low  wave    score
-##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-##  1     1      1        1 medium 1         0.1428571     0 102.2686
-##  2     1      1        1 medium 1         0.1428571     1 102.0135
-##  3     1      1        1 medium 1         0.1428571     2 102.5216
-##  4     1      1        1 medium 1         0.1428571     3 102.2792
-##  5     1      1        1 medium 1         0.1428571     4 102.2834
-##  6     1      1        1 medium 1         0.1428571     5 102.7963
-##  7     1      1        1 medium 1         0.1428571     6 103.0441
-##  8     1      1        1 medium 1         0.1428571     7 102.8868
-##  9     1      1        1 medium 1         0.1428571     8 103.9101
-## 10     1      1        1 medium 1         0.1428571     9 103.2392
-## # … with 190 more rows, and 1 more variable: pred &lt;dbl&gt;
+##      sid school district group  treatment  prop_low  wave    score     pred
+##    &lt;int&gt;  &lt;int&gt;    &lt;int&gt; &lt;chr&gt;  &lt;fct&gt;         &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1      1        1 medium 1         0.1428571     0 102.2686 102.0541
+##  2     1      1        1 medium 1         0.1428571     1 102.0135 102.2029
+##  3     1      1        1 medium 1         0.1428571     2 102.5216 102.3516
+##  4     1      1        1 medium 1         0.1428571     3 102.2792 102.5004
+##  5     1      1        1 medium 1         0.1428571     4 102.2834 102.6492
+##  6     1      1        1 medium 1         0.1428571     5 102.7963 102.7980
+##  7     1      1        1 medium 1         0.1428571     6 103.0441 102.9468
+##  8     1      1        1 medium 1         0.1428571     7 102.8868 103.0955
+##  9     1      1        1 medium 1         0.1428571     8 103.9101 103.2443
+## 10     1      1        1 medium 1         0.1428571     9 103.2392 103.3931
+## # … with 190 more rows
 ```
 
 ---
@@ -2084,7 +2088,7 @@ class: inverse-green middle
 
 * Finally discussing Gelman &amp; Hill notation in more depth
 
-* Homework 1 is due, Homework 2 assigned
+* Homework 1 is due
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

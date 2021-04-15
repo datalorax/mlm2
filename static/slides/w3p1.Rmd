@@ -376,6 +376,11 @@ m0_ranvals %>%
 * You can make either a lot more fancy, accessible, etc., and probably should if you're going to use it for publication.
 
 ---
+class: inverse-green middle
+# Break
+`r countdown::countdown(5)`
+
+---
 class: inverse-red midle
 # Making predictions "by hand"
 
@@ -1194,4 +1199,4 @@ class: inverse-green middle
 
 * Finally discussing Gelman & Hill notation in more depth
 
-* Homework 1 is due, Homework 2 assigned
+* Homework 1 is due
