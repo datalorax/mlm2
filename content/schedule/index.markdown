@@ -80,7 +80,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "clark" "random_intercepts.html#standard-regression" "" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/0a2lS2tfvXc" >}}
 {{< /wrap >}}
 {{< /week >}}
 
