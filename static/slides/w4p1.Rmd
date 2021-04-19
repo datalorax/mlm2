@@ -35,11 +35,12 @@ update_geom_defaults('text', list(size = 9))
 
 * Review Homework 1
 
-* Discuss Gelmand and Hill notation - contrast with Raudenbush and Bryk
+* Review the most important parts of Week 3 content
+
+* Discuss Gelman and Hill notation - contrast with Raudenbush and Bryk
 
 * Unstructured VCV Matrices and alternatives
 
-* Homework 2
 
 ---
 # Learning Objectives
@@ -58,9 +59,295 @@ class: inverse-blue middle
 # Review Homework 1
 
 ---
+class: inverse-red middle
+
+# Review Week 3 content
+
+---
+# Data and model
+
+```{r message = FALSE}
+library(tidyverse)
+library(lme4)
+
+popular <- read_csv(here::here("data", "popularity.csv"))
+
+m <- lmer(popular ~ extrav + (extrav|class), popular,
+          control = lmerControl(optimizer = "bobyqa"))
+```
+
+`extrav` is a measure of extraversion.
+
+What is this model fitting, in plain English?
+
+---
+# Model summary
+```{r }
+arm::display(m)
+```
+
+---
+# Let's walk through
+* By way of thinking through it, let's compare to simple linear regression
+
+--
+```{r }
+slr <- lm(popular ~ extrav, popular)
+```
+
+---
+# Visually
+```{r message = FALSE}
+ggplot(popular, aes(extrav, popular)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm")
+```
+
+---
+# Making predictions
+
+```{r echo = FALSE}
+equatiomatic::extract_eq(slr, use_coef = TRUE)
+```
+
+--
+Scores of 0 to 5
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 0 = 3.27
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 1 = 3.62 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 2 = 3.97 
+$$
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 3 = 4.32 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 4 = 4.67 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 5 = 5.02
+$$
+
+
+---
+# Now for the mlm
+It's more complicated now for a couple of reasons
+
+* Each `class` has their own intercept and slope. Which class is the student in?
+
+* What if we want to make a prediction for someone outside our sample?
+
+--
+Let's walk through 4 predictions
+
+---
+# Sample preds
+```{r }
+sample_preds <- popular %>% 
+  group_by(class) %>% 
+  slice(1) %>% 
+  ungroup %>% 
+  slice(1:4)
+
+sample_preds
+```
+
+---
+# Coefficients
+```{r echo = FALSE}
+equatiomatic::extract_eq(m, use_coef = TRUE)
+```
+
+---
+# Grab params
+Fixed effects
+```{r }
+f <- fixef(m)
+f
+```
+
+--
+classroom deviations
+
+```{r }
+r <- ranef(m)
+r
+```
+
+---
+# Predictions depend on classroom
+
+### Fixed effect part
+Works just like simple linear regression
+
+--
+```{r }
+sample_preds[1, ]
+```
+
+$$
+\operatorname{\widehat{popular}} = 2.46 + 0.49 \times 5 = 4.91
+$$
+--
+
+```{r }
+f[1] + f[2]*5
+```
+
+
+
+---
+# Random effects
+We now have to add in the random effects *for the corresponding classroom*.
+
+--
+```{r }
+head(r$class)
+```
+
+--
+$$
+\operatorname{\widehat{popular}} = (2.46 + 0.34) + (0.49 + -0.03) \times 5 = 5.10
+$$
+---
+# In code
+```{r }
+class1 <- r$class[1, ]
+class1
+(f[1] + class1[1]) + (f[2] + class1[2])*5
+```
+
+
+---
+# Predictions
+```{r }
+sample_preds
+head(r$class, n = 4)
+fixef(m)
+```
+
+---
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + 0.34) + (0.49 + -0.03) \times 5 = 5.10
+$$
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + -1.18) + (0.49 + 0.10) \times 8 = 6.00
+$$
+$$
+\operatorname{\widehat{popular}} = (2.46 + -0.63) + (0.49 + 0.06) \times 5 = 4.58
+$$
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + 1.09) + (0.49 + -0.10) \times 3 = 4.72
+$$
+--
+```{r }
+predict(m, newdata = sample_preds)
+```
+
+--
+### What if we want to make a prediction outside of our classrooms?
+
+--
+Fixed effects only
+
+$$
+\operatorname{\widehat{popular}} = 2.46 + 0.49 \times \operatorname{extraversion} 
+$$
+---
+# Plotting
+We can use the `expand.grid()` function to create different conditions.
+
+--
+Let's compare slopes across the first five classrooms
+
+```{r }
+conditions <- expand.grid(extrav = 1:10, class = 1:5)
+```
+
+.pull-left[
+```{r }
+head(conditions)
+```
+]
+
+.pull-right[
+```{r }
+tail(conditions)
+```
+]
+
+---
+# Make predictions
+```{r }
+conditions %>% 
+  mutate(model_pred = predict(m, newdata = conditions))
+```
+
+---
+# Plot
+
+```{r }
+conditions %>% 
+  mutate(model_pred = predict(m, newdata = conditions)) %>% 
+  ggplot(aes(extrav, model_pred)) +
+  geom_line(aes(group = class))
+```
+
+---
+# One more quick example
+Model an interaction
+```{r }
+m2 <- lmer(popular ~ extrav*sex + (extrav|class), popular,
+          control = lmerControl(optimizer = "bobyqa"))
+```
+
+---
+# Model summary
+```{r }
+arm::display(m2)
+```
+
+---
+# Marginal effect
+Let's look at the interaction between extraversion and sex
+
+```{r }
+conditions2 <- expand.grid(extrav = 1:10, 
+                           sex = c("girl", "boy"), 
+                           class = 0) %>% 
+  mutate(pred = predict(m2, 
+                        newdata = ., 
+                        allow.new.levels = TRUE))
+conditions2
+```
+
+---
+# Plot
+```{r }
+ggplot(conditions2, aes(extrav, pred)) +
+  geom_line(aes(color = sex))
+```
+
+---
+class: inverse-red middle
+# Questions?
+
+---
 class: inverse-blue middle
 
-# Gelman and Hill notation
+# Notation
+### Introducing the Gelman and Hill notation
 
 ---
 # Standard regression

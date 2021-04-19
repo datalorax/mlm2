@@ -214,3 +214,14 @@ willett_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/opposites
 willett <- read_csv(willett_link) %>% 
   select(id:cog)
 write_csv(willett, here::here("data", "willett-1988.csv"))
+
+
+# Children of the National Longitudinal Study of Youth
+cnlsy_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/reading_pp.txt"
+cnlsy <- read_csv(cnlsy_link)
+write_csv(cnlsy, here::here("data", "cnlsy.csv"))
+
+wages_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/wages_pp.txt"
+wages <- read_csv(wages_link) %>% 
+  select(id:ged, black:hgc, uerate)
+write_csv(wages, here::here("data", "wages.csv"))

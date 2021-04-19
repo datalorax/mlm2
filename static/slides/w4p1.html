@@ -64,11 +64,12 @@ layout: true
 
 * Review Homework 1
 
-* Discuss Gelmand and Hill notation - contrast with Raudenbush and Bryk
+* Review the most important parts of Week 3 content
+
+* Discuss Gelman and Hill notation - contrast with Raudenbush and Bryk
 
 * Unstructured VCV Matrices and alternatives
 
-* Homework 2
 
 ---
 # Learning Objectives
@@ -87,9 +88,678 @@ class: inverse-blue middle
 # Review Homework 1
 
 ---
+class: inverse-red middle
+
+# Review Week 3 content
+
+---
+# Data and model
+
+
+```r
+library(tidyverse)
+library(lme4)
+
+popular &lt;- read_csv(here::here("data", "popularity.csv"))
+
+m &lt;- lmer(popular ~ extrav + (extrav|class), popular,
+          control = lmerControl(optimizer = "bobyqa"))
+```
+
+`extrav` is a measure of extraversion.
+
+What is this model fitting, in plain English?
+
+---
+# Model summary
+
+```r
+arm::display(m)
+```
+
+```
+## lmer(formula = popular ~ extrav + (extrav | class), data = popular, 
+##     control = lmerControl(optimizer = "bobyqa"))
+##             coef.est coef.se
+## (Intercept) 2.46     0.20   
+## extrav      0.49     0.03   
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  class    (Intercept) 1.73           
+##           extrav      0.16     -0.97 
+##  Residual             0.95           
+## ---
+## number of obs: 2000, groups: class, 100
+## AIC = 5791.4, DIC = 5762
+## deviance = 5770.7
+```
+
+---
+# Let's walk through
+* By way of thinking through it, let's compare to simple linear regression
+
+--
+
+```r
+slr &lt;- lm(popular ~ extrav, popular)
+```
+
+---
+# Visually
+
+```r
+ggplot(popular, aes(extrav, popular)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm")
+```
+
+![](w4p1_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+# Making predictions
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35(\operatorname{extrav})
+$$
+
+--
+Scores of 0 to 5
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 0 = 3.27
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 1 = 3.62 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 2 = 3.97 
+$$
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 3 = 4.32 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 4 = 4.67 
+$$
+
+$$
+\operatorname{\widehat{popular}} = 3.27 + 0.35 \times 5 = 5.02
+$$
+
+
+---
+# Now for the mlm
+It's more complicated now for a couple of reasons
+
+* Each `class` has their own intercept and slope. Which class is the student in?
+
+* What if we want to make a prediction for someone outside our sample?
+
+--
+Let's walk through 4 predictions
+
+---
+# Sample preds
+
+```r
+sample_preds &lt;- popular %&gt;% 
+  group_by(class) %&gt;% 
+  slice(1) %&gt;% 
+  ungroup %&gt;% 
+  slice(1:4)
+
+sample_preds
+```
+
+```
+## # A tibble: 4 x 7
+##   pupil class extrav sex    texp  popular popteach
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1     1      5 girl     24 6.3             6
+## 2     1     2      8 girl     14 6.4             6
+## 3     1     3      5 boy      13 4.2             4
+## 4     1     4      3 girl     20 4.100000        4
+```
+
+---
+# Coefficients
+$$
+`\begin{aligned}
+  \operatorname{\widehat{popular}}_{i}  &amp;\sim N \left(2.46_{\alpha_{j[i]}} + 0.49_{\beta_{1j[i]}}(\operatorname{extrav}), 0.95 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;0 \\
+      &amp;0
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     1.73 &amp; -0.97 \\ 
+     -0.97 &amp; 0.16
+  \end{array}
+\right)
+ \right)
+    \text{, for class j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+---
+# Grab params
+Fixed effects
+
+```r
+f &lt;- fixef(m)
+f
+```
+
+```
+## (Intercept)      extrav 
+##   2.4610234   0.4928571
+```
+
+--
+classroom deviations
+
+
+```r
+r &lt;- ranef(m)
+r
+```
+
+```
+## $class
+##     (Intercept)       extrav
+## 1    0.34095954 -0.027014677
+## 2   -1.17798954  0.096974668
+## 3   -0.62937002  0.057097182
+## 4    1.08529708 -0.099953042
+## 5   -0.19489641  0.021601800
+## 6   -0.98339230  0.083762531
+## 7   -1.00065422  0.064825024
+## 8   -2.31344585  0.203883548
+## 9   -0.72390121  0.076936163
+## 10   0.81714889 -0.088190958
+## 11  -0.80165382  0.053642262
+## 12  -0.50559454  0.035562482
+## 13   1.94465792 -0.163675650
+## 14  -4.60442503  0.379805874
+## 15  -0.95627606  0.092420531
+## 16  -0.63300242  0.038113732
+## 17   0.39246763 -0.023686639
+## 18   2.28824205 -0.199172763
+## 19   1.11955746 -0.088677713
+## 20   0.21949255  0.001085573
+## 21   0.26728615 -0.047272343
+## 22   2.29791264 -0.192289863
+## 23   0.33161921 -0.024183133
+## 24  -1.35638924  0.114938066
+## 25  -0.01994683 -0.011555948
+## 26  -1.25402662  0.107101274
+## 27  -1.19545641  0.114147749
+## 28  -0.44502470  0.014290982
+## 29   2.03871407 -0.180129251
+## 30  -1.40054893  0.109698011
+## 31  -1.79566145  0.205412272
+## 32  -0.34719881  0.051159472
+## 33   2.12578123 -0.136367830
+## 34  -0.98425888  0.101445482
+## 35   3.63820003 -0.322359287
+## 36   0.91322197 -0.111514042
+## 37   0.30465672 -0.016094329
+## 38  -0.51579961  0.044299138
+## 39   0.61982719 -0.065503359
+## 40  -1.37549168  0.146964064
+## 41  -1.59793019  0.120798718
+## 42   0.45790261 -0.028187295
+## 43   0.71853077 -0.072570668
+## 44  -0.62247125  0.062370382
+## 45   1.35450804 -0.121366316
+## 46   0.20177100  0.005892888
+## 47  -0.02078929 -0.013791520
+## 48  -2.26606243  0.208550251
+## 49  -0.61265117  0.051465741
+## 50   2.28265601 -0.208111972
+## 51  -0.69648204  0.049844088
+## 52  -0.90954843  0.067366763
+## 53   2.86086261 -0.232865613
+## 54   0.64107333 -0.074085601
+## 55  -2.50861566  0.192442071
+## 56  -0.14415572  0.007115389
+## 57  -2.80554237  0.241556549
+## 58   1.75944076 -0.126488906
+## 59  -1.68024885  0.141406264
+## 60  -2.84510196  0.251453827
+## 61   1.61352443 -0.124578081
+## 62   1.50756016 -0.135037156
+## 63   0.59132744 -0.044723322
+## 64   3.73918453 -0.308268291
+## 65   2.45234814 -0.220397788
+## 66   1.03733197 -0.058445288
+## 67   2.66082354 -0.227526069
+## 68   1.46921309 -0.131443741
+## 69   1.63166550 -0.140435755
+## 70   0.43378635 -0.053210430
+## 71  -0.30351761  0.025705771
+## 72   1.51758455 -0.131131939
+## 73   0.31830478 -0.015358480
+## 74   0.11917146 -0.010920052
+## 75   3.21937801 -0.282591050
+## 76  -0.44752241  0.034897759
+## 77  -2.07421760  0.189805156
+## 78   0.20218552 -0.032347963
+## 79  -0.03079998  0.023590148
+## 80  -0.35201798 -0.007108531
+## 81  -1.59892551  0.137191741
+## 82  -4.47259281  0.356549044
+## 83   1.94061207 -0.169805276
+## 84   2.34329550 -0.194455692
+## 85   2.59038066 -0.230546280
+## 86  -2.63669093  0.211968413
+## 87  -2.15950668  0.182295946
+## 88  -0.50307369  0.043046426
+## 89  -0.24684183  0.033388043
+## 90  -1.31095047  0.116798271
+## 91   0.17151990 -0.024759656
+## 92  -0.79771656  0.067134422
+## 93  -0.94261942  0.087295289
+## 94   0.90471914 -0.082321802
+## 95   0.32102824 -0.049803302
+## 96   0.61116278 -0.045875786
+## 97  -2.32751564  0.214605064
+## 98   2.31222739 -0.201619723
+## 99  -0.11828481  0.029049313
+## 100 -2.48332475  0.229068557
+## 
+## with conditional variances for "class"
+```
+
+---
+# Predictions depend on classroom
+
+### Fixed effect part
+Works just like simple linear regression
+
+--
+
+```r
+sample_preds[1, ]
+```
+
+```
+## # A tibble: 1 x 7
+##   pupil class extrav sex    texp popular popteach
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1     1      5 girl     24     6.3        6
+```
+
+$$
+\operatorname{\widehat{popular}} = 2.46 + 0.49 \times 5 = 4.91
+$$
+--
+
+
+```r
+f[1] + f[2]*5
+```
+
+```
+## (Intercept) 
+##    4.925309
+```
+
+
+
+---
+# Random effects
+We now have to add in the random effects *for the corresponding classroom*.
+
+--
+
+```r
+head(r$class)
+```
+
+```
+##   (Intercept)      extrav
+## 1   0.3409595 -0.02701468
+## 2  -1.1779895  0.09697467
+## 3  -0.6293700  0.05709718
+## 4   1.0852971 -0.09995304
+## 5  -0.1948964  0.02160180
+## 6  -0.9833923  0.08376253
+```
+
+--
+$$
+\operatorname{\widehat{popular}} = (2.46 + 0.34) + (0.49 + -0.03) \times 5 = 5.10
+$$
+---
+# In code
+
+```r
+class1 &lt;- r$class[1, ]
+class1
+```
+
+```
+##   (Intercept)      extrav
+## 1   0.3409595 -0.02701468
+```
+
+```r
+(f[1] + class1[1]) + (f[2] + class1[2])*5
+```
+
+```
+##   (Intercept)
+## 1    5.131195
+```
+
+
+---
+# Predictions
+
+```r
+sample_preds
+```
+
+```
+## # A tibble: 4 x 7
+##   pupil class extrav sex    texp  popular popteach
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1     1     1      5 girl     24 6.3             6
+## 2     1     2      8 girl     14 6.4             6
+## 3     1     3      5 boy      13 4.2             4
+## 4     1     4      3 girl     20 4.100000        4
+```
+
+```r
+head(r$class, n = 4)
+```
+
+```
+##   (Intercept)      extrav
+## 1   0.3409595 -0.02701468
+## 2  -1.1779895  0.09697467
+## 3  -0.6293700  0.05709718
+## 4   1.0852971 -0.09995304
+```
+
+```r
+fixef(m)
+```
+
+```
+## (Intercept)      extrav 
+##   2.4610234   0.4928571
+```
+
+---
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + 0.34) + (0.49 + -0.03) \times 5 = 5.10
+$$
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + -1.18) + (0.49 + 0.10) \times 8 = 6.00
+$$
+$$
+\operatorname{\widehat{popular}} = (2.46 + -0.63) + (0.49 + 0.06) \times 5 = 4.58
+$$
+
+$$
+\operatorname{\widehat{popular}} = (2.46 + 1.09) + (0.49 + -0.10) \times 3 = 4.72
+$$
+--
+
+```r
+predict(m, newdata = sample_preds)
+```
+
+```
+##        1        2        3        4 
+## 5.131195 6.001688 4.581425 4.725033
+```
+
+--
+### What if we want to make a prediction outside of our classrooms?
+
+--
+Fixed effects only
+
+$$
+\operatorname{\widehat{popular}} = 2.46 + 0.49 \times \operatorname{extraversion} 
+$$
+---
+# Plotting
+We can use the `expand.grid()` function to create different conditions.
+
+--
+Let's compare slopes across the first five classrooms
+
+
+```r
+conditions &lt;- expand.grid(extrav = 1:10, class = 1:5)
+```
+
+.pull-left[
+
+```r
+head(conditions)
+```
+
+```
+##   extrav class
+## 1      1     1
+## 2      2     1
+## 3      3     1
+## 4      4     1
+## 5      5     1
+## 6      6     1
+```
+]
+
+.pull-right[
+
+```r
+tail(conditions)
+```
+
+```
+##    extrav class
+## 45      5     5
+## 46      6     5
+## 47      7     5
+## 48      8     5
+## 49      9     5
+## 50     10     5
+```
+]
+
+---
+# Make predictions
+
+```r
+conditions %&gt;% 
+  mutate(model_pred = predict(m, newdata = conditions))
+```
+
+```
+##    extrav class model_pred
+## 1       1     1   3.267825
+## 2       2     1   3.733668
+## 3       3     1   4.199510
+## 4       4     1   4.665353
+## 5       5     1   5.131195
+## 6       6     1   5.597038
+## 7       7     1   6.062880
+## 8       8     1   6.528722
+## 9       9     1   6.994565
+## 10     10     1   7.460407
+## 11      1     2   1.872866
+## 12      2     2   2.462697
+## 13      3     2   3.052529
+## 14      4     2   3.642361
+## 15      5     2   4.232193
+## 16      6     2   4.822025
+## 17      7     2   5.411856
+## 18      8     2   6.001688
+## 19      9     2   6.591520
+## 20     10     2   7.181352
+## 21      1     3   2.381608
+## 22      2     3   2.931562
+## 23      3     3   3.481516
+## 24      4     3   4.031471
+## 25      5     3   4.581425
+## 26      6     3   5.131379
+## 27      7     3   5.681333
+## 28      8     3   6.231288
+## 29      9     3   6.781242
+## 30     10     3   7.331196
+## 31      1     4   3.939225
+## 32      2     4   4.332129
+## 33      3     4   4.725033
+## 34      4     4   5.117937
+## 35      5     4   5.510841
+## 36      6     4   5.903745
+## 37      7     4   6.296649
+## 38      8     4   6.689553
+## 39      9     4   7.082457
+## 40     10     4   7.475361
+## 41      1     5   2.780586
+## 42      2     5   3.295045
+## 43      3     5   3.809504
+## 44      4     5   4.323963
+## 45      5     5   4.838422
+## 46      6     5   5.352880
+## 47      7     5   5.867339
+## 48      8     5   6.381798
+## 49      9     5   6.896257
+## 50     10     5   7.410716
+```
+
+---
+# Plot
+
+
+```r
+conditions %&gt;% 
+  mutate(model_pred = predict(m, newdata = conditions)) %&gt;% 
+  ggplot(aes(extrav, model_pred)) +
+  geom_line(aes(group = class))
+```
+
+![](w4p1_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+
+---
+# One more quick example
+Model an interaction
+
+```r
+m2 &lt;- lmer(popular ~ extrav*sex + (extrav|class), popular,
+          control = lmerControl(optimizer = "bobyqa"))
+```
+
+---
+# Model summary
+
+```r
+arm::display(m2)
+```
+
+```
+## lmer(formula = popular ~ extrav * sex + (extrav | class), data = popular, 
+##     control = lmerControl(optimizer = "bobyqa"))
+##                coef.est coef.se
+## (Intercept)    2.23     0.20   
+## extrav         0.41     0.03   
+## sexgirl        0.95     0.16   
+## extrav:sexgirl 0.06     0.03   
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  class    (Intercept) 1.63           
+##           extrav      0.18     -0.94 
+##  Residual             0.74           
+## ---
+## number of obs: 2000, groups: class, 100
+## AIC = 4890.7, DIC = 4836.6
+## deviance = 4855.7
+```
+
+---
+# Marginal effect
+Let's look at the interaction between extraversion and sex
+
+
+```r
+conditions2 &lt;- expand.grid(extrav = 1:10, 
+                           sex = c("girl", "boy"), 
+                           class = 0) %&gt;% 
+  mutate(pred = predict(m2, 
+                        newdata = ., 
+                        allow.new.levels = TRUE))
+conditions2
+```
+
+```
+##    extrav  sex class     pred
+## 1       1 girl     0 3.654686
+## 2       2 girl     0 4.124926
+## 3       3 girl     0 4.595165
+## 4       4 girl     0 5.065404
+## 5       5 girl     0 5.535643
+## 6       6 girl     0 6.005883
+## 7       7 girl     0 6.476122
+## 8       8 girl     0 6.946361
+## 9       9 girl     0 7.416600
+## 10     10 girl     0 7.886840
+## 11      1  boy     0 2.645470
+## 12      2  boy     0 3.059526
+## 13      3  boy     0 3.473583
+## 14      4  boy     0 3.887640
+## 15      5  boy     0 4.301697
+## 16      6  boy     0 4.715754
+## 17      7  boy     0 5.129811
+## 18      8  boy     0 5.543868
+## 19      9  boy     0 5.957925
+## 20     10  boy     0 6.371982
+```
+
+---
+# Plot
+
+```r
+ggplot(conditions2, aes(extrav, pred)) +
+  geom_line(aes(color = sex))
+```
+
+![](w4p1_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
+
+---
+class: inverse-red middle
+# Questions?
+
+---
 class: inverse-blue middle
 
-# Gelman and Hill notation
+# Notation
+### Introducing the Gelman and Hill notation
 
 ---
 # Standard regression
@@ -364,7 +1034,7 @@ summary(sim_m0)
 ```
 
 ```
-## Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+## Linear mixed model fit by REML ['lmerMod']
 ## Formula: score ~ ses + (1 | scid)
 ##    Data: sim_df
 ## 
@@ -381,11 +1051,9 @@ summary(sim_m0)
 ## Number of obs: 1500, groups:  scid, 30
 ## 
 ## Fixed effects:
-##              Estimate Std. Error        df t value Pr(&gt;|t|)    
-## (Intercept)   12.3901     0.4622   28.9920   26.81   &lt;2e-16 ***
-## ses            2.4682     0.1562 1473.1549   15.80   &lt;2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##             Estimate Std. Error t value
+## (Intercept)  12.3901     0.4622   26.81
+## ses           2.4682     0.1562   15.80
 ## 
 ## Correlation of Fixed Effects:
 ##     (Intr)
@@ -926,7 +1594,7 @@ $$
 
 Let's fit a parallel slopes model with the Willett data. You try first.
 
-<div class="countdown" id="timer_606e5608" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_607e09b1" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -954,7 +1622,7 @@ Sparse matrix - we can view it with `image()`
 image(w0_rvcv)
 ```
 
-![](w4p1_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
+![](w4p1_files/figure-html/unnamed-chunk-49-1.png)&lt;!-- --&gt;
 
 ---
 # Pull first few rows/cols
@@ -966,15 +1634,24 @@ w0_rvcv[1:8, 1:8]
 
 ```
 ## 8 x 8 sparse Matrix of class "dgCMatrix"
-##           1         2         3         4         5         6         7         8
-## 1 1280.7065  904.8054  904.8054  904.8054    .         .         .         .     
-## 2  904.8054 1280.7065  904.8054  904.8054    .         .         .         .     
-## 3  904.8054  904.8054 1280.7065  904.8054    .         .         .         .     
-## 4  904.8054  904.8054  904.8054 1280.7065    .         .         .         .     
-## 5    .         .         .         .      1280.7065  904.8054  904.8054  904.8054
-## 6    .         .         .         .       904.8054 1280.7065  904.8054  904.8054
-## 7    .         .         .         .       904.8054  904.8054 1280.7065  904.8054
-## 8    .         .         .         .       904.8054  904.8054  904.8054 1280.7065
+##           1         2         3         4         5         6         7
+## 1 1280.7065  904.8054  904.8054  904.8054    .         .         .     
+## 2  904.8054 1280.7065  904.8054  904.8054    .         .         .     
+## 3  904.8054  904.8054 1280.7065  904.8054    .         .         .     
+## 4  904.8054  904.8054  904.8054 1280.7065    .         .         .     
+## 5    .         .         .         .      1280.7065  904.8054  904.8054
+## 6    .         .         .         .       904.8054 1280.7065  904.8054
+## 7    .         .         .         .       904.8054  904.8054 1280.7065
+## 8    .         .         .         .       904.8054  904.8054  904.8054
+##           8
+## 1    .     
+## 2    .     
+## 3    .     
+## 4    .     
+## 5  904.8054
+## 6  904.8054
+## 7  904.8054
+## 8 1280.7065
 ```
 
 ---
@@ -1073,7 +1750,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_606e53ba" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_607e0b28" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1662,25 +2339,13 @@ compare_performance(ar, har, toep, w1,
 ```
 
 ```
-## Warning: Could not get model data.
-
-## Warning: Could not get model data.
-
-## Warning: Could not get model data.
-```
-
-```
-## Warning: When comparing models, please note that probably not all models were fit from same data.
-```
-
-```
 ## # A tibble: 4 x 5
-##   Name  Model                AIC      BIC Performance_Score
-##   &lt;chr&gt; &lt;chr&gt;              &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
-## 1 toep  gls             1277.979 1295.543         0.9094409
-## 2 w1    lmerModLmerTest 1278.823 1296.473         0.8196721
-## 3 ar    gls             1281.465 1293.174         0.7759608
-## 4 har   gls             1285.760 1306.250         0
+##   Name  Model        AIC      BIC Performance_Score
+##   &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
+## 1 toep  gls     1277.979 1295.543         0.9094409
+## 2 w1    lmerMod 1278.823 1296.473         0.8196721
+## 3 ar    gls     1281.465 1293.174         0.7759608
+## 4 har   gls     1285.760 1306.250         0
 ```
 
 We have slight evidence here that the Toeplitz structure fits better than the unstructured version, which was slightly better than the autoregressive model.

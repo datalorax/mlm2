@@ -257,3 +257,7 @@ a.footer-icon-link:hover {
 .small80 {
   font-size: 80% !important;
 }
+
+.remark-slide-content.full-slide-fig{
+  padding: 0px 0px 0px 0px;
+  width: 100%;}
