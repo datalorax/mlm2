@@ -225,3 +225,10 @@ wages_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/wages_pp.tx
 wages <- read_csv(wages_link) %>% 
   select(id:ged, black:hgc, uerate)
 write_csv(wages, here::here("data", "wages.csv"))
+
+
+alc_link <- "https://stats.idre.ucla.edu/stat/r/examples/alda/data/alcohol1_pp.txt"
+alc <- read_csv(alc_link)
+alc %>% 
+  select(-cpeer, -ccoa, -age_14) %>% 
+  write_csv(here::here("data", "alcohol-adolescents.csv"))
