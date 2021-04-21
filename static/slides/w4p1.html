@@ -4,7 +4,7 @@
     <title>Variance-Covariance Matrices</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
-    <script src="libs/header-attrs-2.7.7/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
     <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
@@ -1594,7 +1594,7 @@ $$
 
 Let's fit a parallel slopes model with the Willett data. You try first.
 
-<div class="countdown" id="timer_607e09b1" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60805c1c" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1634,24 +1634,15 @@ w0_rvcv[1:8, 1:8]
 
 ```
 ## 8 x 8 sparse Matrix of class "dgCMatrix"
-##           1         2         3         4         5         6         7
-## 1 1280.7065  904.8054  904.8054  904.8054    .         .         .     
-## 2  904.8054 1280.7065  904.8054  904.8054    .         .         .     
-## 3  904.8054  904.8054 1280.7065  904.8054    .         .         .     
-## 4  904.8054  904.8054  904.8054 1280.7065    .         .         .     
-## 5    .         .         .         .      1280.7065  904.8054  904.8054
-## 6    .         .         .         .       904.8054 1280.7065  904.8054
-## 7    .         .         .         .       904.8054  904.8054 1280.7065
-## 8    .         .         .         .       904.8054  904.8054  904.8054
-##           8
-## 1    .     
-## 2    .     
-## 3    .     
-## 4    .     
-## 5  904.8054
-## 6  904.8054
-## 7  904.8054
-## 8 1280.7065
+##           1         2         3         4         5         6         7         8
+## 1 1280.7065  904.8054  904.8054  904.8054    .         .         .         .     
+## 2  904.8054 1280.7065  904.8054  904.8054    .         .         .         .     
+## 3  904.8054  904.8054 1280.7065  904.8054    .         .         .         .     
+## 4  904.8054  904.8054  904.8054 1280.7065    .         .         .         .     
+## 5    .         .         .         .      1280.7065  904.8054  904.8054  904.8054
+## 6    .         .         .         .       904.8054 1280.7065  904.8054  904.8054
+## 7    .         .         .         .       904.8054  904.8054 1280.7065  904.8054
+## 8    .         .         .         .       904.8054  904.8054  904.8054 1280.7065
 ```
 
 ---
@@ -1750,7 +1741,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_607e0b28" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60805b70" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -2336,6 +2327,19 @@ compare_performance(ar, har, toep, w1,
                     metrics = c("AIC", "BIC"),
                     rank = TRUE) %&gt;% 
   as_tibble()
+```
+
+```
+## Warning: Could not get model data.
+
+## Warning: Could not get model data.
+
+## Warning: Could not get model data.
+```
+
+```
+## Warning: When comparing models, please note that probably not all models were fit from same
+## data.
 ```
 
 ```
