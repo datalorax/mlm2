@@ -116,7 +116,7 @@ Icons in the schedule link to specific chapters.
 {{< week "04-30" >}}
   {{< description "Modeling Growth 1" "Thinking flexibly about time and modeling non-linear trends with polynomials basis expansion. We will also discuss data transformations (e.g., log, inverse)." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w5p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< assigned "assignments" "hw2" >}}
