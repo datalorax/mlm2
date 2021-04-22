@@ -93,6 +93,7 @@ arm::display(m)
 --
 ```{r }
 slr <- lm(popular ~ extrav, popular)
+arm::display(slr)
 ```
 
 ---
@@ -154,7 +155,7 @@ Let's walk through 4 predictions
 sample_preds <- popular %>% 
   group_by(class) %>% 
   slice(1) %>% 
-  ungroup %>% 
+  ungroup() %>% 
   slice(1:4)
 
 sample_preds
@@ -163,7 +164,7 @@ sample_preds
 ---
 # Coefficients
 ```{r echo = FALSE}
-equatiomatic::extract_eq(m, use_coef = TRUE)
+equatiomatic::extract_eq(m, use_coef = TRUE, mean_separate = TRUE)
 ```
 
 ---
@@ -398,7 +399,10 @@ Each `mpg` value is assumed generated from a normal distribution, with a mean st
 
 ---
 # Simulate
+### I'm not expecting you to follow along here
+
 If we have a solid understanding of the distributional properties, we can simulate new data from the model
+
 
 --
 First let's set some population parameters
@@ -552,7 +556,7 @@ a_j <- rnorm(j, 0, 2.18)
 ```
 
 ---
-For each school, simulate nj obs from leve 1 model, adding in the school deviation
+For each school, simulate nj obs from the level 1 model, adding in the school deviation
 
 There are lots of ways to do this - I'm using a `for()` loop here in an effort to be transparent
 
@@ -566,11 +570,18 @@ for(i in 1:j) {
                               12.66 + 2.39*ses[[i]] + a_j[i], 
                               6.09)
 }
+```
+
+---
+# Put in a df
+
+```{r }
 sim_df <- data.frame(
   scid = rep(1:j, each = nj),
   ses = unlist(ses),
   score = unlist(school_scores)
 )
+head(sim_df)
 ```
 
 ---
@@ -720,7 +731,7 @@ $$
       \epsilon_n
     \end{array}
   \right)
-\sim
+\sim MVN
   \left(
     \left[
       \begin{array}{c}
@@ -832,7 +843,7 @@ Same variance components for all blocks
 
 
 --
-Off diagonals are still zero
+Out-of-block diagonals are still zero
 
 ---
 # Homogeneity of variance
@@ -1135,6 +1146,7 @@ ar <- gls(opp ~ time,
 
 ---
 # Summary
+Notice, you're not actually estimating random effect variances here, just an alternative residual covariance structure
 ```{r }
 summary(ar)
 ```
@@ -1346,5 +1358,6 @@ Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubl
 
 ---
 class: inverse-green middle
-# Next time: Modeling growth (part 1)
-### Also Homework 2
+# Next time 
+## Modeling growth (part 1)
+### Also Homework 2 is assigned

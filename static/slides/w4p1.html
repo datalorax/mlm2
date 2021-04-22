@@ -143,6 +143,17 @@ arm::display(m)
 
 ```r
 slr &lt;- lm(popular ~ extrav, popular)
+arm::display(slr)
+```
+
+```
+## lm(formula = popular ~ extrav, data = popular)
+##             coef.est coef.se
+## (Intercept) 3.27     0.12   
+## extrav      0.35     0.02   
+## ---
+## n = 2000, k = 2
+## residual sd = 1.31, R-Squared = 0.10
 ```
 
 ---
@@ -208,7 +219,7 @@ Let's walk through 4 predictions
 sample_preds &lt;- popular %&gt;% 
   group_by(class) %&gt;% 
   slice(1) %&gt;% 
-  ungroup %&gt;% 
+  ungroup() %&gt;% 
   slice(1:4)
 
 sample_preds
@@ -228,7 +239,8 @@ sample_preds
 # Coefficients
 $$
 `\begin{aligned}
-  \operatorname{\widehat{popular}}_{i}  &amp;\sim N \left(2.46_{\alpha_{j[i]}} + 0.49_{\beta_{1j[i]}}(\operatorname{extrav}), 0.95 \right) \\    
+  \operatorname{\widehat{popular}}_{i}  &amp;\sim N \left(\mu, 0.95 \right) \\
+    \mu &amp;=2.46_{\alpha_{j[i]}} + 0.49_{\beta_{1j[i]}}(\operatorname{extrav}) \\    
 \left(
   \begin{array}{c} 
     \begin{aligned}
@@ -811,7 +823,10 @@ Each `mpg` value is assumed generated from a normal distribution, with a mean st
 
 ---
 # Simulate
+### I'm not expecting you to follow along here
+
 If we have a solid understanding of the distributional properties, we can simulate new data from the model
+
 
 --
 First let's set some population parameters
@@ -1003,7 +1018,7 @@ a_j &lt;- rnorm(j, 0, 2.18)
 ```
 
 ---
-For each school, simulate nj obs from leve 1 model, adding in the school deviation
+For each school, simulate nj obs from the level 1 model, adding in the school deviation
 
 There are lots of ways to do this - I'm using a `for()` loop here in an effort to be transparent
 
@@ -1018,11 +1033,29 @@ for(i in 1:j) {
                               12.66 + 2.39*ses[[i]] + a_j[i], 
                               6.09)
 }
+```
+
+---
+# Put in a df
+
+
+```r
 sim_df &lt;- data.frame(
   scid = rep(1:j, each = nj),
   ses = unlist(ses),
   score = unlist(school_scores)
 )
+head(sim_df)
+```
+
+```
+##   scid        ses     score
+## 1    1 -0.9529766  9.789073
+## 2    1  0.4057701 12.820300
+## 3    1 -0.9839385 20.956667
+## 4    1 -1.6101230 15.884079
+## 5    1 -0.4301688  1.363627
+## 6    1 -1.2242106  7.820335
 ```
 
 ---
@@ -1433,7 +1466,7 @@ $$
       \epsilon_n
     \end{array}
   \right)
-\sim
+\sim MVN
   \left(
     \left[
       \begin{array}{c}
@@ -1545,7 +1578,7 @@ Same variance components for all blocks
 
 
 --
-Off diagonals are still zero
+Out-of-block diagonals are still zero
 
 ---
 # Homogeneity of variance
@@ -1594,7 +1627,7 @@ $$
 
 Let's fit a parallel slopes model with the Willett data. You try first.
 
-<div class="countdown" id="timer_60805c1c" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6081f14d" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1622,7 +1655,7 @@ Sparse matrix - we can view it with `image()`
 image(w0_rvcv)
 ```
 
-![](w4p1_files/figure-html/unnamed-chunk-49-1.png)&lt;!-- --&gt;
+![](w4p1_files/figure-html/unnamed-chunk-50-1.png)&lt;!-- --&gt;
 
 ---
 # Pull first few rows/cols
@@ -1741,7 +1774,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_60805b70" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6081f0e6" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -2006,6 +2039,7 @@ ar &lt;- gls(opp ~ time,
 
 ---
 # Summary
+Notice, you're not actually estimating random effect variances here, just an alternative residual covariance structure
 
 ```r
 summary(ar)
@@ -2330,19 +2364,6 @@ compare_performance(ar, har, toep, w1,
 ```
 
 ```
-## Warning: Could not get model data.
-
-## Warning: Could not get model data.
-
-## Warning: Could not get model data.
-```
-
-```
-## Warning: When comparing models, please note that probably not all models were fit from same
-## data.
-```
-
-```
 ## # A tibble: 4 x 5
 ##   Name  Model        AIC      BIC Performance_Score
 ##   &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
@@ -2492,8 +2513,9 @@ Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubl
 
 ---
 class: inverse-green middle
-# Next time: Modeling growth (part 1)
-### Also Homework 2
+# Next time 
+## Modeling growth (part 1)
+### Also Homework 2 is assigned
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
