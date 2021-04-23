@@ -1,0 +1,173 @@
+---
+title: Homework 1
+author: Daniel Anderson
+date: '2021-03-24'
+assigned: '2021-04-09'
+due: '2021-04-23'
+categories:
+  - Assignments
+tags:
+  - Assignments
+  - Homework
+toc: true
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE, 
+  warning = FALSE, 
+  include = FALSE,
+  cache = TRUE
+)
+library(tidyverse)
+library(lme4)
+library(performance)
+```
+
+## Background
+
+There are three primary purposes for this homework:
+
+-   Practice restructuring data in a format that would be appropriate for multilevel modeling in R via the [**{lme4}**](https://github.com/lme4/lme4/) package
+
+-   Fitting models you are already familiar with through R, rather than through HLM or other proprietary software.
+
+-   Creating a few basic plots of the model results
+
+### Getting started
+
+Create a new RStudio project for this homework. Create a folder for the data and place "longitudinal-sim.csv" in that folder. Create a new R markdown file to complete the lab. You can use whatever basic format you'd like, but please make it clear which question you are addressing, in each code chunk, keep text outside of code chunks (unless there are specific parts of the code you'd like to comment), and avoid printing large output. In other words, you can do whatever exploratory work you need to do, but please remove (or comment out) any code that ends up printing anything that is not directly related to your response (e.g., a data frame).
+
+## Part 1: Data structuring
+
+Read in the "longitudinal-sim.csv" file. It should look like the below.
+
+```{r include = TRUE}
+l <- read_csv(here::here("data", "longitudinal-sim.csv"))
+l
+```
+
+Each row in this dataset represents a student (`sid`) nested in a school (`scid`) nested in a school district (`distid`). The remaining columns represent scores from a seasonally-administered benchmark assessment (administered in the fall, winter, and spring) across Grades 3-5.
+
+Restructure this dataset so you could use the **{lme4}** package to fit a growth model with random intercepts and slopes for students and grade-level fixed effects. Code time by wave (e.g., fall, winter, spring = 0, 1, 2).
+
+**Note:** Depending on your comfort level with R, this may be quite challenging. Please make sure to work with your group members and/or check in with me. The important part is that you understand how to do this, not neccessarily that you complete it this one time. There are also **lots** of different ways to do this, so don't get too hung up on one "correct" way.
+
+```{r }
+create_wave <- function(x) {
+  case_when(x == "fall" ~ 0,
+            x == "winter" ~ 1, 
+            x == "spring" ~ 2)
+}
+l <- l %>% 
+  pivot_longer(starts_with("g"),
+               names_to = c("grade", "wave"),
+               values_to = "score",
+               names_prefix = "g",
+               names_sep = "_",
+               names_transform = list(wave = create_wave,
+                                      grade = factor)) %>% 
+  mutate(wave = ifelse(grade == 4, wave + 3, wave),
+         wave = ifelse(grade == 5, wave + 6, wave))
+```
+
+## Part 2: Model fit and evaluation
+
+### Part A
+
+Fit the following models with student-level random effects (i.e., ignoring any potential school- or district-level variability for now):
+
+-   Unconditional growth model with random intercepts and parallel slopes
+-   Conditional growth model with random intercepts, parallel slopes, and grade-level fixed effects
+-   Unconditional growth model with random intercepts and random slopes
+-   Conditional growth model with random intercepts, random slopes, and grade-level fixed effects
+
+Note when I ran models 3 and 4 I did run into some convergence warnings. You can safely ignore these, or you can use a different optimizer to get rid of them by adding `control = lmerControl(optimizer = "bobyqa")`. The **{lme4}** package has several possible optimizer and, in this case, the default optimizer did not quite reach its tolerance for convergence, while most of the others do.
+
+```{r }
+m0a <- lmer(score ~ 1 + wave + (1|sid), l)
+m0b <- lmer(score ~ wave + grade + (1|sid), l)
+
+m1a <- lmer(score ~ 1 + wave + (1 + wave|sid), 
+            data = l,
+            control = lmerControl(optimizer = "bobyqa"))
+
+# a <- allFit(m1a)
+# summary(a)
+
+m1b <- lmer(score ~ wave + grade + (wave|sid), 
+            data = l,
+            control = lmerControl(optimizer = "bobyqa"))
+```
+
+### Part B
+
+Compare the performance of the four models you fit in the previous section. Which model displays the best fit to the data? Make a determination and provide a brief writup, using evidence to justify your selection.
+
+```{r }
+# Note some of these take a while to run
+compare_performance(m0a, m0b, m1a, m1b)
+perf_1ab <- compare_performance(m1a, m1b)
+
+diff(perf_1ab$AIC)
+diff(perf_1ab$BIC)
+
+test_performance(m0a, m0b, m1a, m1b)
+
+test_performance(m1a, m1b)
+test_likelihoodratio(m1a, m1b)
+
+anova(m1a, m1b)
+
+sundry::aic_weights(m1a, m1b)
+```
+
+<!-- When comparing across models, the most complex model, including a grade-level fixed effect and student-level random intercepts and slopes, displayed the best fit to the data. This model had the lowest AIC and BIC values, both of which were more than 30,000 points lower than the next-best fitting model. The $\chi^2$ test of the change in the model deviance from the model not including grade, to the full model, was significantly different from zero ($\chi^2(2) = 37532, p < 0.001$). -->
+
+### Part C
+
+Provide a brief writeup *interpreting* the model you selected from above. Be sure to interpret both the fixed effects and random effects. I'm looking for a "plain English" description. It does not necessarily need to be APA style, but plain English and APA are also not mutually exclusive, so you could. Please make sure to also include confidence intervals in your interpretation.
+
+```{r }
+summary(m1b)
+confint(m1b)
+```
+
+<!-- 
+Students' scored, on average, 188.79 points on the assessment in the fall of Grade 3 (95% CI: [188.65, 188.93]), which varied between students with a standard deviation of 10.09 points (95% profiled CI: [9.99, 10.19]). Students gained, on average, 6.18 points on the assessment per season (95% profiled CI: [6.15, 6.21]), which varied between students with a standard deviation of 1.16 points (95% profiled CI: [1.14, 1.17]). The coefficient for Grade 4 indicated  students lost, on average, 8.17 points from the spring of Grade 3 to the fall of grade 4 (95% profiled CI: [-8.26, -8.08]). The coefficient for Grade 5 was a bit more difficult to interpret. Had students continued on the average trajectory estimated during Grade 3, their predicted achievement in the fall of Grade 5 would be 188.79 + 6.18*6 = 225.87. However, students actually scored, on average, approximately 16.69 points less than this amount (95% profiled CI: [-16.85, -16.53]).
+-->
+
+## Part 3: Plots of the model fit
+
+Plot the predicted values for student ID's 1-1-1, 1-1-2, and 1-1-3, relative to their observed data points. Use facet wrapping to place them all in the same plot. The end result should look similar to the below, which shows this relation for student IDS 1-1-4, 1-1-5, and 1-1-6. Note that my plot has some styling added to it which you can feel free to ignore (I just can't help myself).
+
+```{r include = TRUE, eval = TRUE}
+l %>% 
+  mutate(pred = predict(m1b)) %>% 
+  filter(sid %in% c("1-1-4", "1-1-5", "1-1-6")) %>% 
+  ggplot(aes(wave, score)) +
+  geom_point(size = 3) +
+  geom_line(aes(y = pred),
+            color = "#67E0CF",
+            size = 1.5) +
+  facet_wrap(~sid) +
+  scale_color_manual(values = c("#515C7C", "#414237", "#458E5C")) +
+  guides(color = "none") +
+  theme_minimal(20) 
+
+# For the first three students, run the following code instead
+
+# l %>% 
+#   mutate(pred = predict(m1b)) %>% 
+#   filter(sid %in% c("1-1-1", "1-1-2", "1-1-3")) %>% 
+#   ggplot(aes(wave, score)) +
+#   geom_point(size = 3) +
+#   geom_line(aes(y = pred),
+#             color = "#67E0CF",
+#             size = 1.5) +
+#   facet_wrap(~sid) +
+#   scale_color_manual(values = c("#515C7C", "#414237", "#458E5C")) +
+#   guides(color = "none") +
+#   theme_minimal(20) 
+```
