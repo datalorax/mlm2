@@ -89,7 +89,7 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "04-23" >}}
-  {{< description "Variance-covariance matrices & intro to Gelman & Hill notation" "Contrasting unstructured variance-covariance matrices with alternative specifications (e.g., independent, Toeplitz). We will also discuss the Gelman & Hill notation for multilevel models and practice writing and interpreting model equations." >}}
+  {{< description "Intro to Gelman & Hill notation" "We review content from the previous course, review Homework 1, and introduce the Gelman & Hill notation for multilevel models." >}}
   {{< wrap >}}
 {{< slides "w4p1" >}}
 {{< /wrap >}}
@@ -114,19 +114,20 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "04-30" >}}
-  {{< description "Modeling Growth 1" "Thinking flexibly about time and modeling non-linear trends with polynomials basis expansion. We will also discuss data transformations (e.g., log, inverse)." >}}
+  {{< description "Variance-covariance matrices" "We will review Gelman & Hill notation and compare and contrast different residual variance-covariance specifications. Contrasting unstructured variance-covariance matrices with alternative specifications (e.g., independent, Toeplitz)" >}}
   {{< wrap >}}
 {{< slides "w5p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "assignments" "hw2" >}}
+{{< assigned "homework-2" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< due "assignments/#final-project" "Prop" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-4/" "4" >}}
-{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-5/" "5" >}}
+{{< readings "clark" "extensions.html#residual-structure" "" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-7/" "7" >}}
+{{< readings "gh" "https://canvas.uoregon.edu/files/10667756/download?download_frd=1" "12.5-12.10" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -138,7 +139,7 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "05-07" >}}
-  {{< description "Introduction to Bayesian estimation" "Basic concepts in Bayesian estimation: prior and posterior distributions, MCMC sampling, model convergence. We will fit similar models to those fit previously in the course, but using the brms package for Bayesian inference." >}}
+  {{< description "Modeling Growth 1" "Thinking flexibly about time and modeling non-linear trends with polynomials basis expansion. We will also discuss data transformations (e.g., log, inverse)." >}}
   {{< wrap >}}
 {{< slides "" >}}
 {{< /wrap >}}
@@ -149,7 +150,8 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "clark2" "intro.html" "NA" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-4/" "NA" >}}
+{{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-5/" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -161,7 +163,7 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "05-14" >}}
-  {{< description "Multilevel logistic regression" "Extending on the models we've learned previously to deal with dichotomous outcomes. We will also continue our discussion of Bayesian estimation and use Bayes to estimate thse models." >}}
+  {{< description "Introduction to Bayesian estimation" "Basic concepts in Bayesian estimation: prior and posterior distributions, MCMC sampling, model convergence. We will fit similar models to those fit previously in the course, but using the brms package for Bayesian inference." >}}
   {{< wrap >}}
 {{< slides "" >}}
 {{< /wrap >}}
@@ -172,8 +174,8 @@ Icons in the schedule link to specific chapters.
 {{< due "assignments" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "gh" "https://canvas.uoregon.edu/files/10667771/download?download_frd=1" "5" >}}
-{{< readings "gh" "https://canvas.uoregon.edu/files/10667780/download?download_frd=1" "14" >}}
+{{< readings "clark2" "intro.html" "5" >}}
+{{< readings "clark2" "intro.html" "14" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
@@ -185,7 +187,7 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "05-21" >}}
-  {{< description "Simulating data from multilevel models" "We will gain a deeper understanding of the models we fit throughout the term by generating new data assuming they follow the distributional assumptions of the given models. We will then tweak some of the data generating models and evauate how robust the multilevel model is to violations of these assumptions" >}}
+  {{< description "Bayesian estimation 2: Multilevel logistic regression" "Extending on the models we've learned previously to deal with dichotomous outcomes. We will also continue our discussion of Bayesian estimation and use Bayes to estimate thse models." >}}
   {{< wrap >}}
 {{< slides "" >}}
 {{< /wrap >}}
@@ -196,7 +198,8 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< readings "other" "https://bookdown.org/marklhc/notes/simulating-multilevel-data.html" "NA" >}}
+{{< readings "gh" "https://canvas.uoregon.edu/files/10667771/download?download_frd=1" "NA" >}}
+{{< readings "gh" "https://canvas.uoregon.edu/files/10667780/download?download_frd=1" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< lecture "" >}}
