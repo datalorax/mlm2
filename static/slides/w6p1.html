@@ -37,11 +37,11 @@ layout: true
   &lt;div class="slides-footer"&gt;
   &lt;span&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w5p1.pdf"&gt;
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w6p1.pdf"&gt;
     &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w5p1.html"&gt;
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w6p1.html"&gt;
     &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
@@ -82,7 +82,7 @@ Outcome = `piat` = Peabody Individual Achievement Test
 --
 Please read in `cnlsy.csv` now
 
-<div class="countdown" id="timer_6088b13f" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088de97" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -122,7 +122,7 @@ d
 # Fit a basic model
 Please try to fit a model that accounts for the within-subjects design in some way and includes a random intercept and slope.
 
-<div class="countdown" id="timer_6088af39" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088dedc" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -167,7 +167,7 @@ But what does a one unit increase in `wave_c` actually mean?
 # More meaningful
 * Note that each `wave` is tied to a specific age group (the approximate age of participants at that age). Can we use this? Try!
 
-<div class="countdown" id="timer_6088b12e" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088dd56" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -306,7 +306,7 @@ ggplot(d, aes(agegrp, age)) +
 
 Fit another model with `age` as the time variable instead. How do the results compare?
 
-<div class="countdown" id="timer_6088afb2" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088e088" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -444,7 +444,7 @@ The differences in the model predictions overall appear modest, but it does disp
 ### Challenge
 Can you change the model so the coefficient represents monthly growth?
 
-<div class="countdown" id="timer_6088af8a" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088dedc" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -574,7 +574,22 @@ Please read in the `wages.csv` dataset.
 wages &lt;- read_csv(here::here("data", "wages.csv"))
 ```
 
-<div class="countdown" id="timer_6088b1fb" style="right:0;bottom:0;" data-warnwhen="0">
+```
+## 
+## ── Column specification ────────────────────────────────────────────────────────────────────
+## cols(
+##   id = col_double(),
+##   lnw = col_double(),
+##   exper = col_double(),
+##   ged = col_double(),
+##   black = col_double(),
+##   hispanic = col_double(),
+##   hgc = col_double(),
+##   uerate = col_double()
+## )
+```
+
+<div class="countdown" id="timer_6088dde1" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -695,7 +710,7 @@ Let's fit a more interesting model. Try to fit a model that addresses the follow
 &gt; Is the relation between experience and log wages the same across coded race/ethnicity categories? 
 Do these relations depend on highest grade completed?
 
-<div class="countdown" id="timer_6088aeee" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088de12" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -988,7 +1003,7 @@ range(sim_d$date)
 # Plot
 Show the overall relation between `date` and `score`. What do you notice?
 
-<div class="countdown" id="timer_6088b067" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088de9c" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1029,7 +1044,7 @@ Let's try fitting a linear model and a quadratic model and see which fits better
 --
 You try fitting the linear model first, with `date` predicting `score`, and both the intercept and slope varying across students.
 
-<div class="countdown" id="timer_6088aef1" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088df55" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1151,6 +1166,10 @@ anova(linear, quad)
 ```
 
 ```
+## refitting model(s) with ML (instead of REML)
+```
+
+```
 ## Data: sim_d
 ## Models:
 ## linear: score ~ days_from_start + (days_from_start | sid)
@@ -1211,7 +1230,7 @@ This is definitely looking better, but it's too high in the lower tail and maybe
 
 You try first - extend what we just did to model a cubic trend
 
-<div class="countdown" id="timer_6088ae26" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088de0d" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1266,6 +1285,10 @@ arm::display(cubic)
 
 ```r
 anova(linear, quad, cubic)
+```
+
+```
+## refitting model(s) with ML (instead of REML)
 ```
 
 ```
@@ -1360,6 +1383,10 @@ arm::display(log_m)
 
 ```r
 anova(linear, quad, cubic, log_m)
+```
+
+```
+## refitting model(s) with ML (instead of REML)
 ```
 
 ```

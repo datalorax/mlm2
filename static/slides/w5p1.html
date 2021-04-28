@@ -39,11 +39,11 @@ layout: true
   &lt;div class="slides-footer"&gt;
   &lt;span&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w4p1.pdf"&gt;
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w5p1.pdf"&gt;
     &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w4p1.html"&gt;
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w5p1.html"&gt;
     &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
@@ -116,7 +116,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_6088b134" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088dfa2" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -140,7 +140,7 @@ $$
 $$
 
 
-<div class="countdown" id="timer_6088b0bc" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088df07" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -189,7 +189,7 @@ $$
 $$
 
 
-<div class="countdown" id="timer_6088ae0d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088e0f9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -226,7 +226,7 @@ sim3
 ## # … with 560 more rows
 ```
 
-<div class="countdown" id="timer_6088aeef" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088ddb7" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -289,7 +289,7 @@ sim3
 ---
 # New model
 
-<div class="countdown" id="timer_6088afeb" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088e033" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -340,7 +340,7 @@ lmer(Math ~ ActiveTime + (ActiveTime|class_id) + (1|School),
 # This one
 What about this one?
 
-<div class="countdown" id="timer_6088afe7" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088e132" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -416,7 +416,7 @@ lmer(Math ~ ActiveTime + ClassSize +
 
 What about this one?
 
-<div class="countdown" id="timer_6088af0c" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088dfb0" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -754,7 +754,7 @@ $$
 
 Let's fit a parallel slopes model with the Willett data. You try first.
 
-<div class="countdown" id="timer_6088aeae" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088de87" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -901,7 +901,7 @@ $$
 \end{aligned}`
 $$
 
-<div class="countdown" id="timer_6088afc0" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6088df9b" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1220,8 +1220,7 @@ summary(varcomp)
 
 ```
 ## Linear mixed model fit by REML ['lmerMod']
-## Formula: opp ~ time + ((0 + t0 | id) + (0 + t1 | id) + (0 + t2 | id) +  
-##     (0 + t3 | id))
+## Formula: opp ~ time + ((0 + t0 | id) + (0 + t1 | id) + (0 + t2 | id) +      (0 + t3 | id))
 ##    Data: w
 ## 
 ## REML criterion at convergence: 1387.2
@@ -1742,6 +1741,19 @@ compare_performance(ar, har, toep, w1, varcomp, fully_unstructured,
                     metrics = c("AIC", "BIC"),
                     rank = TRUE) %&gt;% 
   as_tibble()
+```
+
+```
+## Warning: Could not get model data.
+
+## Warning: Could not get model data.
+
+## Warning: Could not get model data.
+```
+
+```
+## Warning: When comparing models, please note that probably not all models were fit from same
+## data.
 ```
 
 ```

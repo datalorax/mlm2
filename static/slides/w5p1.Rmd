@@ -29,7 +29,7 @@ update_geom_defaults('point', list(size = 5))
 update_geom_defaults('text', list(size = 9))
 ```
 
-`r setup("w4p1")`
+`r setup("w5p1")`
 
 ---
 # Agenda
