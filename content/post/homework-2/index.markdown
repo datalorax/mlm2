@@ -49,12 +49,12 @@ Compare the fit of all models. Which model does the evidence suggest provides th
 
 
 ### 5: Adding predictors
-Include `coa` and `peer` as predictors in the model. Evaluate whether adolescents alcohol use trajectories (slopes) depend on these variables. You can extent your `{lme4}` model or your `gls()` model, regardless of your conclusions from above. Provide a brief summary of your findings (you do not have to interpret the entire model, just whether or not the trajectories depend on `coa` and/or `peer`).
+Include `coa` and `peer` as predictors in the model. Evaluate whether adolescents alcohol use trajectories (slopes) depend on these variables. You can extend your `{lme4}` model or your `gls()` model, regardless of your conclusions from above. Provide a brief summary of your findings (you do not have to interpret the entire model, just whether or not the trajectories depend on `coa` and/or `peer`).
 
 
 
 ### 6: Plots
 
-Produce the following plot. Don't worry about differences in the theming. Just get the basics structure. Note, I'm using the model that I felt displaye the best fit to the data to make my predictions.
+Produce the following plot. Don't worry about differences in the theming. Just get the basics structure. Note, I'm using the model that I felt displayed the best fit to the data to make my predictions.
 
 <img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="672" />
