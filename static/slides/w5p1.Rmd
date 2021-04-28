@@ -1,7 +1,7 @@
 ---
-title: "Modeling Growth 1"
+title: "Variance-Covariance Matrices"
 author: "Daniel Anderson "
-date: "Week 5"
+date: "Week 4"
 output:
   xaringan::moon_reader:
     css: ["default", "new.css"]
@@ -20,945 +20,1053 @@ output:
 source(here::here("static", "slides", "slide-setup.R"))
 xaringanExtra::use_clipboard()
 library(tidyverse)
+library(equatiomatic)
 theme_set(theme_minimal(25))
-knitr::opts_chunk$set(fig.width = 13)
-update_geom_defaults('path', list(size = 2))
+knitr::opts_chunk$set(fig.width = 13, message = FALSE)
+update_geom_defaults('errorbarh', list(size = 2))
+update_geom_defaults('path', list(size = 3))
 update_geom_defaults('point', list(size = 5))
 update_geom_defaults('text', list(size = 9))
 ```
 
-`r setup("w5p1")`
+`r setup("w4p1")`
 
 ---
 # Agenda
-* Thinking flexibly about time
 
-  + Coefficient interpretation by time coding
-  
-* A few methods for handling non-linearity 
+* Review some notation
 
+* Unstructured VCV Matrices and alternatives
 
---
-.realbig[Note]
-
-The last bullet is not necessarily specific to growth models
 
 ---
-# The data
-### Sample of the Children of the National Longitudinal Study of Youth
+# Learning Objectives
 
---
-Outcome = `piat` = Peabody Individual Achievement Test
+* Gain a deeper understanding of how the residual structure is different in multilevel models
 
+* Understand that there are methods for changing the residual structure, and understand when and why this might be preferable
 
---
-Please read in `cnlsy.csv` now
+* Be able to implement alternative methods using [**{nlme}**](https://cran.r-project.org/web/packages/nlme/)
 
-`r countdown::countdown(2)`
-
---
-
-```{r message = FALSE}
-library(tidyverse)
-d <- read_csv(here::here("data", "cnlsy.csv"))
-```
 
 ---
-# Look at the data
+class: inverse-blue middle
+
+# Notation
+### Reviewing some Gelman and Hill notation
+
+
+---
+# Data
+Let's start by using the *sleepstudy* data from **{lme4}**.
+
 ```{r }
-d
-```
-
----
-# Fit a basic model
-Please try to fit a model that accounts for the within-subjects design in some way and includes a random intercept and slope.
-
-`r countdown::countdown(2)`
-
---
-```{r message = FALSE}
 library(lme4)
-d <- d %>% 
-  mutate(wave_c = wave - 1)
-m_wave <- lmer(piat ~ wave_c + (wave_c|id),
-               data = d)
+head(sleepstudy)
 ```
 
 ---
-# Interpret
+# Translate
+Translate the following model into `lme4::lmer()` syntax
+
+```{r echo = FALSE}
+ss0 <- lmer(Reaction ~ 1 + (1|Subject), data = sleepstudy)
+extract_eq(ss0)
+```
+
+`r countdown::countdown(2)`
+
+--
+```{r eval = FALSE}
+lmer(Reaction ~ 1 + (1|Subject), data = sleepstudy)
+```
+
+---
+# More complicated
+
+Translate this equation into `lme4::lmer()` syntax
+
+```{r echo = FALSE}
+ss1 <- lmer(Reaction ~ Days + (1|Subject), data = sleepstudy)
+extract_eq(ss1)
+```
+
+
+`r countdown::countdown(1)`
+
+--
+```{r eval = FALSE}
+lmer(Reaction ~ Days + (1|Subject), data = sleepstudy)
+```
+
+
+---
+# Even more complicated
+
+Translate this equation into `lme4::lmer()` syntax
+
+```{r echo = FALSE}
+ss2 <- lmer(Reaction ~ Days + (Days|Subject), data = sleepstudy)
+extract_eq(ss2)
+```
+
+
+`r countdown::countdown(1)`
+
+--
+```{r eval = FALSE}
+lmer(Reaction ~ Days + (Days|Subject), data = sleepstudy)
+```
+
+
+---
+# New data
+
+```{r}
+sim3 <- read_csv(here::here("data", "sim3level.csv"))
+sim3
+```
+
+`r countdown::countdown(1)`
+
+.footnote[Data obtained [here](http://alexanderdemos.org/Mixed5.html)]
+
+---
+# A bit of a problem
 ```{r }
-arm::display(m_wave)
+sim3 %>% 
+  count(Classroom, School)
+```
+
+---
+# Make classroom unique
+We could handle this with our model syntax, but nested IDs like this always makes me nervous. Let's make them unique.
+
+--
+```{r }
+sim3 <- sim3 %>% 
+  mutate(class_id = paste0("class", Classroom, ":", School))
+sim3
+```
+
+---
+# New model
+
+`r countdown::countdown(2)`
+
+Translate this equation into code
+
+```{r echo = FALSE}
+s0 <- lmer(Math ~ ActiveTime + (ActiveTime|class_id) + (1|School),
+           data = sim3)
+extract_eq(s0)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(Math ~ ActiveTime + (ActiveTime|class_id) + (1|School),
+     data = sim3)
+```
+
+---
+# This one
+What about this one?
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE}
+s1 <- lmer(Math ~ ActiveTime + ClassSize + (ActiveTime|class_id) + (
+  ActiveTime|School),
+           data = sim3)
+extract_eq(s1, font_size = "small")
 ```
 
 --
-But what does a one unit increase in `wave_c` actually mean?
+```{r eval = FALSE}
+lmer(Math ~ ActiveTime + ClassSize + 
+       (ActiveTime|class_id) + (ActiveTime|School),
+     data = sim3)
+```
 
 ---
-# More meaningful
-* Note that each `wave` is tied to a specific age group (the approximate age of participants at that age). Can we use this? Try!
+# Last one
+
+What about this one?
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE}
+s2 <- lmer(Math ~ ActiveTime * ClassSize + (ActiveTime|class_id) + (
+  ActiveTime + ClassSize|School),
+           data = sim3)
+extract_eq(s2, font_size = "small")
+```
+
+--
+```{r eval = FALSE}
+lmer(Math ~ ActiveTime * ClassSize + 
+       (ActiveTime|class_id) + (ActiveTime + ClassSize|School),
+     data = sim3)
+```
+
+
+---
+class: inverse-blue middle
+
+# Residual structures
+
+---
+# Data
+[Willett, 1988](https://www.jstor.org/stable/1167368?seq=1#metadata_info_tab_contents)
+
+* $n$ = 35 people
+* Each completed a cognitive inventory on "opposites naming"
+* At first time point, participants also completed a general cognitive measure
+
+---
+# Read in data
+
+```{r message = FALSE}
+willett <- read_csv(here::here("data", "willett-1988.csv"))
+willett
+```
+
+---
+# Standard OLS 
+
+* We have four observations per participant. 
+
+* If we fit a standard OLS model, it would look like this
+
+```{r }
+bad <- lm(opp ~ time, data = willett)
+summary(bad)
+```
+
+---
+# Assumptions
+As we discussed previously, this model looks like this
+
+$$
+\operatorname{opp} = \alpha + \beta_{1}(\operatorname{time}) + \epsilon
+$$
+
+where
+
+$$
+\epsilon \sim \left(0, \sigma \right)
+$$
+
+---
+# Individual level residuals
+We can expand our notation, so it looks like a multivariate normal distribution
+
+$$
+\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_1 \\\
+      \epsilon_2 \\\
+      \epsilon_3 \\\
+      \vdots \\\
+      \epsilon_n
+    \end{array}
+  \right)
+\sim MVN
+  \left(
+    \left[
+      \begin{array}{c}
+        0\\\
+        0\\\
+        0\\\
+        \vdots \\\
+        0
+    \end{array}
+    \right],
+    \left[
+      \begin{array}{ccccc}
+        \sigma_{\epsilon} & 0 & 0 & \dots & 0 \\\
+        0 & \sigma_{\epsilon} & 0 & 0 & 0 \\\
+        0 & 0 & \sigma_{\epsilon} & 0 & 0 \\\
+        \vdots & 0 & 0 & \ddots & \vdots \\\
+        0 & 0 & 0 & \dots & \sigma_{\epsilon}
+      \end{array}
+    \right]
+  \right)
+\end{equation}
+$$
+
+This is where the $i.i.d.$ part comes in. The residuals are assumed $i$ndependent and $i$dentically $d$istributed.
+
+---
+# Multilevel model
+Very regularly, there are reasons to believe the $i.i.d.$ assumption is violated. Consider our current case, with 4 time points for each individual.
+
+* Is an observation for one time point for one individual *independent* from the other observations for that individual?
+
+
+--
+* Rather than estimating a single residual variance, we estimate an additional components associated with individuals, leading to a *block* diagonal structure
+
+---
+# Block diagonal
+
+.small70[
+$$
+\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_{11} \\
+      \epsilon_{12} \\
+      \epsilon_{13} \\
+      \epsilon_{14} \\
+      \epsilon_{21} \\
+      \epsilon_{22} \\
+      \epsilon_{23} \\
+      \epsilon_{24} \\
+      \vdots \\
+      \epsilon_{n1} \\
+      \epsilon_{n2} \\
+      \epsilon_{n3} \\
+      \epsilon_{n4}
+    \end{array}
+  \right)
+\sim
+  \left(
+    \left[
+      \begin{array}{c}
+        \\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        \vdots \\
+        0\\
+        0\\
+        0\\
+        0
+      \end{array}
+    \right],
+    \left[
+      \begin{array}{{@{}*{13}c@{}}}
+      \\
+        \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44} & 0 & 0 & 0 & 0 & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} & \dots  & 0 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44} & \dots  & 0 & 0 & 0 & 0 \\
+        \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \vdots \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} \\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & \dots & \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44}
+      \end{array}
+    \right]
+  \right)
+\end{equation}
+$$
+]
+
+
+--
+Correlations for  off-diagonals estimated
+
+
+--
+Same variance components for all blocks
+
+
+--
+Out-of-block diagonals are still zero
+
+---
+# Homogeneity of variance
+As mentioned on the previous slide, we assume the same variance components across all student
+
+This is referred to as the homogeneity of variance assumption - although the block (often referred to as the composite residual) may be heteroscedastic and dependent **within** a grouping factor (i.e., people) the entire error structure is repeated identically across units (i.e., people)
+
+---
+# Block diagonal
+Because of the homogeneity of variance assumption, we can re-express our block diagonal design as follows
+
+$$
+\begin{equation}
+r \sim N \left(\boldsymbol{0}, 
+  \left[
+    \begin{array}{ccccc}
+      \boldsymbol{\Sigma_r} & \boldsymbol{0} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
+      \boldsymbol{0} & \boldsymbol{\Sigma_r} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
+      \boldsymbol{0} & \boldsymbol{0} & \boldsymbol{\Sigma_r} &  \dots & \boldsymbol{0} \\
+      \vdots & \vdots & \vdots & \ddots & \vdots & \\
+      \boldsymbol{0} & \boldsymbol{0} &  \boldsymbol{0} & \dots & \boldsymbol{\Sigma_r}
+    \end{array}
+  \right]
+\right)
+\end{equation}
+$$
+---
+# Composite residual
+We then define the composite residual, which is common across units
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma_{11} & \sigma_{12} & \sigma_{13} & \sigma_{14} \\
+      \sigma_{21} & \sigma_{22} & \sigma_{23} & \sigma_{24} \\
+      \sigma_{31} & \sigma_{32} & \sigma_{33} & \sigma_{34} \\
+      \sigma_{41} & \sigma_{42} & \sigma_{43} & \sigma_{44}
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+---
+# Let's try!
+
+Let's fit a parallel slopes model with the Willett data. You try first.
 
 `r countdown::countdown(1)`
 
 --
 ```{r }
-m_agegrp <- lmer(piat ~ agegrp + (agegrp|id),
-                 data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
+w0 <- lmer(opp ~ time + (1|id), willett)
 ```
 
----
-# Interpret
-What does the intercept mean here? Age group?
+--
+What does the residual variance-covariance look like? Let's use **sundry** to pull it 
 
 ```{r }
-arm::display(m_agegrp)
+library(sundry)
+w0_rvcv <- pull_residual_vcov(w0)
 ```
 
 ---
-# How do we fix the intercept?
-
---
-## Centering
-Let's center age group on the first time point
+# Image
+Sparse matrix - we can view it with `image()`
 
 ```{r }
-d <- d %>% 
-  mutate(agegrp_c = agegrp - 6.5)
-m_agegrp2 <- lmer(piat ~ agegrp_c + (agegrp_c|id),
-                 data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
+image(w0_rvcv)
 ```
 
 ---
-# Interpret
-What does the intercept represent now?
+# Pull first few rows/cols
 
 ```{r }
-arm::display(m_agegrp2)
-```
-
---
-Pop Quiz: Without looking, how do you think the fit of the model has changed?
-
----
-# Comparing fit
-
-```{r results = "asis"}
-library(performance)
-compare_performance(m_agegrp, m_agegrp2) %>% 
-  print_md()
-```
-
-
-
-They're identical!
-
----
-# Slightly different
-Compare model predictions
-
-```{r echo = FALSE, fig.height = 9, warning = FALSE}
-pred_frame <- tibble(
-  agegrp = 0:12,
-  agegrp_c = 0:12,
-  id = -999
-  ) %>%  
-  mutate(pred_raw = predict(m_agegrp, newdata = ., allow.new.levels = TRUE),
-         pred_c = predict(m_agegrp2, newdata = ., allow.new.levels = TRUE))
-
-points <- data.frame(
-  pred_raw = c(fixef(m_agegrp)[1], fixef(m_agegrp2)[1]),
-  agegrp = c(0, 6.5),
-  color = c("cyan", "magenta")
-)
-
-ggplot(pred_frame, aes(agegrp, pred_raw)) +
-  geom_line(color = "cornflowerblue",
-            size = 5) +
-  geom_line(aes(agegrp_c + 6.5, y = pred_c),
-            color = "firebrick",
-            size = 2) +
-  geom_vline(xintercept = 0) +
-  geom_hline(yintercept = 0) +
-  geom_segment(x = 0, xend = 0, 
-               y = 0, yend = fixef(m_agegrp)[1],
-               color = "cyan",
-               linetype = "dashed") +
-  geom_segment(x = 0, xend = 6.5, 
-               y = fixef(m_agegrp2)[1], yend = fixef(m_agegrp2)[1],
-               color = "magenta",
-               linetype = "dashed") +
-  geom_segment(x = 6.5, xend = 6.5, 
-               y = 0, yend = fixef(m_agegrp2)[1],
-               color = "magenta",
-               linetype = "dashed") +
-  geom_point(aes(color = color), points, size = 4) +
-  guides(color = "none") +
-  scale_color_identity() +
-  xlim(-5, 20) +
-  ylim(-15, 85) +
-  labs(x = "Age", y = "Prediction")
+w0_rvcv[1:8, 1:8]
 ```
 
 ---
-# Age
+# Structure
+On the previous slide, note the values on the diagonal are all the same, as are all the off-diagonals
 
-* Notice that `agegrp` does not always correspond directly with their *actual* age.
+* This is because we've only estimated one additional variance component
 
---
-```{r fig.height = 5}
-ggplot(d, aes(agegrp, age)) +
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1,
-              color = "cornflowerblue")
-```
 
 ---
-# Model assumptions
-* When we use the `agegrp` variable, we are assuming that all children are *the exact same age* at each assessment wave. 
+# Understanding these numbers
+Let's look at the model output
 
-* Although `agegrp` is more interpretable than `wave`, it doesn't solve all our problems
-
---
-.center[.realbig[You try]]
-
-Fit another model with `age` as the time variable instead. How do the results compare?
-
-`r countdown::countdown(2)`
-
----
-# Intercept
-
-How do we want to handle this? Probably need to do something. 
-
---
-Look at first time point
 ```{r }
-d %>% 
-  filter(wave == 1) %>% 
-  count(age)
+arm::display(w0)
 ```
 
 ---
-# Centering
-* I'll choose to subtract 6 from each age
+The diagonal values were $`r w0_rvcv[1, 1]`$ while the off diagonal values were $`r w0_rvcv[1, 2]`$
 
-* what will this value represent for students who were 6.91 years old at the first wave?
+Let's extract the variance components from our model.
+
+```{r }
+vars_w0 <- as.data.frame(VarCorr(w0))
+vars_w0
+```
 
 --
-  + Backwards projection
+
+Notice anything?
+
+
+--
+
+The diagonals are given by `sum(vars_w0)$vcov` while the off-diagonals are just the intercept variance
+
+
+---
+# Including more complexity
+
+Try estimating this model now, then look at the residual variance-covariance matrix again
+
+```{r echo = FALSE}
+w1 <- lmer(opp ~ time + (time|id), willett)
+extract_eq(w1)
+```
+
+`r countdown::countdown(4)`
+
+---
+# The composite residual
+```{r }
+w1 <- lmer(opp ~ time + (time|id), willett)
+w1_rvcv <- pull_residual_vcov(w1)
+w1_rvcv[1:4, 1:4]
+```
+
+
+--
+### Unstructured
+
+The model we fit has an *unstructured* variance co-variance matrix. While each
+block is the same, every element of the block is now estimated.
+
+
+---
+# What are these numbers?
+They are the variance components, re-expressed as a composite residual
+
+
+--
+The diagonal is given by
+
+$$
+\begin{equation}
+\sigma^2 + \sigma^2_{\alpha_j} + 2\sigma^2_{01}w_i + \sigma^2_{\beta_1}w^2_i 
+\end{equation}
+$$
+
+
+where $w$ represents the given wave (for our example)
+
+
+--
+Let's do this "by hand"
+
+---
+# Get the pieces
+
+```{r }
+vars_w1 <- as.data.frame(VarCorr(w1))
+
+# get the pieces
+int_var <- vars_w1$vcov[1]
+slope_var <- vars_w1$vcov[2]
+covar <- vars_w1$vcov[3]
+residual <- vars_w1$vcov[4]
+```
+
+---
+# Calculate
+
+```{r }
+diag(w1_rvcv[1:4, 1:4])
+residual + int_var
+residual + int_var + 2*covar + slope_var
+residual + int_var + (2*covar)*2 + slope_var*2^2
+residual + int_var + (2*covar)*3 + slope_var*3^2
+```
+
+---
+# Why?
+What was the point of doing that by hand?
+
+![](https://media1.popsugar-assets.com/files/thumbor/2qfH3BIwMUci7X3COzTN2VCEPL0/fit-in/728xorig/filters:format_auto-!!-:strip_icc-!!-/2014/07/09/780/n/1922283/4c633a9489b97031_tumblr_inline_mn9lfioyVS1qz4rgp/i/He-Basically-Invented-Side-Eye-Move.gif)
+
+I don't really care about the equations - the point is, they're just transformations of the variance components
+
+
+---
+# Off-diagonals
+
+The off-diagonals are given by
+
+$$
+\begin{equation}
+\sigma^2_{\alpha_j} + \sigma_{01}(t_i + t_i') + \sigma^2_{\beta_1}t_it_i'
+\end{equation}
+$$
+
+---
+# Calculate a few
+```{r label, options}
+w1_rvcv[1:4, 1:4]
+int_var + covar*(1 + 0) + slope_var*1*0
+int_var + covar*(2 + 1) + slope_var*2*1
+int_var + covar*(3 + 2) + slope_var*3*2
+int_var + covar*(2 + 0) + slope_var*2*0
+```
+
+---
+class: inverse-red middle
+# Positing other structures
+
+---
+# The possibilities
+There are a number of alternative structures. We'll talk about a few here.
+
+
+--
+If you want to go deeper, I suggest Singer & Willett, Chapter 7
+
+
+--
+Code to fit models with each type of structure, using the same Willett data we're using today, is available [here](https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-7/)
+
+---
+# Structures we'll fit
+
+* Unstructured (default with **lme4**, we've already seen this)
+
+* Variance components (no off-diagonals)
+
+* Autoregressive
+
+* Heterogeneous autoregressive
+
+* Toeplitz
+
+
+--
+Note this is just a sampling. Other structures are possible.
+
+
+--
+Outside of *unstructured* & *variance component only* models, we'll need to use the **nlme** package
+
+
+--
+We could also use Bayes, as we'll get to in a few weeks.
+
+---
+class: inverse-orange middle
+# Variance component only
+
+---
+# The model
+Generally, in a model like the Willett data, we would estimate intercept variance, and maybe slope variance.
+
+
+--
+We saw earlier how these combine to create the residual variance-covariance matrix
+
+
+--
+Alternatively, we can estimate separate variances at each time point
+
+
+--
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2_1 & 0 & 0 & 0 \\
+      0 & \sigma^2_2 & 0 & 0 \\
+      0 & 0 & \sigma^2_3 & 0 \\
+      0 & 0 & 0 & \sigma^2_4
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+---
+# One-hot encoding
+
+First, use one-hot encoding for time
+
+Same as dummy-coding, but you use *all* the levels.
+
+```{r }
+w <- willett %>% 
+  mutate(t0 = ifelse(time == 0, 1, 0),
+         t1 = ifelse(time == 1, 1, 0),
+         t2 = ifelse(time == 2, 1, 0),
+         t3 = ifelse(time == 3, 1, 0))
+w
+```
+
+---
+# Alternative creation
+The `model.matrix()` function automatically dummy-codes factors.
+
+--
+```{r }
+model.matrix( ~ 0 + factor(time), data = willett) %>% 
+  head()
+```
+
+--
+Could be helpful if time is coded in a more complicated way
+
+---
+# Fit the model
+
+```{r }
+varcomp <- lmer(opp ~  time + (0 + t0 + t1 + t2 + t3 || id), w)
+summary(varcomp)
+```
+
+
+---
+# Estimation
+* Estimates the variance at each timepoint independently (`||`)
+
+  + In other words, no correlation is estimated
   
+```{r }
+sundry::pull_residual_vcov(varcomp)[1:4, 1:4]
+```
+
+---
+# Thinking deeper
+
+How reasonable is it to assume the variance at one time point?
+
+
+--
+In most cases, probably not very.
+
+
+--
+.realbig[BUT]
+
+
+--
+Sometimes we can't reliably estimate the covariances, so this helps simplify our model so it's estimable, even if the assumptions we're making are stronger.
+
+---
+# Fully unstructured
+* We could estimate separate variance *and* all the covariances - this is just a *really* complicated model
+
+* By default, **lme4** will actually try to prevent you from doing this
+
+--
+```{r error = TRUE}
+fully_unstructured <- lmer(opp ~  time + 
+                             (0 + t0 + t1 + t2 + t3 | id), 
+                           data = w)
+```
+
+---
+# Ignore checks
+
+Number of random effects == observations. 
+
+We can still estimate, just tell the model to ignore this check
+
 --
 ```{r }
-d <- d %>% 
-  mutate(age6 = age - 6)
+fully_unstructured <- lmer(
+  opp ~  time + (0 + t0 + t1 + t2 + t3 | id), 
+  data = w,
+  control = lmerControl(check.nobs.vs.nRE = "ignore") #<<
+) 
+```
 
-m_age <- lmer(piat ~ age6 + (age6|id), data = d)
+---
+```{r }
+arm::display(fully_unstructured)
+```
+
+---
+# Terminology
+
+* What **lme4** fits by default is generally referred to as an *unstructured* variance-covariance matrix. 
+
+* This means the random effect variances and covariances are all estimated
+
+* The previous model I am referring to as *fully* unstructured, because we estimate seperate variances at each time point
+
+* Some might not make this distinction, so just be careful when people use this term
+
+---
+class: inverse-orange middle
+# Autoregressive
+
+---
+# Autoregressive
+* There are many types of autoregressive structures
+  + If you took a class on time-series data you'd learn about others
+  
+* What we'll talk about is referred to as an AR1 structure
+
+* Variances (on the diagonal) are constant
+
+* Includes constant "band-diagonals"
+
+
+---
+# Autoregressive
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 & \sigma^2\rho & \sigma^2\rho^2 & \sigma^2\rho^3 \\
+      \sigma^2\rho & \sigma^2 & \sigma^2\rho & \sigma^2\rho^2 \\
+      \sigma^2\rho^2 & \sigma^2\rho & \sigma^2 & \sigma^2\rho \\
+      \sigma^2\rho^3 & \sigma^2\rho^2 & \sigma^2\rho & \sigma^2
+    \end{array}
+  \right]
+\end{equation}
+$$
+* Each band is forced to be lower than the prior by a constant fraction
+  + estimated autocorrelation parameter $\rho$. The error variance is multiplied by $\rho$ for the first diagonal, by $\rho^2$ for the second, etc.
+
+* Uses only two variance components
+
+
+---
+# Fit
+
+First load **nlme**
+
+```{r message = FALSE}
+library(nlme)
+```
+
+
+--
+We'll use the `gls()` function. The interface is, overall, fairly similar to **lme4**
+
+--
+```{r }
+ar <- gls(opp ~ time, 
+          data = willett,
+          correlation = corAR1(form = ~ 1|id))
+```
+
+---
+# Summary
+Notice, you're not  estimating random effect variances, just an alternative residual covariance structure
+```{r }
+summary(ar)
+```
+
+---
+# Extract composite residual
+
+```{r }
+cm_ar <- corMatrix(ar$modelStruct$corStruct) # all of them
+cr_ar <- cm_ar[[1]] # just the first (they're all the same)
+cr_ar
+```
+
+
+--
+
+Multiply the correlation matrix by the model residual variance to get the covariance matrix
+
+```{r }
+cr_ar * sigma(ar)^2
+```
+
+---
+# Confirming calculations
+
+```{r}
+sigma(ar)^2
+sigma(ar)^2*0.8249118
+sigma(ar)^2*0.8249118^2
+sigma(ar)^2*0.8249118^3
+```
+
+---
+# Heterogenous autoregressive
+* Same as autorgressive but allows each variance to differ
+
+* Still one $\rho$ estimated
+
+  + Same "decay" across band diagonals
+
+* Band diagonals no longer equivalent, because different variances
+
+---
+# Heterogenous autoregressive
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2_1 & \sigma_1\sigma_2\rho & \sigma_1\sigma_3\rho^2 & \sigma_1\sigma_4\rho^2 \\
+      \sigma_2\sigma_1\rho & \sigma^2_2 & \sigma_2\sigma_3\rho & \sigma_2\sigma_4\rho^2 \\
+      \sigma_3\sigma_1\rho^2 & \sigma_3\sigma_2\rho & \sigma^2_3 & \sigma_3\sigma_4\rho \\
+      \sigma_4\sigma_1\rho^3 & \sigma_4\sigma_2\rho^2 & \sigma_4\sigma_3\rho & \sigma^2_4
+    \end{array}
+  \right]
+\end{equation}
+$$
+
+---
+# Fit
+Note - `varIdent` specifies different variances for each wave (variances of the [identity matrix](https://en.wikipedia.org/wiki/Identity_matrix))
+
+```{r }
+har <- gls(
+  opp ~ time,
+  data = willett,
+  correlation = corAR1(form = ~ 1|id),
+  weights = varIdent(form = ~1|time)
+)
 ```
 
 ---
 # Summary
 ```{r }
-arm::display(m_age)
+summary(har)
 ```
 
 ---
-# Compare fit
+# Extract/compute composite residual
+
+The below is fairly complicated, but you can work it out if you go line by line
+
 ```{r }
-compare_performance(m_wave, m_agegrp2, m_age) %>% 
-  print_md()
+cm_har <- corMatrix(har$modelStruct$corStruct)[[1]] 
+var_struct <- har$modelStruct$varStruct
+vars <- coef(var_struct, unconstrained = FALSE, allCoef = TRUE)
+vars <- matrix(vars, ncol = 1)
+
+cm_har * sigma(har)^2 * 
+  (vars %*% t(vars)) # multiply by a mat of vars
 ```
 
 ---
-# Difference in predictions
-```{r }
-pred_frame <- d %>% 
-  mutate(pred_agegrp = predict(m_agegrp2),
-         pred_age = predict(m_age)) %>% 
-  filter(id %in% 1:6)
-```
+# Toeplitz
 
----
-```{r }
-ggplot(pred_frame, aes(age, piat)) +
-  geom_point() +
-  geom_line(aes(x = age6 + 6, y = pred_age),
-            color = "cornflowerblue") +
-  geom_line(aes(x = agegrp_c + 6.5, y = pred_agegrp),
-            color = "firebrick") +
-  facet_wrap(~id)
-```
+* Constant variance
 
----
-class: inverse-orange middle
-# Differences
-The differences in the model predictions overall appear modest, but it does display better fit to the data, and the assumptions we're making are less stringent.
+* Has identical band-diagonals, like autoregressive
 
----
-# Changing interpretation
+* Relaxes assumption of each band being a parallel by a common fraction of the prior band
 
-* In this case, our coefficient for age is interepeted in years.
-
---
-> On average, children gained `r round(fixef(m_age)[2], 2)` points on the Peabody Individual Achievement Test **per year**.
+  + Each band determined empirically by the data
 
 
 --
-### Challenge
-Can you change the model so the coefficient represents monthly growth?
-
-`r countdown::countdown(3)`
+A bit of a compromise between prior two
 
 ---
-# Solution
-Just  multiply `age` by 12 to get it coded in months.
+# Toeplitz
+
+$$
+\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 & \sigma^2_1 & \sigma^2_2 & \sigma^2_3 \\
+      \sigma^2_1 & \sigma^2 & \sigma^2_1 & \sigma^2_2 \\
+      \sigma^2_2 & \sigma^2_1 & \sigma^2 & \sigma^2_1 \\
+      \sigma^2_2 & \sigma^2_2 & \sigma^2_1 & \sigma^2
+    \end{array}
+  \right]
+\end{equation}
+$$
 
 --
+## Fit
+
 ```{r }
-d <- d %>% 
-  mutate(age_months = age6 * 12)
-d
+toep <- gls(opp ~ time, 
+            data = willett,
+            correlation = corARMA(form = ~ 1|id, p = 3))
 ```
 
 ---
-# Refit
-
+# Summary
 ```{r }
-m_months <- lmer(piat ~ age_months + (age_months|id), data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
-arm::display(m_months)
+summary(toep)
 ```
 
 ---
-# Which model fits better?
-Before we test - what do you suspect?
-
---
-## They are not actually the same
+# Extract/compute composite residual
+Same as with autoregressive - just multiply the correlation matrix by the residual variance
 
 ```{r }
-compare_performance(m_age, m_months)
+cr_toep <- corMatrix(toep$modelStruct$corStruct)[[1]] 
+cr_toep * sigma(toep)^2
 ```
 
+
 ---
-# But they are essentially
+# Comparing fits
 
 ```{r }
-pred_frame %>% 
-  mutate(pred_months = predict(m_months)[1:18]) %>% 
-  select(id, starts_with("pred"))
+library(performance)
+compare_performance(ar, har, toep, w1, varcomp, fully_unstructured,
+                    metrics = c("AIC", "BIC"),
+                    rank = TRUE) %>% 
+  as_tibble()
 ```
 
----
-class: inverse-blue middle
-# Another example
-With more complications
+We have slight evidence here that the Toeplitz structure fits better than the standard unstructured version, which was slightly better than the autoregressive model.
 
 ---
-# Wages data
-Please read in the `wages.csv` dataset.
+# gls models
 
-```{r }
-wages <- read_csv(here::here("data", "wages.csv"))
-```
-
-`r countdown::countdown(2)`
-
----
-# Data
-* Mournane, Boudett, and Willett (1999)
-* National Longitudinal Survey of Youth
-* Studied wages of individuals who dropped out of high school
-
-### Variables
-* `id`: Participant ID
-* `lnw`: Natural log of wages
-* `exper`: Experience, in years
-* `ged`: Whether or not they completed a GED
-* `black`, `hispanic`: Dummy variables for race/ethnicity
-* `hgc`: Highest grade completed
-* `uerate`: Unemployment rate at the time
-
----
-# Complications
-```{r }
-wages %>% 
-  filter(id %in% c(206, 332))
-```
-
----
-# Complications
-* Unbalanced data
-```{r }
-wages %>% 
-  count(id) %>% 
-  summarize(range = range(n))
-```
-
-* Participants age ranged from 14-17 at first time point 
-
-* Unequal spacing between waves
-
----
-# Complications
-
-* Participants dropped out at different times, entered the workforce and different times, and switched jobs at different times
-
-* A decision was made to clock *time* from their first day of work
-
-* The `exper` variable tracks their overall time in the workforce, and time at a given salary
-
----
-# Fitting a model
-* The hard part - structuring the data - is already done. We really don't have to do anything special here to account for all these complexities!
-
---
-```{r }
-m_wage0 <- lmer(lnw ~ exper + (exper|id), data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
-
----
-```{r }
-arm::display(m_wage0)
-```
-
---
-Every one year of extra experience corresponded to a `r round(fixef(m_wage0)[2], 2)` increase in log wages, on average, which varied across participants with a standard deviation of `r round(sqrt(VarCorr(m_wage0)$id[2, 2]), 2)`.
-
----
-# Challenge
-Let's fit a more interesting model. Try to fit a model that addresses the following questions:
-
-> Is the relation between experience and log wages the same across coded race/ethnicity categories? 
-Do these relations depend on highest grade completed?
-
-`r countdown::countdown(5)`
-
----
-# Centering
-Let's center highest grade completed. You could choose whatever value makes the most sense to you. I'll choose Grade 9.
-
-```{r }
-wages <- wages %>% 
-  mutate(hgc_9 = hgc - 9)
-```
-
----
-# Is this right?
-If not, what is it missing?
-```{r }
-m_wage1 <- lmer(lnw ~ exper + black + hispanic + hgc_9 +
-                  (exper|id),
-                data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
-
----
-# Random effects
-In the previous model, I specified `exper` as randomly varying across `id` levels. 
-
-
---
-Could or should I have set any of the other variables to vary randomly? Why or why not?
-
----
-# Marginal predictions
-```{r }
-pred_frame <- expand.grid(
-  exper = 0:15,
-  black = 0:1,
-  hispanic = 0:1,
-  hgc_9 = 6:12 - 9,
-  id = -999
+```{r echo = FALSE}
+modelsummary::modelsummary(list(
+  "Autoregressive (AR)" = ar, 
+  "Heterogeneous AR" = har,
+  "Toeplitz" = toep
+  )
 )
-
-pred_frame <- pred_frame %>% 
-  mutate(pred = predict(m_wage1, 
-                        pred_frame, 
-                        allow.new.levels = TRUE))
 ```
 
 ---
-# Race/Ethnicity
-Let's create a new variable that has all the race/ethnicity *labels* instead of the dummy codes.
+# lme4 models
 
-```{r }
-pred_frame <- pred_frame %>% 
-  mutate(
-    race_eth = case_when(
-      black == 0 & hispanic == 0 ~ "White",
-      black == 1 & hispanic == 0 ~ "Black",
-      black == 0 & hispanic == 1 ~ "Hispanic",
-      TRUE ~ NA_character_
-    )
+```{r echo = FALSE}
+modelsummary::modelsummary(list(
+  "Standard" = w1,
+  "Var Comp" = varcomp,
+  "Fully Unstruc" = fully_unstructured
   )
+)
 ```
 
 ---
-# Plots
-Look at just `hgc_9 == 0`.
-```{r fig.height = 5}
-pred_frame %>% 
-  drop_na() %>% 
-  filter(hgc_9 == 0) %>% 
-  ggplot(aes(exper, pred)) +
-  geom_line(aes(color = race_eth)) 
-```
+class: inverse-red middle
+# Stepping back
+### Why do we care about all of this?
 
 ---
-# All hgc
-```{r echo = FALSE, fig.height = 10}
-pred_frame %>% 
-  drop_na() %>% 
-  ggplot(aes(exper, pred)) +
-  geom_line(aes(color = race_eth)) +
-  facet_wrap(~hgc_9)
-```
+# Overfitting
+
+* If a simpler model fits the data just as well, it should be preferred
+
+* Models that are overfit have "learned too much" from the data and won't generalize well
+
+* Can think of it as fitting to the errors in the data, rather than the "true" patterns found in the population
 
 ---
-# Interactions
-If we want to know how the *slope* may or may not depend on these variables, we have to model the interactions.
+# Convergence issues
+
+* As your models get increasingly complicated, you're likely to run into convergence issues. 
+
+* Simplifying your residual variance-covariance structure may help 
+  + Keeps the basic model structure intact
+
 
 --
-## Just the two-way interactions
-```{r }
-m_wage2 <- lmer(lnw ~ exper + black + exper:black +
-                  exper:hispanic + 
-                  hgc_9 + exper:hgc_9 +
-                  (exper|id),
-                data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
+Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubleshooting) for convergence troubleshooting with **lme4**. The `allFit()` function is often helpful but very computationally intensive.
+
 
 ---
-# Reproduce the plots
-### First make new predictions
+# Summary
+* As is probably fairly evident from the code - there are many more structures you could explore. However, most are not implemented through **lme4**.
 
-```{r }
-pred_frame <- pred_frame %>% 
-  mutate(pred_int = predict(m_wage2, 
-                            newdata = pred_frame, 
-                            allow.new.levels = TRUE))
-```
+* Simplifying the residual variance-covariance can sometimes lead to better fitting models
 
----
-# Plot
-
-```{r }
-pred_frame %>% 
-  drop_na() %>% 
-  filter(hgc_9 == 0) %>% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = race_eth)) 
-```
-
----
-```{r }
-pred_frame %>% 
-  drop_na() %>% 
-  filter(hgc_9 == -3 | hgc_9 == 3) %>% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = race_eth)) +
-  facet_wrap(~hgc_9)
-```
-
----
-# Focus on hgc
-
-```{r eval = FALSE}
-pred_frame %>% 
-  drop_na() %>% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = factor(hgc_9))) +
-  facet_wrap(~race_eth) +
-  scale_color_brewer("Highest grade completed", 
-                     palette = "Accent", 
-                     breaks = 3:-3,
-                     labels = 12:6) +
-  labs(x = "Experience (years)",
-       y = "Model Predicted wages (log scaled)")
-```
-
----
-class: full-slide-fig middle
-
-```{r echo = FALSE}
-pred_frame %>% 
-  drop_na() %>% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = factor(hgc_9))) +
-  facet_wrap(~race_eth) +
-  scale_color_brewer("Highest grade completed", 
-                     palette = "Accent", 
-                     breaks = 3:-3,
-                     labels = 12:6) +
-  labs(x = "Experience (years)",
-       y = "Model Predicted wages (log scaled)")
-```
-
----
-# Coefficient interpretation
-Notice I started with the plots
-
-* In *presenting* a model, this is generally what I would do
-
-  - I think this generally helps interpretation
-  
-* In practice I generally start by looking at the coefficients 
-
----
-# Model summary
-```{r }
-arm::display(m_wage2)
-```
-
----
-class: inverse-blue middle
-# Handling non-linearity
-
----
-# The data
-Simulated data to mimic a common form of non-linearity.
-
-Notice the "true" intercept and slope for each student is actually in the data.
-
-```{r message = FALSE}
-sim_d <- read_csv(here::here("data", "curvilinear-sim.csv"))
-sim_d
-```
-
----
-# Complexities
-Notice these data do have some complexities
-
---
-Unbalance
-```{r }
-sim_d %>% 
-  count(sid) %>% 
-  summarize(range(n))
-```
-
----
-# Varied "starting" points
-
-```{r }
-sim_d %>% 
-  arrange(sid, date) %>% 
-  group_by(sid) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  summarize(range(date))
-```
-
-Overall date range
-```{r }
-range(sim_d$date)
-```
-
----
-# Plot
-Show the overall relation between `date` and `score`. What do you notice?
-
-`r countdown::countdown(1)`
-
----
-```{r message = FALSE}
-ggplot(sim_d, aes(date, score)) +
-  geom_point(alpha = 0.15, stroke = NA) +
-  geom_smooth(se = FALSE, color = "#33B1AE", size = 2)
-```
-
-Ideas on how to model this?
-
----
-```{r message = FALSE}
-ggplot(sim_d, aes(date, score)) +
-  geom_point(alpha = 0.15, stroke = NA) +
-  geom_smooth(se = FALSE, color = "#33B1AE", size = 2) +
-  geom_smooth(se = FALSE, method = "lm", color = "#808AFF", size = 2)
-```
-
-Linear modeling is not going to work...
-
----
-# Polynomials
-
-```{r echo = FALSE, fig.height = 9}
-tibble(x = 0:100, 
-       linear = 0:100,
-       quadratic_d = x + -0.006*x^2,
-       quadratic_a = x + x^2,
-       cubic = x + x^2 + -0.0075*x^3) %>% 
-  pivot_longer(-x) %>% 
-  mutate(name = factor(
-    name,
-    levels = c("linear", "quadratic_d", "quadratic_a", "cubic"),
-    labels = c("Linear", 
-               "Quadratic (decelerating)", 
-               "Quadratic (accelerating)",
-               "Cubic"))) %>% 
-  ggplot(aes(x, value)) +
-  geom_line() +
-  facet_wrap(~name, scales = "free_y") +
-  theme_void(30)
-```
-
----
-# Fit a model
-Let's try fitting a linear model and a quadratic model and see which fits better.
-
---
-You try fitting the linear model first, with `date` predicting `score`, and both the intercept and slope varying across students.
-
-`r countdown::countdown(1)`
-
----
-# Center date
-
-Let's first center date and put it in interpretable units.
-
-I'll center it on the first time point.
-
---
-First - what do dates look like when converted to numbers?
-
-```{r message = FALSE}
-library(lubridate)
-as_date(0)
-as_date(1)
-```
-
-One unit = one day.
-
----
-# Center
-
-```{r }
-sim_d <- sim_d %>% 
-  mutate(
-    days_from_start = as.numeric(date) - min(as.numeric(date))
-  )
-```
-
----
-# Fit linear model
-
-```{r }
-linear <- lmer(score ~ days_from_start + (days_from_start|sid), 
-               data = sim_d,
-               control = lmerControl(optimizer = "Nelder_Mead"))
-arm::display(linear)
-```
-
----
-# Fit quadratic model
-```{r }
-sim_d <- sim_d %>% 
-  mutate(days2 = days_from_start^2)
-
-quad <- lmer(score ~ days_from_start + days2 + 
-               (days_from_start|sid), 
-             data = sim_d,
-             control = lmerControl(optimizer = "Nelder_Mead"))
-```
-
----
-# Quadratic summary
-
-```{r }
-arm::display(quad)
-```
-
----
-# Compare
-```{r }
-anova(linear, quad)
-```
-
----
-# Plot predictions
-```{r }
-pred_frame <- tibble(
-    days_from_start = 0:max(sim_d$days_from_start),
-    days2 = days_from_start^2,
-    sid = -999
-  ) %>% 
-  mutate(pred_linear = predict(linear, newdata = ., allow.new.levels = TRUE),
-         pred_quad = predict(quad, newdata = ., allow.new.levels = TRUE))
-pred_frame
-```
-
----
-```{r }
-ggplot(pred_frame, aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF")
-```
-
-This is definitely looking better, but it's too high in the lower tail and maybe a bit too low in the upper
-
----
-# Cubic?
-
-You try first - extend what we just did to model a cubic trend
-
-`r countdown::countdown(3)`
-
---
-
-```{r }
-sim_d <- sim_d %>% 
-  mutate(days3 = days_from_start^3)
-
-cubic <- lmer(score ~ days_from_start + days2 + days3 +
-                (days_from_start|sid), 
-             data = sim_d,
-             control = lmerControl(optimizer = "Nelder_Mead"))
-```
-
----
-# Cubic summary
-
-```{r }
-arm::display(cubic)
-```
-
----
-# Compare
-
-```{r }
-anova(linear, quad, cubic)
-```
-
----
-# Predictions
-
-```{r eval = FALSE}
-pred_frame <- pred_frame %>% 
-  mutate(days3 = days_from_start^3)
-
-pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa")
-```
-
----
-class: middle
-
-```{r echo = FALSE}
-pred_frame <- pred_frame %>% 
-  mutate(days3 = days_from_start^3)
-
-pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa")
-```
-
----
-# Alternative
-Instead of modeling additional parameters, just transform the data
-
---
-## Common transformations
-
-* log
-* square root
-* inverse $1/x$
-
----
-# Try log
-If you're familiar with log growth, the scatterplots we've been looking at probably resemble this trend quite well.
-
-Let's try log transforming our time variable, then fit with it - bonus, we save two estimated parameters.
-
-Note - I will have to use `log(x + 1)` instead of `log(x)` because `log(0)` $= - \infty$  and `log(1)` $= `r log(1)`$.
-
----
-
-```{r }
-sim_d <- sim_d %>% 
-  mutate(days_log = log(days_from_start + 1))
-
-log_m <- lmer(score ~ days_log + (days_log|sid), 
-              data = sim_d)
-
-arm::display(log_m)
-```
-
----
-# Compare
-
-```{r }
-anova(linear, quad, cubic, log_m)
-```
-
-It use the same number of parameters as the linear model, but fits *far* better.
-
----
-# Predictions
-
-```{r }
-pred_frame <- pred_frame %>% 
-  mutate(days_log = log(days_from_start + 1))
-
-pred_frame <- pred_frame %>% 
-  mutate(pred_log = predict(log_m, newdata = ., allow.new.levels = TRUE))
-```
-
---
-Let's first look at these predictions on the log scale
-
----
-# Predictions on log scale
-
-```{r }
-ggplot(pred_frame, aes(days_log)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_log), color = "#4D4F57")
-```
-
----
-# On raw scale
-
-```{r eval = FALSE}
-pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa") +
-  geom_line(aes(y = pred_log), color = "#4D4F57")
-```
-
----
-# On raw scale
-
-```{r echo = FALSE}
-pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa") +
-  geom_line(aes(y = pred_log), color = "#4D4F57")
-```
+* May also be helpful with convergence and avoid overfitting
 
 ---
 class: inverse-green middle
-# Next time
-Bayesian Methods
-
-## Now: Homework 2
+# Now
+## Homework 2
+### Next time: Modeling growth (part 1)

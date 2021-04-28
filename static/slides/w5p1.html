@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Modeling Growth 1</title>
+    <title>Variance-Covariance Matrices</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
     <script src="libs/header-attrs-2.7/header-attrs.js"></script>
@@ -12,6 +12,8 @@
     <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
     <link href="libs/countdown-0.3.5/countdown.css" rel="stylesheet" />
     <script src="libs/countdown-0.3.5/countdown.js"></script>
+    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
+    <link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
     <script src="https://unpkg.com/feather-icons"></script>
     <link rel="stylesheet" href="new.css" type="text/css" />
   </head>
@@ -19,9 +21,9 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# Modeling Growth 1
+# Variance-Covariance Matrices
 ### Daniel Anderson
-### Week 5
+### Week 4
 
 ---
 
@@ -37,11 +39,11 @@ layout: true
   &lt;div class="slides-footer"&gt;
   &lt;span&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w5p1.pdf"&gt;
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w4p1.pdf"&gt;
     &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
-  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w5p1.html"&gt;
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w4p1.html"&gt;
     &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
   &lt;/a&gt;
   
@@ -59,1408 +61,1949 @@ layout: true
 
 ---
 # Agenda
-* Thinking flexibly about time
 
-  + Coefficient interpretation by time coding
-  
-* A few methods for handling non-linearity 
+* Review some notation
 
+* Unstructured VCV Matrices and alternatives
 
---
-.realbig[Note]
-
-The last bullet is not necessarily specific to growth models
 
 ---
-# The data
-### Sample of the Children of the National Longitudinal Study of Youth
+# Learning Objectives
 
---
-Outcome = `piat` = Peabody Individual Achievement Test
+* Gain a deeper understanding of how the residual structure is different in multilevel models
 
+* Understand that there are methods for changing the residual structure, and understand when and why this might be preferable
 
---
-Please read in `cnlsy.csv` now
+* Be able to implement alternative methods using [**{nlme}**](https://cran.r-project.org/web/packages/nlme/)
 
-<div class="countdown" id="timer_60805add" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
---
-
-
-```r
-library(tidyverse)
-d &lt;- read_csv(here::here("data", "cnlsy.csv"))
-```
 
 ---
-# Look at the data
+class: inverse-blue middle
 
-```r
-d
-```
+# Notation
+### Reviewing some Gelman and Hill notation
 
-```
-## # A tibble: 267 x 5
-##       id  wave agegrp       age  piat
-##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
-##  1     1     1    6.5  6           18
-##  2     1     2    8.5  8.333333    35
-##  3     1     3   10.5 10.33333     59
-##  4     2     1    6.5  6           18
-##  5     2     2    8.5  8.5         25
-##  6     2     3   10.5 10.58333     28
-##  7     3     1    6.5  6.083333    18
-##  8     3     2    8.5  8.416667    23
-##  9     3     3   10.5 10.41667     32
-## 10     4     1    6.5  6           18
-## # … with 257 more rows
-```
 
 ---
-# Fit a basic model
-Please try to fit a model that accounts for the within-subjects design in some way and includes a random intercept and slope.
+# Data
+Let's start by using the *sleepstudy* data from **{lme4}**.
 
-<div class="countdown" id="timer_60805d74" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
---
 
 ```r
 library(lme4)
-d &lt;- d %&gt;% 
-  mutate(wave_c = wave - 1)
-m_wave &lt;- lmer(piat ~ wave_c + (wave_c|id),
-               data = d)
+head(sleepstudy)
+```
+
+```
+##   Reaction Days Subject
+## 1 249.5600    0     308
+## 2 258.7047    1     308
+## 3 250.8006    2     308
+## 4 321.4398    3     308
+## 5 356.8519    4     308
+## 6 414.6901    5     308
 ```
 
 ---
-# Interpret
+# Translate
+Translate the following model into `lme4::lmer()` syntax
 
-```r
-arm::display(m_wave)
-```
+$$
+`\begin{aligned}
+  \operatorname{Reaction}_{i}  &amp;\sim N \left(\alpha_{j[i]}, \sigma^2 \right) \\
+    \alpha_{j}  &amp;\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for Subject j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
 
-```
-## lmer(formula = piat ~ wave_c + (wave_c | id), data = d)
-##             coef.est coef.se
-## (Intercept) 21.16     0.62  
-## wave_c      10.06     0.59  
-## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr 
-##  id       (Intercept) 3.38          
-##           wave_c      4.24     0.22 
-##  Residual             5.20          
-## ---
-## number of obs: 267, groups: id, 89
-## AIC = 1830.4, DIC = 1821.5
-## deviance = 1819.9
-```
+<div class="countdown" id="timer_6088b134" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 --
-But what does a one unit increase in `wave_c` actually mean?
+
+```r
+lmer(Reaction ~ 1 + (1|Subject), data = sleepstudy)
+```
 
 ---
-# More meaningful
-* Note that each `wave` is tied to a specific age group (the approximate age of participants at that age). Can we use this? Try!
+# More complicated
 
-<div class="countdown" id="timer_60805b90" style="right:0;bottom:0;" data-warnwhen="0">
+Translate this equation into `lme4::lmer()` syntax
+
+$$
+`\begin{aligned}
+  \operatorname{Reaction}_{i}  &amp;\sim N \left(\alpha_{j[i]} + \beta_{1}(\operatorname{Days}), \sigma^2 \right) \\
+    \alpha_{j}  &amp;\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for Subject j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+
+<div class="countdown" id="timer_6088b0bc" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
 --
 
 ```r
-m_agegrp &lt;- lmer(piat ~ agegrp + (agegrp|id),
-                 data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
+lmer(Reaction ~ Days + (1|Subject), data = sleepstudy)
 ```
+
 
 ---
-# Interpret
-What does the intercept mean here? Age group?
+# Even more complicated
+
+Translate this equation into `lme4::lmer()` syntax
+
+$$
+`\begin{aligned}
+  \operatorname{Reaction}_{i}  &amp;\sim N \left(\alpha_{j[i]} + \beta_{1j[i]}(\operatorname{Days}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for Subject j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
 
 
-```r
-arm::display(m_agegrp)
-```
-
-```
-## lmer(formula = piat ~ agegrp + (agegrp | id), data = d, control = lmerControl(optimizer = "bobyqa"))
-##             coef.est coef.se
-## (Intercept) -11.54     2.21 
-## agegrp        5.03     0.30 
-## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr  
-##  id       (Intercept) 13.43          
-##           agegrp       2.12    -0.97 
-##  Residual              5.20          
-## ---
-## number of obs: 267, groups: id, 89
-## AIC = 1831.8, DIC = 1820.1
-## deviance = 1819.9
-```
-
----
-# How do we fix the intercept?
-
---
-## Centering
-Let's center age group on the first time point
-
-
-```r
-d &lt;- d %&gt;% 
-  mutate(agegrp_c = agegrp - 6.5)
-m_agegrp2 &lt;- lmer(piat ~ agegrp_c + (agegrp_c|id),
-                 data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
-```
-
----
-# Interpret
-What does the intercept represent now?
-
-
-```r
-arm::display(m_agegrp2)
-```
-
-```
-## lmer(formula = piat ~ agegrp_c + (agegrp_c | id), data = d, control = lmerControl(optimizer = "bobyqa"))
-##             coef.est coef.se
-## (Intercept) 21.16     0.62  
-## agegrp_c     5.03     0.30  
-## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr 
-##  id       (Intercept) 3.38          
-##           agegrp_c    2.12     0.22 
-##  Residual             5.20          
-## ---
-## number of obs: 267, groups: id, 89
-## AIC = 1831.8, DIC = 1820.1
-## deviance = 1819.9
-```
-
---
-Pop Quiz: Without looking, how do you think the fit of the model has changed?
-
----
-# Comparing fit
-
-
-```r
-library(performance)
-compare_performance(m_agegrp, m_agegrp2) %&gt;% 
-  print_md()
-```
-
-
-
-Table: Comparison of Model Performance Indices
-
-|Name      |   Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
-|:---------|:-------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
-|m_agegrp  | lmerMod | 1831.78 | 1853.30 |       0.81 |       0.48 | 0.64 | 4.15 |  5.20 |
-|m_agegrp2 | lmerMod | 1831.78 | 1853.30 |       0.81 |       0.48 | 0.64 | 4.15 |  5.20 |
-
-
-
-They're identical!
-
----
-# Slightly different
-Compare model predictions
-
-![](w5p1_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
-
----
-# Age
-
-* Notice that `agegrp` does not always correspond directly with their *actual* age.
+<div class="countdown" id="timer_6088ae0d" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 --
 
 ```r
-ggplot(d, aes(agegrp, age)) +
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1,
-              color = "cornflowerblue")
+lmer(Reaction ~ Days + (Days|Subject), data = sleepstudy)
 ```
 
-![](w5p1_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
 
 ---
-# Model assumptions
-* When we use the `agegrp` variable, we are assuming that all children are *the exact same age* at each assessment wave. 
+# New data
 
-* Although `agegrp` is more interpretable than `wave`, it doesn't solve all our problems
+
+```r
+sim3 &lt;- read_csv(here::here("data", "sim3level.csv"))
+sim3
+```
+
+```
+## # A tibble: 570 x 6
+##        Math ActiveTime ClassSize Classroom School StudentID
+##       &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;      &lt;dbl&gt;
+##  1 55.42604 0.06913359        18         1 Sch1           1
+##  2 54.34306 0.08462063        18         1 Sch1           2
+##  3 61.42570 0.1299456         18         1 Sch1           3
+##  4 56.12271 0.7461320         18         1 Sch1           4
+##  5 53.34900 0.03887918        18         1 Sch1           5
+##  6 57.99773 0.6856354         18         1 Sch1           6
+##  7 54.46326 0.1439774         18         1 Sch1           7
+##  8 64.20517 0.8910800         18         1 Sch1           8
+##  9 54.49117 0.08963612        18         1 Sch1           9
+## 10 57.87599 0.03773272        18         1 Sch1          10
+## # … with 560 more rows
+```
+
+<div class="countdown" id="timer_6088aeef" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+.footnote[Data obtained [here](http://alexanderdemos.org/Mixed5.html)]
+
+---
+# A bit of a problem
+
+```r
+sim3 %&gt;% 
+  count(Classroom, School)
+```
+
+```
+## # A tibble: 30 x 3
+##    Classroom School     n
+##        &lt;dbl&gt; &lt;chr&gt;  &lt;int&gt;
+##  1         1 Sch1      18
+##  2         1 Sch2      18
+##  3         1 Sch3      19
+##  4         2 Sch1      14
+##  5         2 Sch2      18
+##  6         2 Sch3      24
+##  7         3 Sch1      20
+##  8         3 Sch2      15
+##  9         3 Sch3      20
+## 10         4 Sch1      14
+## # … with 20 more rows
+```
+
+---
+# Make classroom unique
+We could handle this with our model syntax, but nested IDs like this always makes me nervous. Let's make them unique.
 
 --
-.center[.realbig[You try]]
 
-Fit another model with `age` as the time variable instead. How do the results compare?
+```r
+sim3 &lt;- sim3 %&gt;% 
+  mutate(class_id = paste0("class", Classroom, ":", School))
+sim3
+```
 
-<div class="countdown" id="timer_60805c12" style="right:0;bottom:0;" data-warnwhen="0">
+```
+## # A tibble: 570 x 7
+##        Math ActiveTime ClassSize Classroom School StudentID class_id   
+##       &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;      
+##  1 55.42604 0.06913359        18         1 Sch1           1 class1:Sch1
+##  2 54.34306 0.08462063        18         1 Sch1           2 class1:Sch1
+##  3 61.42570 0.1299456         18         1 Sch1           3 class1:Sch1
+##  4 56.12271 0.7461320         18         1 Sch1           4 class1:Sch1
+##  5 53.34900 0.03887918        18         1 Sch1           5 class1:Sch1
+##  6 57.99773 0.6856354         18         1 Sch1           6 class1:Sch1
+##  7 54.46326 0.1439774         18         1 Sch1           7 class1:Sch1
+##  8 64.20517 0.8910800         18         1 Sch1           8 class1:Sch1
+##  9 54.49117 0.08963612        18         1 Sch1           9 class1:Sch1
+## 10 57.87599 0.03773272        18         1 Sch1          10 class1:Sch1
+## # … with 560 more rows
+```
+
+---
+# New model
+
+<div class="countdown" id="timer_6088afeb" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
----
-# Intercept
+Translate this equation into code
 
-How do we want to handle this? Probably need to do something. 
+$$
+`\begin{aligned}
+  \operatorname{Math}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i]}(\operatorname{ActiveTime}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for class_id j = 1,} \dots \text{,J} \\    \alpha_{k}  &amp;\sim N \left(\mu_{\alpha_{k}}, \sigma^2_{\alpha_{k}} \right)
+    \text{, for School k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
 
 --
-Look at first time point
 
 ```r
-d %&gt;% 
-  filter(wave == 1) %&gt;% 
-  count(age)
-```
-
-```
-## # A tibble: 12 x 2
-##         age     n
-##       &lt;dbl&gt; &lt;int&gt;
-##  1 6            6
-##  2 6.083333     4
-##  3 6.166667     9
-##  4 6.25         9
-##  5 6.333333    10
-##  6 6.416667    11
-##  7 6.5          7
-##  8 6.583333     7
-##  9 6.666667     9
-## 10 6.75         3
-## 11 6.833333     7
-## 12 6.916667     7
+lmer(Math ~ ActiveTime + (ActiveTime|class_id) + (1|School),
+     data = sim3)
 ```
 
 ---
-# Centering
-* I'll choose to subtract 6 from each age
+# This one
+What about this one?
 
-* what will this value represent for students who were 6.91 years old at the first wave?
+<div class="countdown" id="timer_6088afe7" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{Math}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{ActiveTime}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{ClassSize}) \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for class_id j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for School k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
 
 --
-  + Backwards projection
+
+```r
+lmer(Math ~ ActiveTime + ClassSize + 
+       (ActiveTime|class_id) + (ActiveTime|School),
+     data = sim3)
+```
+
+---
+# Last one
+
+What about this one?
+
+<div class="countdown" id="timer_6088af0c" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{Math}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{ActiveTime}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1k[i]}^{\alpha}(\operatorname{ClassSize}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{ClassSize})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for class_id j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k} \\
+      &amp;\gamma_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}} \\
+      &amp;\mu_{\gamma_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} &amp; \rho_{\alpha_{k}\gamma_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}} &amp; \rho_{\beta_{1k}\gamma_{1k}} \\ 
+     \rho_{\gamma_{1k}\alpha_{k}} &amp; \rho_{\gamma_{1k}\beta_{1k}} &amp; \sigma^2_{\gamma_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for School k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+--
+
+```r
+lmer(Math ~ ActiveTime * ClassSize + 
+       (ActiveTime|class_id) + (ActiveTime + ClassSize|School),
+     data = sim3)
+```
+
+
+---
+class: inverse-blue middle
+
+# Residual structures
+
+---
+# Data
+[Willett, 1988](https://www.jstor.org/stable/1167368?seq=1#metadata_info_tab_contents)
+
+* `\(n\)` = 35 people
+* Each completed a cognitive inventory on "opposites naming"
+* At first time point, participants also completed a general cognitive measure
+
+---
+# Read in data
+
+
+```r
+willett &lt;- read_csv(here::here("data", "willett-1988.csv"))
+willett
+```
+
+```
+## # A tibble: 140 x 4
+##       id  time   opp   cog
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1     1     0   205   137
+##  2     1     1   217   137
+##  3     1     2   268   137
+##  4     1     3   302   137
+##  5     2     0   219   123
+##  6     2     1   243   123
+##  7     2     2   279   123
+##  8     2     3   302   123
+##  9     3     0   142   129
+## 10     3     1   212   129
+## # … with 130 more rows
+```
+
+---
+# Standard OLS 
+
+* We have four observations per participant. 
+
+* If we fit a standard OLS model, it would look like this
+
+
+```r
+bad &lt;- lm(opp ~ time, data = willett)
+summary(bad)
+```
+
+```
+## 
+## Call:
+## lm(formula = opp ~ time, data = willett)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -88.374 -25.584   1.186  28.926  64.746 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  164.374      5.035   32.65   &lt;2e-16 ***
+## time          26.960      2.691   10.02   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 35.6 on 138 degrees of freedom
+## Multiple R-squared:  0.421,	Adjusted R-squared:  0.4168 
+## F-statistic: 100.3 on 1 and 138 DF,  p-value: &lt; 2.2e-16
+```
+
+---
+# Assumptions
+As we discussed previously, this model looks like this
+
+$$
+\operatorname{opp} = \alpha + \beta_{1}(\operatorname{time}) + \epsilon
+$$
+
+where
+
+$$
+\epsilon \sim \left(0, \sigma \right)
+$$
+
+---
+# Individual level residuals
+We can expand our notation, so it looks like a multivariate normal distribution
+
+$$
+`\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_1 \\\
+      \epsilon_2 \\\
+      \epsilon_3 \\\
+      \vdots \\\
+      \epsilon_n
+    \end{array}
+  \right)
+\sim MVN
+  \left(
+    \left[
+      \begin{array}{c}
+        0\\\
+        0\\\
+        0\\\
+        \vdots \\\
+        0
+    \end{array}
+    \right],
+    \left[
+      \begin{array}{ccccc}
+        \sigma_{\epsilon} &amp; 0 &amp; 0 &amp; \dots &amp; 0 \\\
+        0 &amp; \sigma_{\epsilon} &amp; 0 &amp; 0 &amp; 0 \\\
+        0 &amp; 0 &amp; \sigma_{\epsilon} &amp; 0 &amp; 0 \\\
+        \vdots &amp; 0 &amp; 0 &amp; \ddots &amp; \vdots \\\
+        0 &amp; 0 &amp; 0 &amp; \dots &amp; \sigma_{\epsilon}
+      \end{array}
+    \right]
+  \right)
+\end{equation}`
+$$
+
+This is where the `\(i.i.d.\)` part comes in. The residuals are assumed `\(i\)`ndependent and `\(i\)`dentically `\(d\)`istributed.
+
+---
+# Multilevel model
+Very regularly, there are reasons to believe the `\(i.i.d.\)` assumption is violated. Consider our current case, with 4 time points for each individual.
+
+* Is an observation for one time point for one individual *independent* from the other observations for that individual?
+
+
+--
+* Rather than estimating a single residual variance, we estimate an additional components associated with individuals, leading to a *block* diagonal structure
+
+---
+# Block diagonal
+
+.small70[
+$$
+`\begin{equation}
+  \left(
+    \begin{array}{c}
+      \epsilon_{11} \\
+      \epsilon_{12} \\
+      \epsilon_{13} \\
+      \epsilon_{14} \\
+      \epsilon_{21} \\
+      \epsilon_{22} \\
+      \epsilon_{23} \\
+      \epsilon_{24} \\
+      \vdots \\
+      \epsilon_{n1} \\
+      \epsilon_{n2} \\
+      \epsilon_{n3} \\
+      \epsilon_{n4}
+    \end{array}
+  \right)
+\sim
+  \left(
+    \left[
+      \begin{array}{c}
+        \\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        0\\
+        \vdots \\
+        0\\
+        0\\
+        0\\
+        0
+      \end{array}
+    \right],
+    \left[
+      \begin{array}{{@{}*{13}c@{}}}
+      \\
+        \sigma_{11} &amp; \sigma_{12} &amp; \sigma_{13} &amp; \sigma_{14} &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        \sigma_{21} &amp; \sigma_{22} &amp; \sigma_{23} &amp; \sigma_{24} &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        \sigma_{31} &amp; \sigma_{32} &amp; \sigma_{33} &amp; \sigma_{34} &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        \sigma_{41} &amp; \sigma_{42} &amp; \sigma_{43} &amp; \sigma_{44} &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; \sigma_{11} &amp; \sigma_{12} &amp; \sigma_{13} &amp; \sigma_{14} &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; \sigma_{21} &amp; \sigma_{22} &amp; \sigma_{23} &amp; \sigma_{24} &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; \sigma_{31} &amp; \sigma_{32} &amp; \sigma_{33} &amp; \sigma_{34} &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; \sigma_{41} &amp; \sigma_{42} &amp; \sigma_{43} &amp; \sigma_{44} &amp; \dots  &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+        \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots &amp; \sigma_{11} &amp; \sigma_{12} &amp; \sigma_{13} &amp; \sigma_{14} \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots &amp; \sigma_{21} &amp; \sigma_{22} &amp; \sigma_{23} &amp; \sigma_{24} \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots &amp; \sigma_{31} &amp; \sigma_{32} &amp; \sigma_{33} &amp; \sigma_{34} \\
+        0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; \dots &amp; \sigma_{41} &amp; \sigma_{42} &amp; \sigma_{43} &amp; \sigma_{44}
+      \end{array}
+    \right]
+  \right)
+\end{equation}`
+$$
+]
+
+
+--
+Correlations for  off-diagonals estimated
+
+
+--
+Same variance components for all blocks
+
+
+--
+Out-of-block diagonals are still zero
+
+---
+# Homogeneity of variance
+As mentioned on the previous slide, we assume the same variance components across all student
+
+This is referred to as the homogeneity of variance assumption - although the block (often referred to as the composite residual) may be heteroscedastic and dependent **within** a grouping factor (i.e., people) the entire error structure is repeated identically across units (i.e., people)
+
+---
+# Block diagonal
+Because of the homogeneity of variance assumption, we can re-express our block diagonal design as follows
+
+$$
+`\begin{equation}
+r \sim N \left(\boldsymbol{0}, 
+  \left[
+    \begin{array}{ccccc}
+      \boldsymbol{\Sigma_r} &amp; \boldsymbol{0} &amp; \boldsymbol{0} &amp; \dots &amp; \boldsymbol{0} \\
+      \boldsymbol{0} &amp; \boldsymbol{\Sigma_r} &amp; \boldsymbol{0} &amp; \dots &amp; \boldsymbol{0} \\
+      \boldsymbol{0} &amp; \boldsymbol{0} &amp; \boldsymbol{\Sigma_r} &amp;  \dots &amp; \boldsymbol{0} \\
+      \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots &amp; \\
+      \boldsymbol{0} &amp; \boldsymbol{0} &amp;  \boldsymbol{0} &amp; \dots &amp; \boldsymbol{\Sigma_r}
+    \end{array}
+  \right]
+\right)
+\end{equation}`
+$$
+---
+# Composite residual
+We then define the composite residual, which is common across units
+
+$$
+`\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma_{11} &amp; \sigma_{12} &amp; \sigma_{13} &amp; \sigma_{14} \\
+      \sigma_{21} &amp; \sigma_{22} &amp; \sigma_{23} &amp; \sigma_{24} \\
+      \sigma_{31} &amp; \sigma_{32} &amp; \sigma_{33} &amp; \sigma_{34} \\
+      \sigma_{41} &amp; \sigma_{42} &amp; \sigma_{43} &amp; \sigma_{44}
+    \end{array}
+  \right]
+\end{equation}`
+$$
+
+---
+# Let's try!
+
+Let's fit a parallel slopes model with the Willett data. You try first.
+
+<div class="countdown" id="timer_6088aeae" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+```r
+w0 &lt;- lmer(opp ~ time + (1|id), willett)
+```
+
+--
+What does the residual variance-covariance look like? Let's use **sundry** to pull it 
+
+
+```r
+library(sundry)
+w0_rvcv &lt;- pull_residual_vcov(w0)
+```
+
+---
+# Image
+Sparse matrix - we can view it with `image()`
+
+
+```r
+image(w0_rvcv)
+```
+
+![](w5p1_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
+
+---
+# Pull first few rows/cols
+
+
+```r
+w0_rvcv[1:8, 1:8]
+```
+
+```
+## 8 x 8 sparse Matrix of class "dgCMatrix"
+##           1         2         3         4         5         6         7         8
+## 1 1280.7065  904.8054  904.8054  904.8054    .         .         .         .     
+## 2  904.8054 1280.7065  904.8054  904.8054    .         .         .         .     
+## 3  904.8054  904.8054 1280.7065  904.8054    .         .         .         .     
+## 4  904.8054  904.8054  904.8054 1280.7065    .         .         .         .     
+## 5    .         .         .         .      1280.7065  904.8054  904.8054  904.8054
+## 6    .         .         .         .       904.8054 1280.7065  904.8054  904.8054
+## 7    .         .         .         .       904.8054  904.8054 1280.7065  904.8054
+## 8    .         .         .         .       904.8054  904.8054  904.8054 1280.7065
+```
+
+---
+# Structure
+On the previous slide, note the values on the diagonal are all the same, as are all the off-diagonals
+
+* This is because we've only estimated one additional variance component
+
+
+---
+# Understanding these numbers
+Let's look at the model output
+
+
+```r
+arm::display(w0)
+```
+
+```
+## lmer(formula = opp ~ time + (1 | id), data = willett)
+##             coef.est coef.se
+## (Intercept) 164.37     5.78 
+## time         26.96     1.47 
+## 
+## Error terms:
+##  Groups   Name        Std.Dev.
+##  id       (Intercept) 30.08   
+##  Residual             19.39   
+## ---
+## number of obs: 140, groups: id, 35
+## AIC = 1308.3, DIC = 1315.9
+## deviance = 1308.1
+```
+
+---
+The diagonal values were `\(1280.7065389\)` while the off diagonal values were `\(904.8053852\)`
+
+Let's extract the variance components from our model.
+
+
+```r
+vars_w0 &lt;- as.data.frame(VarCorr(w0))
+vars_w0
+```
+
+```
+##        grp        var1 var2     vcov    sdcor
+## 1       id (Intercept) &lt;NA&gt; 904.8054 30.07998
+## 2 Residual        &lt;NA&gt; &lt;NA&gt; 375.9012 19.38817
+```
+
+--
+
+Notice anything?
+
+
+--
+
+The diagonals are given by `sum(vars_w0)$vcov` while the off-diagonals are just the intercept variance
+
+
+---
+# Including more complexity
+
+Try estimating this model now, then look at the residual variance-covariance matrix again
+
+$$
+`\begin{aligned}
+  \operatorname{opp}_{i}  &amp;\sim N \left(\alpha_{j[i]} + \beta_{1j[i]}(\operatorname{time}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for id j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_6088afc0" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# The composite residual
+
+```r
+w1 &lt;- lmer(opp ~ time + (time|id), willett)
+w1_rvcv &lt;- pull_residual_vcov(w1)
+w1_rvcv[1:4, 1:4]
+```
+
+```
+## 4 x 4 sparse Matrix of class "dgCMatrix"
+##           1         2         3         4
+## 1 1358.2469 1019.5095  840.2515  660.9934
+## 2 1019.5095 1132.1294  925.7905  878.9310
+## 3  840.2515  925.7905 1170.8089 1096.8686
+## 4  660.9934  878.9310 1096.8686 1474.2856
+```
+
+
+--
+### Unstructured
+
+The model we fit has an *unstructured* variance co-variance matrix. While each
+block is the same, every element of the block is now estimated.
+
+
+---
+# What are these numbers?
+They are the variance components, re-expressed as a composite residual
+
+
+--
+The diagonal is given by
+
+$$
+`\begin{equation}
+\sigma^2 + \sigma^2_{\alpha_j} + 2\sigma^2_{01}w_i + \sigma^2_{\beta_1}w^2_i 
+\end{equation}`
+$$
+
+
+where `\(w\)` represents the given wave (for our example)
+
+
+--
+Let's do this "by hand"
+
+---
+# Get the pieces
+
+
+```r
+vars_w1 &lt;- as.data.frame(VarCorr(w1))
+
+# get the pieces
+int_var &lt;- vars_w1$vcov[1]
+slope_var &lt;- vars_w1$vcov[2]
+covar &lt;- vars_w1$vcov[3]
+residual &lt;- vars_w1$vcov[4]
+```
+
+---
+# Calculate
+
+
+```r
+diag(w1_rvcv[1:4, 1:4])
+```
+
+```
+## [1] 1358.247 1132.129 1170.809 1474.286
+```
+
+```r
+residual + int_var
+```
+
+```
+## [1] 1358.247
+```
+
+```r
+residual + int_var + 2*covar + slope_var
+```
+
+```
+## [1] 1132.129
+```
+
+```r
+residual + int_var + (2*covar)*2 + slope_var*2^2
+```
+
+```
+## [1] 1170.809
+```
+
+```r
+residual + int_var + (2*covar)*3 + slope_var*3^2
+```
+
+```
+## [1] 1474.286
+```
+
+---
+# Why?
+What was the point of doing that by hand?
+
+![](https://media1.popsugar-assets.com/files/thumbor/2qfH3BIwMUci7X3COzTN2VCEPL0/fit-in/728xorig/filters:format_auto-!!-:strip_icc-!!-/2014/07/09/780/n/1922283/4c633a9489b97031_tumblr_inline_mn9lfioyVS1qz4rgp/i/He-Basically-Invented-Side-Eye-Move.gif)
+
+I don't really care about the equations - the point is, they're just transformations of the variance components
+
+
+---
+# Off-diagonals
+
+The off-diagonals are given by
+
+$$
+`\begin{equation}
+\sigma^2_{\alpha_j} + \sigma_{01}(t_i + t_i') + \sigma^2_{\beta_1}t_it_i'
+\end{equation}`
+$$
+
+---
+# Calculate a few
+
+```r
+w1_rvcv[1:4, 1:4]
+```
+
+```
+## 4 x 4 sparse Matrix of class "dgCMatrix"
+##           1         2         3         4
+## 1 1358.2469 1019.5095  840.2515  660.9934
+## 2 1019.5095 1132.1294  925.7905  878.9310
+## 3  840.2515  925.7905 1170.8089 1096.8686
+## 4  660.9934  878.9310 1096.8686 1474.2856
+```
+
+```r
+int_var + covar*(1 + 0) + slope_var*1*0
+```
+
+```
+## [1] 1019.51
+```
+
+```r
+int_var + covar*(2 + 1) + slope_var*2*1
+```
+
+```
+## [1] 925.7905
+```
+
+```r
+int_var + covar*(3 + 2) + slope_var*3*2
+```
+
+```
+## [1] 1096.869
+```
+
+```r
+int_var + covar*(2 + 0) + slope_var*2*0
+```
+
+```
+## [1] 840.2515
+```
+
+---
+class: inverse-red middle
+# Positing other structures
+
+---
+# The possibilities
+There are a number of alternative structures. We'll talk about a few here.
+
+
+--
+If you want to go deeper, I suggest Singer &amp; Willett, Chapter 7
+
+
+--
+Code to fit models with each type of structure, using the same Willett data we're using today, is available [here](https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-7/)
+
+---
+# Structures we'll fit
+
+* Unstructured (default with **lme4**, we've already seen this)
+
+* Variance components (no off-diagonals)
+
+* Autoregressive
+
+* Heterogeneous autoregressive
+
+* Toeplitz
+
+
+--
+Note this is just a sampling. Other structures are possible.
+
+
+--
+Outside of *unstructured* &amp; *variance component only* models, we'll need to use the **nlme** package
+
+
+--
+We could also use Bayes, as we'll get to in a few weeks.
+
+---
+class: inverse-orange middle
+# Variance component only
+
+---
+# The model
+Generally, in a model like the Willett data, we would estimate intercept variance, and maybe slope variance.
+
+
+--
+We saw earlier how these combine to create the residual variance-covariance matrix
+
+
+--
+Alternatively, we can estimate separate variances at each time point
+
+
+--
+
+$$
+`\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2_1 &amp; 0 &amp; 0 &amp; 0 \\
+      0 &amp; \sigma^2_2 &amp; 0 &amp; 0 \\
+      0 &amp; 0 &amp; \sigma^2_3 &amp; 0 \\
+      0 &amp; 0 &amp; 0 &amp; \sigma^2_4
+    \end{array}
+  \right]
+\end{equation}`
+$$
+
+---
+# One-hot encoding
+
+First, use one-hot encoding for time
+
+Same as dummy-coding, but you use *all* the levels.
+
+
+```r
+w &lt;- willett %&gt;% 
+  mutate(t0 = ifelse(time == 0, 1, 0),
+         t1 = ifelse(time == 1, 1, 0),
+         t2 = ifelse(time == 2, 1, 0),
+         t3 = ifelse(time == 3, 1, 0))
+w
+```
+
+```
+## # A tibble: 140 x 8
+##       id  time   opp   cog    t0    t1    t2    t3
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1     1     0   205   137     1     0     0     0
+##  2     1     1   217   137     0     1     0     0
+##  3     1     2   268   137     0     0     1     0
+##  4     1     3   302   137     0     0     0     1
+##  5     2     0   219   123     1     0     0     0
+##  6     2     1   243   123     0     1     0     0
+##  7     2     2   279   123     0     0     1     0
+##  8     2     3   302   123     0     0     0     1
+##  9     3     0   142   129     1     0     0     0
+## 10     3     1   212   129     0     1     0     0
+## # … with 130 more rows
+```
+
+---
+# Alternative creation
+The `model.matrix()` function automatically dummy-codes factors.
+
+--
+
+```r
+model.matrix( ~ 0 + factor(time), data = willett) %&gt;% 
+  head()
+```
+
+```
+##   factor(time)0 factor(time)1 factor(time)2 factor(time)3
+## 1             1             0             0             0
+## 2             0             1             0             0
+## 3             0             0             1             0
+## 4             0             0             0             1
+## 5             1             0             0             0
+## 6             0             1             0             0
+```
+
+--
+Could be helpful if time is coded in a more complicated way
+
+---
+# Fit the model
+
+
+```r
+varcomp &lt;- lmer(opp ~  time + (0 + t0 + t1 + t2 + t3 || id), w)
+summary(varcomp)
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: opp ~ time + ((0 + t0 | id) + (0 + t1 | id) + (0 + t2 | id) +  
+##     (0 + t3 | id))
+##    Data: w
+## 
+## REML criterion at convergence: 1387.2
+## 
+## Scaled residuals: 
+##      Min       1Q   Median       3Q      Max 
+## -1.70477 -0.50440  0.02222  0.58653  1.37347 
+## 
+## Random effects:
+##  Groups   Name Variance Std.Dev.
+##  id       t0   671.8    25.92   
+##  id.1     t1   478.9    21.88   
+##  id.2     t2   643.8    25.37   
+##  id.3     t3   777.7    27.89   
+##  Residual      625.0    25.00   
+## Number of obs: 140, groups:  id, 35
+## 
+## Fixed effects:
+##             Estimate Std. Error t value
+## (Intercept)  164.429      5.007  32.839
+## time          26.925      2.758   9.762
+## 
+## Correlation of Fixed Effects:
+##      (Intr)
+## time -0.801
+```
+
+
+---
+# Estimation
+* Estimates the variance at each timepoint independently (`||`)
+
+  + In other words, no correlation is estimated
   
+
+```r
+sundry::pull_residual_vcov(varcomp)[1:4, 1:4]
+```
+
+```
+## 4 x 4 sparse Matrix of class "dgCMatrix"
+##         1        2        3        4
+## 1 1296.75    .        .        .    
+## 2    .    1103.838    .        .    
+## 3    .       .     1268.773    .    
+## 4    .       .        .     1402.641
+```
+
+---
+# Thinking deeper
+
+How reasonable is it to assume the variance at one time point?
+
+
+--
+In most cases, probably not very.
+
+
+--
+.realbig[BUT]
+
+
+--
+Sometimes we can't reliably estimate the covariances, so this helps simplify our model so it's estimable, even if the assumptions we're making are stronger.
+
+---
+# Fully unstructured
+* We could estimate separate variance *and* all the covariances - this is just a *really* complicated model
+
+* By default, **lme4** will actually try to prevent you from doing this
+
 --
 
 ```r
-d &lt;- d %&gt;% 
-  mutate(age6 = age - 6)
+fully_unstructured &lt;- lmer(opp ~  time + 
+                             (0 + t0 + t1 + t2 + t3 | id), 
+                           data = w)
+```
 
-m_age &lt;- lmer(piat ~ age6 + (age6|id), data = d)
+```
+## Error: number of observations (=140) &lt;= number of random effects (=140) for term (0 + t0 + t1 + t2 + t3 | id); the random-effects parameters and the residual variance (or scale parameter) are probably unidentifiable
+```
+
+---
+# Ignore checks
+
+Number of random effects == observations. 
+
+We can still estimate, just tell the model to ignore this check
+
+--
+
+```r
+fully_unstructured &lt;- lmer(
+  opp ~  time + (0 + t0 + t1 + t2 + t3 | id), 
+  data = w,
+* control = lmerControl(check.nobs.vs.nRE = "ignore")
+) 
+```
+
+---
+
+```r
+arm::display(fully_unstructured)
+```
+
+```
+## lmer(formula = opp ~ time + (0 + t0 + t1 + t2 + t3 | id), data = w, 
+##     control = lmerControl(check.nobs.vs.nRE = "ignore"))
+##             coef.est coef.se
+## (Intercept) 165.83     5.87 
+## time         26.58     2.12 
+## 
+## Error terms:
+##  Groups   Name Std.Dev. Corr           
+##  id       t0   34.42                   
+##           t1   31.58    0.90           
+##           t2   34.16    0.78 0.94      
+##           t3   35.95    0.46 0.75 0.88 
+##  Residual      11.09                   
+## ---
+## number of obs: 140, groups: id, 35
+## AIC = 1289.4, DIC = 1280.3
+## deviance = 1271.9
+```
+
+---
+# Terminology
+
+* What **lme4** fits by default is generally referred to as an *unstructured* variance-covariance matrix. 
+
+* This means the random effect variances and covariances are all estimated
+
+* The previous model I am referring to as *fully* unstructured, because we estimate seperate variances at each time point
+
+* Some might not make this distinction, so just be careful when people use this term
+
+---
+class: inverse-orange middle
+# Autoregressive
+
+---
+# Autoregressive
+* There are many types of autoregressive structures
+  + If you took a class on time-series data you'd learn about others
+  
+* What we'll talk about is referred to as an AR1 structure
+
+* Variances (on the diagonal) are constant
+
+* Includes constant "band-diagonals"
+
+
+---
+# Autoregressive
+
+$$
+`\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 &amp; \sigma^2\rho &amp; \sigma^2\rho^2 &amp; \sigma^2\rho^3 \\
+      \sigma^2\rho &amp; \sigma^2 &amp; \sigma^2\rho &amp; \sigma^2\rho^2 \\
+      \sigma^2\rho^2 &amp; \sigma^2\rho &amp; \sigma^2 &amp; \sigma^2\rho \\
+      \sigma^2\rho^3 &amp; \sigma^2\rho^2 &amp; \sigma^2\rho &amp; \sigma^2
+    \end{array}
+  \right]
+\end{equation}`
+$$
+* Each band is forced to be lower than the prior by a constant fraction
+  + estimated autocorrelation parameter `\(\rho\)`. The error variance is multiplied by `\(\rho\)` for the first diagonal, by `\(\rho^2\)` for the second, etc.
+
+* Uses only two variance components
+
+
+---
+# Fit
+
+First load **nlme**
+
+
+```r
+library(nlme)
+```
+
+
+--
+We'll use the `gls()` function. The interface is, overall, fairly similar to **lme4**
+
+--
+
+```r
+ar &lt;- gls(opp ~ time, 
+          data = willett,
+          correlation = corAR1(form = ~ 1|id))
+```
+
+---
+# Summary
+Notice, you're not  estimating random effect variances, just an alternative residual covariance structure
+
+```r
+summary(ar)
+```
+
+```
+## Generalized least squares fit by REML
+##   Model: opp ~ time 
+##   Data: willett 
+##        AIC      BIC    logLik
+##   1281.465 1293.174 -636.7327
+## 
+## Correlation Structure: AR(1)
+##  Formula: ~1 | id 
+##  Parameter estimate(s):
+##       Phi 
+## 0.8249118 
+## 
+## Coefficients:
+##                 Value Std.Error  t-value p-value
+## (Intercept) 164.33842  6.136372 26.78104       0
+## time         27.19786  1.919857 14.16661       0
+## 
+##  Correlation: 
+##      (Intr)
+## time -0.469
+## 
+## Standardized residuals:
+##         Min          Q1         Med          Q3         Max 
+## -2.42825488 -0.71561388  0.03192973  0.78792605  1.76110779 
+## 
+## Residual standard error: 36.37938 
+## Degrees of freedom: 140 total; 138 residual
+```
+
+---
+# Extract composite residual
+
+
+```r
+cm_ar &lt;- corMatrix(ar$modelStruct$corStruct) # all of them
+cr_ar &lt;- cm_ar[[1]] # just the first (they're all the same)
+cr_ar
+```
+
+```
+##           [,1]      [,2]      [,3]      [,4]
+## [1,] 1.0000000 0.8249118 0.6804795 0.5613356
+## [2,] 0.8249118 1.0000000 0.8249118 0.6804795
+## [3,] 0.6804795 0.8249118 1.0000000 0.8249118
+## [4,] 0.5613356 0.6804795 0.8249118 1.0000000
+```
+
+
+--
+
+Multiply the correlation matrix by the model residual variance to get the covariance matrix
+
+
+```r
+cr_ar * sigma(ar)^2
+```
+
+```
+##           [,1]      [,2]      [,3]      [,4]
+## [1,] 1323.4596 1091.7375  900.5872  742.9050
+## [2,] 1091.7375 1323.4596 1091.7375  900.5872
+## [3,]  900.5872 1091.7375 1323.4596 1091.7375
+## [4,]  742.9050  900.5872 1091.7375 1323.4596
+```
+
+---
+# Confirming calculations
+
+
+```r
+sigma(ar)^2
+```
+
+```
+## [1] 1323.46
+```
+
+```r
+sigma(ar)^2*0.8249118
+```
+
+```
+## [1] 1091.737
+```
+
+```r
+sigma(ar)^2*0.8249118^2
+```
+
+```
+## [1] 900.5871
+```
+
+```r
+sigma(ar)^2*0.8249118^3
+```
+
+```
+## [1] 742.9049
+```
+
+---
+# Heterogenous autoregressive
+* Same as autorgressive but allows each variance to differ
+
+* Still one `\(\rho\)` estimated
+
+  + Same "decay" across band diagonals
+
+* Band diagonals no longer equivalent, because different variances
+
+---
+# Heterogenous autoregressive
+
+$$
+`\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2_1 &amp; \sigma_1\sigma_2\rho &amp; \sigma_1\sigma_3\rho^2 &amp; \sigma_1\sigma_4\rho^2 \\
+      \sigma_2\sigma_1\rho &amp; \sigma^2_2 &amp; \sigma_2\sigma_3\rho &amp; \sigma_2\sigma_4\rho^2 \\
+      \sigma_3\sigma_1\rho^2 &amp; \sigma_3\sigma_2\rho &amp; \sigma^2_3 &amp; \sigma_3\sigma_4\rho \\
+      \sigma_4\sigma_1\rho^3 &amp; \sigma_4\sigma_2\rho^2 &amp; \sigma_4\sigma_3\rho &amp; \sigma^2_4
+    \end{array}
+  \right]
+\end{equation}`
+$$
+
+---
+# Fit
+Note - `varIdent` specifies different variances for each wave (variances of the [identity matrix](https://en.wikipedia.org/wiki/Identity_matrix))
+
+
+```r
+har &lt;- gls(
+  opp ~ time,
+  data = willett,
+  correlation = corAR1(form = ~ 1|id),
+  weights = varIdent(form = ~1|time)
+)
 ```
 
 ---
 # Summary
 
 ```r
-arm::display(m_age)
+summary(har)
 ```
 
 ```
-## lmer(formula = piat ~ age6 + (age6 | id), data = d)
-##             coef.est coef.se
-## (Intercept) 18.79     0.61  
-## age6         4.54     0.26  
+## Generalized least squares fit by REML
+##   Model: opp ~ time 
+##   Data: willett 
+##       AIC     BIC    logLik
+##   1285.76 1306.25 -635.8798
 ## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr 
-##  id       (Intercept) 2.01          
-##           age6        1.84     0.17 
-##  Residual             5.23          
-## ---
-## number of obs: 267, groups: id, 89
-## AIC = 1816.1, DIC = 1803.6
-## deviance = 1803.9
-```
-
----
-# Compare fit
-
-```r
-compare_performance(m_wave, m_agegrp2, m_age) %&gt;% 
-  print_md()
-```
-
-
-
-Table: Comparison of Model Performance Indices
-
-|Name      |   Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
-|:---------|:-------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
-|m_wave    | lmerMod | 1830.39 | 1851.92 |       0.81 |       0.48 | 0.64 | 4.15 |  5.20 |
-|m_agegrp2 | lmerMod | 1831.78 | 1853.30 |       0.81 |       0.48 | 0.64 | 4.15 |  5.20 |
-|m_age     | lmerMod | 1816.14 | 1837.67 |       0.81 |       0.50 | 0.62 | 4.34 |  5.23 |
-
----
-# Difference in predictions
-
-```r
-pred_frame &lt;- d %&gt;% 
-  mutate(pred_agegrp = predict(m_agegrp2),
-         pred_age = predict(m_age)) %&gt;% 
-  filter(id %in% 1:6)
-```
-
----
-
-```r
-ggplot(pred_frame, aes(age, piat)) +
-  geom_point() +
-  geom_line(aes(x = age6 + 6, y = pred_age),
-            color = "cornflowerblue") +
-  geom_line(aes(x = agegrp_c + 6.5, y = pred_agegrp),
-            color = "firebrick") +
-  facet_wrap(~id)
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
-
----
-class: inverse-orange middle
-# Differences
-The differences in the model predictions overall appear modest, but it does display better fit to the data, and the assumptions we're making are less stringent.
-
----
-# Changing interpretation
-
-* In this case, our coefficient for age is interepeted in years.
-
---
-&gt; On average, children gained 4.54 points on the Peabody Individual Achievement Test **per year**.
-
-
---
-### Challenge
-Can you change the model so the coefficient represents monthly growth?
-
-<div class="countdown" id="timer_60805d00" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-# Solution
-Just  multiply `age` by 12 to get it coded in months.
-
---
-
-```r
-d &lt;- d %&gt;% 
-  mutate(age_months = age6 * 12)
-d
-```
-
-```
-## # A tibble: 267 x 9
-##       id  wave agegrp       age  piat wave_c agegrp_c       age6 age_months
-##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
-##  1     1     1    6.5  6           18      0        0 0            0       
-##  2     1     2    8.5  8.333333    35      1        2 2.333333    28.      
-##  3     1     3   10.5 10.33333     59      2        4 4.333333    52.00000 
-##  4     2     1    6.5  6           18      0        0 0            0       
-##  5     2     2    8.5  8.5         25      1        2 2.5         30       
-##  6     2     3   10.5 10.58333     28      2        4 4.583333    55.00000 
-##  7     3     1    6.5  6.083333    18      0        0 0.08333333   1.000000
-##  8     3     2    8.5  8.416667    23      1        2 2.416667    29.00000 
-##  9     3     3   10.5 10.41667     32      2        4 4.416667    53.      
-## 10     4     1    6.5  6           18      0        0 0            0       
-## # … with 257 more rows
-```
-
----
-# Refit
-
-
-```r
-m_months &lt;- lmer(piat ~ age_months + (age_months|id), data = d,
-                 control = lmerControl(optimizer = "bobyqa"))
-arm::display(m_months)
-```
-
-```
-## lmer(formula = piat ~ age_months + (age_months | id), data = d, 
-##     control = lmerControl(optimizer = "bobyqa"))
-##             coef.est coef.se
-## (Intercept) 18.79     0.61  
-## age_months   0.38     0.02  
+## Correlation Structure: AR(1)
+##  Formula: ~1 | id 
+##  Parameter estimate(s):
+##       Phi 
+## 0.8173622 
+## Variance function:
+##  Structure: Different standard deviations per stratum
+##  Formula: ~1 | time 
+##  Parameter estimates:
+##        0        1        2        3 
+## 1.000000 0.915959 0.985068 1.045260 
 ## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr 
-##  id       (Intercept) 2.01          
-##           age_months  0.15     0.17 
-##  Residual             5.23          
-## ---
-## number of obs: 267, groups: id, 89
-## AIC = 1821.1, DIC = 1798.7
-## deviance = 1803.9
-```
-
----
-# Which model fits better?
-Before we test - what do you suspect?
-
---
-## They are not actually the same
-
-
-```r
-compare_performance(m_age, m_months)
-```
-
-```
-## # Comparison of Model Performance Indices
+## Coefficients:
+##                 Value Std.Error  t-value p-value
+## (Intercept) 164.63344  5.959533 27.62523       0
+## time         27.11552  1.984807 13.66154       0
 ## 
-## Name     |   Model |      AIC |      BIC | R2 (cond.) | R2 (marg.) |   ICC |  RMSE | Sigma
-## ------------------------------------------------------------------------------------------
-## m_age    | lmerMod | 1816.145 | 1837.668 |      0.807 |      0.496 | 0.618 | 4.341 | 5.235
-## m_months | lmerMod | 1821.115 | 1842.638 |      0.807 |      0.496 | 0.618 | 4.341 | 5.235
-```
-
----
-# But they are essentially
-
-
-```r
-pred_frame %&gt;% 
-  mutate(pred_months = predict(m_months)[1:18]) %&gt;% 
-  select(id, starts_with("pred"))
-```
-
-```
-## # A tibble: 18 x 4
-##       id pred_agegrp pred_age pred_months
-##    &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
-##  1     1    21.85047 19.72314    19.72322
-##  2     1    37.59817 37.27018    37.27026
-##  3     1    53.34587 52.31049    52.31057
-##  4     2    18.95405 18.04288    18.04279
-##  5     2    24.89376 25.06252    25.06245
-##  6     2    30.83348 30.91222    30.91217
-##  7     3    18.88021 18.29429    18.29419
-##  8     3    25.75976 25.95783    25.95776
-##  9     3    32.63931 32.52659    32.52655
-## 10     4    20.86038 19.03189    19.03190
-## 11     4    33.65203 33.64630    33.64632
-## 12     4    46.44368 46.31212    46.31215
-## 13     5    21.28110 19.49879    19.49885
-## 14     5    35.12409 34.15691    34.15697
-## 15     5    48.96708 48.25126    48.25132
-## 16     6    19.51079 18.32752    18.32747
-## 17     6    26.60084 26.82974    26.82970
-## 18     6    33.69089 33.63151    33.63148
-```
-
----
-class: inverse-blue middle
-# Another example
-With more complications
-
----
-# Wages data
-Please read in the `wages.csv` dataset.
-
-
-```r
-wages &lt;- read_csv(here::here("data", "wages.csv"))
-```
-
-```
+##  Correlation: 
+##      (Intr)
+## time -0.45 
 ## 
-## ── Column specification ─────────────────────────────────────────────────────────────────────
-## cols(
-##   id = col_double(),
-##   lnw = col_double(),
-##   exper = col_double(),
-##   ged = col_double(),
-##   black = col_double(),
-##   hispanic = col_double(),
-##   hgc = col_double(),
-##   uerate = col_double()
-## )
-```
-
-<div class="countdown" id="timer_60805d06" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-# Data
-* Mournane, Boudett, and Willett (1999)
-* National Longitudinal Survey of Youth
-* Studied wages of individuals who dropped out of high school
-
-### Variables
-* `id`: Participant ID
-* `lnw`: Natural log of wages
-* `exper`: Experience, in years
-* `ged`: Whether or not they completed a GED
-* `black`, `hispanic`: Dummy variables for race/ethnicity
-* `hgc`: Highest grade completed
-* `uerate`: Unemployment rate at the time
-
----
-# Complications
-
-```r
-wages %&gt;% 
-  filter(id %in% c(206, 332))
-```
-
-```
-## # A tibble: 13 x 8
-##       id      lnw    exper   ged black hispanic   hgc    uerate
-##    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
-##  1   206 2.028    1.874        0     0        0    10  9.200000
-##  2   206 2.297    2.814        0     0        0    10 11       
-##  3   206 2.482    4.314        0     0        0    10  6.295   
-##  4   332 1.63000  0.125        0     0        1     8  7.1     
-##  5   332 1.476    1.625        0     0        1     8  9.6     
-##  6   332 1.804    2.413000     0     0        1     8  7.2     
-##  7   332 1.439    3.393        0     0        1     8  6.195   
-##  8   332 1.748    4.47         0     0        1     8  5.595   
-##  9   332 1.526    5.178        0     0        1     8  4.595   
-## 10   332 2.044    6.082        0     0        1     8  4.295   
-## 11   332 2.179000 7.043        0     0        1     8  3.395   
-## 12   332 2.186    8.197000     0     0        1     8  4.395000
-## 13   332 4.035    9.092        0     0        1     8  6.695
-```
-
----
-# Complications
-* Unbalanced data
-
-```r
-wages %&gt;% 
-  count(id) %&gt;% 
-  summarize(range = range(n))
-```
-
-```
-## # A tibble: 2 x 1
-##   range
-##   &lt;int&gt;
-## 1     1
-## 2    13
-```
-
-* Participants age ranged from 14-17 at first time point 
-
-* Unequal spacing between waves
-
----
-# Complications
-
-* Participants dropped out at different times, entered the workforce and different times, and switched jobs at different times
-
-* A decision was made to clock *time* from their first day of work
-
-* The `exper` variable tracks their overall time in the workforce, and time at a given salary
-
----
-# Fitting a model
-* The hard part - structuring the data - is already done. We really don't have to do anything special here to account for all these complexities!
-
---
-
-```r
-m_wage0 &lt;- lmer(lnw ~ exper + (exper|id), data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
-
----
-
-```r
-arm::display(m_wage0)
-```
-
-```
-## lmer(formula = lnw ~ exper + (exper | id), data = wages, control = lmerControl(optimizer = "bobyqa"))
-##             coef.est coef.se
-## (Intercept) 1.72     0.01   
-## exper       0.05     0.00   
+## Standardized residuals:
+##         Min          Q1         Med          Q3         Max 
+## -2.45009645 -0.74377345  0.02395442  0.82305791  1.81833605 
 ## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr  
-##  id       (Intercept) 0.23           
-##           exper       0.04     -0.30 
-##  Residual             0.31           
-## ---
-## number of obs: 6402, groups: id, 888
-## AIC = 4951.3, DIC = 4903.5
-## deviance = 4921.4
+## Residual standard error: 36.17549 
+## Degrees of freedom: 140 total; 138 residual
 ```
 
---
-Every one year of extra experience corresponded to a 0.05 increase in log wages, on average, which varied across participants with a standard deviation of 0.04.
-
 ---
-# Challenge
-Let's fit a more interesting model. Try to fit a model that addresses the following questions:
+# Extract/compute composite residual
 
-&gt; Is the relation between experience and log wages the same across coded race/ethnicity categories? 
-Do these relations depend on highest grade completed?
-
-<div class="countdown" id="timer_60805bb4" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-# Centering
-Let's center highest grade completed. You could choose whatever value makes the most sense to you. I'll choose Grade 9.
+The below is fairly complicated, but you can work it out if you go line by line
 
 
 ```r
-wages &lt;- wages %&gt;% 
-  mutate(hgc_9 = hgc - 9)
+cm_har &lt;- corMatrix(har$modelStruct$corStruct)[[1]] 
+var_struct &lt;- har$modelStruct$varStruct
+vars &lt;- coef(var_struct, unconstrained = FALSE, allCoef = TRUE)
+vars &lt;- matrix(vars, ncol = 1)
+
+cm_har * sigma(har)^2 * 
+  (vars %*% t(vars)) # multiply by a mat of vars
+```
+
+```
+##           [,1]      [,2]      [,3]      [,4]
+## [1,] 1308.6660  979.7593  861.2399  746.9588
+## [2,]  979.7593 1097.9457  965.1295  837.0629
+## [3,]  861.2399  965.1295 1269.8757 1101.3712
+## [4,]  746.9588  837.0629 1101.3712 1429.8058
 ```
 
 ---
-# Is this right?
-If not, what is it missing?
+# Toeplitz
 
-```r
-m_wage1 &lt;- lmer(lnw ~ exper + black + hispanic + hgc_9 +
-                  (exper|id),
-                data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
+* Constant variance
 
----
-# Random effects
-In the previous model, I specified `exper` as randomly varying across `id` levels. 
+* Has identical band-diagonals, like autoregressive
+
+* Relaxes assumption of each band being a parallel by a common fraction of the prior band
+
+  + Each band determined empirically by the data
 
 
 --
-Could or should I have set any of the other variables to vary randomly? Why or why not?
+A bit of a compromise between prior two
 
 ---
-# Marginal predictions
+# Toeplitz
 
-```r
-pred_frame &lt;- expand.grid(
-  exper = 0:15,
-  black = 0:1,
-  hispanic = 0:1,
-  hgc_9 = 6:12 - 9,
-  id = -999
-)
-
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(pred = predict(m_wage1, 
-                        pred_frame, 
-                        allow.new.levels = TRUE))
-```
-
----
-# Race/Ethnicity
-Let's create a new variable that has all the race/ethnicity *labels* instead of the dummy codes.
-
-
-```r
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(
-    race_eth = case_when(
-      black == 0 &amp; hispanic == 0 ~ "White",
-      black == 1 &amp; hispanic == 0 ~ "Black",
-      black == 0 &amp; hispanic == 1 ~ "Hispanic",
-      TRUE ~ NA_character_
-    )
-  )
-```
-
----
-# Plots
-Look at just `hgc_9 == 0`.
-
-```r
-pred_frame %&gt;% 
-  drop_na() %&gt;% 
-  filter(hgc_9 == 0) %&gt;% 
-  ggplot(aes(exper, pred)) +
-  geom_line(aes(color = race_eth)) 
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
-
----
-# All hgc
-![](w5p1_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
-
----
-# Interactions
-If we want to know how the *slope* may or may not depend on these variables, we have to model the interactions.
+$$
+`\begin{equation}
+  \boldsymbol{\Sigma_r} = \left[
+    \begin{array}{cccc}
+      \sigma^2 &amp; \sigma^2_1 &amp; \sigma^2_2 &amp; \sigma^2_3 \\
+      \sigma^2_1 &amp; \sigma^2 &amp; \sigma^2_1 &amp; \sigma^2_2 \\
+      \sigma^2_2 &amp; \sigma^2_1 &amp; \sigma^2 &amp; \sigma^2_1 \\
+      \sigma^2_2 &amp; \sigma^2_2 &amp; \sigma^2_1 &amp; \sigma^2
+    \end{array}
+  \right]
+\end{equation}`
+$$
 
 --
-## Just the two-way interactions
-
-```r
-m_wage2 &lt;- lmer(lnw ~ exper + black + exper:black +
-                  exper:hispanic + 
-                  hgc_9 + exper:hgc_9 +
-                  (exper|id),
-                data = wages,
-                control = lmerControl(optimizer = "bobyqa"))
-```
-
----
-# Reproduce the plots
-### First make new predictions
+## Fit
 
 
 ```r
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(pred_int = predict(m_wage2, 
-                            newdata = pred_frame, 
-                            allow.new.levels = TRUE))
+toep &lt;- gls(opp ~ time, 
+            data = willett,
+            correlation = corARMA(form = ~ 1|id, p = 3))
 ```
 
 ---
-# Plot
-
+# Summary
 
 ```r
-pred_frame %&gt;% 
-  drop_na() %&gt;% 
-  filter(hgc_9 == 0) %&gt;% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = race_eth)) 
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
-
----
-
-```r
-pred_frame %&gt;% 
-  drop_na() %&gt;% 
-  filter(hgc_9 == -3 | hgc_9 == 3) %&gt;% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = race_eth)) +
-  facet_wrap(~hgc_9)
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
-
----
-# Focus on hgc
-
-
-```r
-pred_frame %&gt;% 
-  drop_na() %&gt;% 
-  ggplot(aes(exper, pred_int)) +
-  geom_line(aes(color = factor(hgc_9))) +
-  facet_wrap(~race_eth) +
-  scale_color_brewer("Highest grade completed", 
-                     palette = "Accent", 
-                     breaks = 3:-3,
-                     labels = 12:6) +
-  labs(x = "Experience (years)",
-       y = "Model Predicted wages (log scaled)")
-```
-
----
-class: full-slide-fig middle
-
-![](w5p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
-
----
-# Coefficient interpretation
-Notice I started with the plots
-
-* In *presenting* a model, this is generally what I would do
-
-  - I think this generally helps interpretation
-  
-* In practice I generally start by looking at the coefficients 
-
----
-# Model summary
-
-```r
-arm::display(m_wage2)
+summary(toep)
 ```
 
 ```
-## lmer(formula = lnw ~ exper + black + exper:black + exper:hispanic + 
-##     hgc_9 + exper:hgc_9 + (exper | id), data = wages, control = lmerControl(optimizer = "bobyqa"))
-##                coef.est coef.se
-## (Intercept)     1.72     0.01  
-## exper           0.05     0.00  
-## black           0.02     0.02  
-## hgc_9           0.03     0.01  
-## exper:black    -0.02     0.01  
-## exper:hispanic  0.01     0.00  
-## exper:hgc_9     0.00     0.00  
+## Generalized least squares fit by REML
+##   Model: opp ~ time 
+##   Data: willett 
+##        AIC      BIC    logLik
+##   1277.979 1295.543 -632.9896
 ## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr  
-##  id       (Intercept) 0.23           
-##           exper       0.04     -0.31 
-##  Residual             0.31           
-## ---
-## number of obs: 6402, groups: id, 888
-## AIC = 4955.1, DIC = 4811.9
-## deviance = 4872.5
-```
-
----
-class: inverse-blue middle
-# Handling non-linearity
-
----
-# The data
-Simulated data to mimic a common form of non-linearity.
-
-Notice the "true" intercept and slope for each student is actually in the data.
-
-
-```r
-sim_d &lt;- read_csv(here::here("data", "curvilinear-sim.csv"))
-sim_d
-```
-
-```
-## # A tibble: 2,760 x 5
-##      sid      int    slope date           score
-##    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;date&gt;         &lt;dbl&gt;
-##  1     1 31.91237 32.25614 2019-04-26 116.1638 
-##  2     1 31.91237 32.25614 2019-04-14  50.02688
-##  3     1 31.91237 32.25614 2019-05-21 151.8375 
-##  4     2 22.91502 24.05294 2019-04-25  81.93698
-##  5     2 22.91502 24.05294 2019-04-30  93.47374
-##  6     2 22.91502 24.05294 2019-05-24 113.8067 
-##  7     2 22.91502 24.05294 2019-04-27  87.83396
-##  8     2 22.91502 24.05294 2019-05-29 112.8697 
-##  9     2 22.91502 24.05294 2019-04-25  82.40156
-## 10     2 22.91502 24.05294 2019-05-27 111.8477 
-## # … with 2,750 more rows
-```
-
----
-# Complexities
-Notice these data do have some complexities
-
---
-Unbalance
-
-```r
-sim_d %&gt;% 
-  count(sid) %&gt;% 
-  summarize(range(n))
-```
-
-```
-## # A tibble: 2 x 1
-##   `range(n)`
-##        &lt;int&gt;
-## 1          3
-## 2          8
-```
-
----
-# Varied "starting" points
-
-
-```r
-sim_d %&gt;% 
-  arrange(sid, date) %&gt;% 
-  group_by(sid) %&gt;% 
-  slice(1) %&gt;% 
-  ungroup() %&gt;% 
-  summarize(range(date))
-```
-
-```
-## # A tibble: 2 x 1
-##   `range(date)`
-##   &lt;date&gt;       
-## 1 2019-04-14   
-## 2 2019-05-29
-```
-
-Overall date range
-
-```r
-range(sim_d$date)
-```
-
-```
-## [1] "2019-04-14" "2019-06-08"
-```
-
----
-# Plot
-Show the overall relation between `date` and `score`. What do you notice?
-
-<div class="countdown" id="timer_60805b3a" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-
-```r
-ggplot(sim_d, aes(date, score)) +
-  geom_point(alpha = 0.15, stroke = NA) +
-  geom_smooth(se = FALSE, color = "#33B1AE", size = 2)
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-45-1.png)&lt;!-- --&gt;
-
-Ideas on how to model this?
-
----
-
-```r
-ggplot(sim_d, aes(date, score)) +
-  geom_point(alpha = 0.15, stroke = NA) +
-  geom_smooth(se = FALSE, color = "#33B1AE", size = 2) +
-  geom_smooth(se = FALSE, method = "lm", color = "#808AFF", size = 2)
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-46-1.png)&lt;!-- --&gt;
-
-Linear modeling is not going to work...
-
----
-# Polynomials
-
-![](w5p1_files/figure-html/unnamed-chunk-47-1.png)&lt;!-- --&gt;
-
----
-# Fit a model
-Let's try fitting a linear model and a quadratic model and see which fits better.
-
---
-You try fitting the linear model first, with `date` predicting `score`, and both the intercept and slope varying across students.
-
-<div class="countdown" id="timer_60805b86" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-# Center date
-
-Let's first center date and put it in interpretable units.
-
-I'll center it on the first time point.
-
---
-First - what do dates look like when converted to numbers?
-
-
-```r
-library(lubridate)
-as_date(0)
-```
-
-```
-## [1] "1970-01-01"
-```
-
-```r
-as_date(1)
-```
-
-```
-## [1] "1970-01-02"
-```
-
-One unit = one day.
-
----
-# Center
-
-
-```r
-sim_d &lt;- sim_d %&gt;% 
-  mutate(
-    days_from_start = as.numeric(date) - min(as.numeric(date))
-  )
-```
-
----
-# Fit linear model
-
-
-```r
-linear &lt;- lmer(score ~ days_from_start + (days_from_start|sid), 
-               data = sim_d,
-               control = lmerControl(optimizer = "Nelder_Mead"))
-arm::display(linear)
-```
-
-```
-## lmer(formula = score ~ days_from_start + (days_from_start | sid), 
-##     data = sim_d, control = lmerControl(optimizer = "Nelder_Mead"))
-##                 coef.est coef.se
-## (Intercept)     68.66     0.71  
-## days_from_start  1.22     0.02  
+## Correlation Structure: ARMA(3,0)
+##  Formula: ~1 | id 
+##  Parameter estimate(s):
+##       Phi1       Phi2       Phi3 
+##  0.8039121  0.3665122 -0.3950326 
 ## 
-## Error terms:
-##  Groups   Name            Std.Dev. Corr  
-##  sid      (Intercept)     13.69          
-##           days_from_start  0.28    -0.41 
-##  Residual                  7.91          
-## ---
-## number of obs: 2760, groups: sid, 500
-## AIC = 21005, DIC = 20981.9
-## deviance = 20987.4
-```
-
----
-# Fit quadratic model
-
-```r
-sim_d &lt;- sim_d %&gt;% 
-  mutate(days2 = days_from_start^2)
-
-quad &lt;- lmer(score ~ days_from_start + days2 + 
-               (days_from_start|sid), 
-             data = sim_d,
-             control = lmerControl(optimizer = "Nelder_Mead"))
-```
-
----
-# Quadratic summary
-
-
-```r
-arm::display(quad)
-```
-
-```
-## lmer(formula = score ~ days_from_start + days2 + (days_from_start | 
-##     sid), data = sim_d, control = lmerControl(optimizer = "Nelder_Mead"))
-##                 coef.est coef.se
-## (Intercept)     52.09     0.54  
-## days_from_start  2.98     0.03  
-## days2           -0.03     0.00  
+## Coefficients:
+##                 Value Std.Error  t-value p-value
+## (Intercept) 165.11855  6.122841 26.96764       0
+## time         26.91997  2.070391 13.00236       0
 ## 
-## Error terms:
-##  Groups   Name            Std.Dev. Corr 
-##  sid      (Intercept)     10.07         
-##           days_from_start  0.18    0.31 
-##  Residual                  4.41         
-## ---
-## number of obs: 2760, groups: sid, 500
-## AIC = 18279.8, DIC = 18224.7
-## deviance = 18245.2
+##  Correlation: 
+##      (Intr)
+## time -0.507
+## 
+## Standardized residuals:
+##         Min          Q1         Med          Q3         Max 
+## -2.44029024 -0.71984566  0.01373249  0.77304950  1.75580973 
+## 
+## Residual standard error: 36.51965 
+## Degrees of freedom: 140 total; 138 residual
 ```
 
 ---
-# Compare
+# Extract/compute composite residual
+Same as with autoregressive - just multiply the correlation matrix by the residual variance
+
 
 ```r
-anova(linear, quad)
+cr_toep &lt;- corMatrix(toep$modelStruct$corStruct)[[1]] 
+cr_toep * sigma(toep)^2
 ```
 
 ```
-## refitting model(s) with ML (instead of REML)
+##           [,1]      [,2]      [,3]      [,4]
+## [1,] 1333.6848 1105.7350  940.9241  634.8366
+## [2,] 1105.7350 1333.6848 1105.7350  940.9241
+## [3,]  940.9241 1105.7350 1333.6848 1105.7350
+## [4,]  634.8366  940.9241 1105.7350 1333.6848
 ```
 
-```
-## Data: sim_d
-## Models:
-## linear: score ~ days_from_start + (days_from_start | sid)
-## quad: score ~ days_from_start + days2 + (days_from_start | sid)
-##        npar   AIC   BIC   logLik deviance  Chisq Df Pr(&gt;Chisq)    
-## linear    6 20999 21035 -10493.7    20987                         
-## quad      7 18259 18301  -9122.6    18245 2742.2  1  &lt; 2.2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
 
 ---
-# Plot predictions
+# Comparing fits
+
 
 ```r
-pred_frame &lt;- tibble(
-    days_from_start = 0:max(sim_d$days_from_start),
-    days2 = days_from_start^2,
-    sid = -999
-  ) %&gt;% 
-  mutate(pred_linear = predict(linear, newdata = ., allow.new.levels = TRUE),
-         pred_quad = predict(quad, newdata = ., allow.new.levels = TRUE))
-pred_frame
+library(performance)
+compare_performance(ar, har, toep, w1, varcomp, fully_unstructured,
+                    metrics = c("AIC", "BIC"),
+                    rank = TRUE) %&gt;% 
+  as_tibble()
 ```
 
 ```
-## # A tibble: 56 x 5
-##    days_from_start days2   sid pred_linear pred_quad
-##              &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-##  1               0     0  -999    68.65771  52.09304
-##  2               1     1  -999    69.87886  55.04428
-##  3               2     4  -999    71.10000  57.93071
-##  4               3     9  -999    72.32114  60.75233
-##  5               4    16  -999    73.54228  63.50914
-##  6               5    25  -999    74.76342  66.20114
-##  7               6    36  -999    75.98456  68.82834
-##  8               7    49  -999    77.20570  71.39072
-##  9               8    64  -999    78.42684  73.88829
-## 10               9    81  -999    79.64798  76.32105
-## # … with 46 more rows
+## # A tibble: 6 x 5
+##   Name               Model        AIC      BIC Performance_Score
+##   &lt;chr&gt;              &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;
+## 1 toep               gls     1277.979 1295.543         0.9907943
+## 2 ar                 gls     1281.465 1293.174         0.9858555
+## 3 w1                 lmerMod 1278.823 1296.473         0.9837572
+## 4 har                gls     1285.760 1306.250         0.9176060
+## 5 fully_unstructured lmerMod 1289.423 1327.664         0.8195083
+## 6 varcomp            lmerMod 1401.215 1421.806         0
 ```
+
+We have slight evidence here that the Toeplitz structure fits better than the standard unstructured version, which was slightly better than the autoregressive model.
 
 ---
+# gls models
 
-```r
-ggplot(pred_frame, aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF")
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-55-1.png)&lt;!-- --&gt;
-
-This is definitely looking better, but it's too high in the lower tail and maybe a bit too low in the upper
+&lt;table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Autoregressive (AR) &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Heterogeneous AR &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Toeplitz &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; (Intercept) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 164.338 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 164.633 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 165.119 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (6.136) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (5.960) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (6.123) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; time &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 27.198 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 27.116 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 26.920 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;box-shadow: 0px 1px"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt; (1.920) &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt; (1.985) &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt; (2.070) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1281.5 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1285.8 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1278.0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1293.2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1306.3 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1295.5 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Log.Lik. &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -636.733 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -635.880 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -632.990 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
 
 ---
-# Cubic?
+# lme4 models
 
-You try first - extend what we just did to model a cubic trend
+&lt;table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Standard &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Var Comp &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Fully Unstruc &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; (Intercept) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 164.374 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 164.429 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 165.832 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (6.119) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (5.007) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (5.867) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; time &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 26.960 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 26.925 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 26.585 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (2.167) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (2.758) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (2.121) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__(Intercept) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 34.623 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__(Intercept).time &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -0.450 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__time &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 11.506 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__Observation &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 12.629 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 24.999 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 11.087 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__t0 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 25.919 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 34.424 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__t1 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 21.883 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 31.582 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__t2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 25.373 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 34.155 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; sd__t3 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 27.887 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 35.947 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__t0.t1 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.899 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__t0.t2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.784 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__t0.t3 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.455 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__t1.t2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.945 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cor__t1.t3 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.754 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;box-shadow: 0px 1px"&gt; cor__t2.t3 &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt; 0.881 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1278.8 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1401.2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1289.4 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1296.5 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1421.8 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1327.7 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Log.Lik. &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -633.411 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -693.607 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -631.711 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; REMLcrit &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1266.823 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1387.215 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1263.423 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
 
-<div class="countdown" id="timer_608059c6" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
+---
+class: inverse-red middle
+# Stepping back
+### Why do we care about all of this?
+
+---
+# Overfitting
+
+* If a simpler model fits the data just as well, it should be preferred
+
+* Models that are overfit have "learned too much" from the data and won't generalize well
+
+* Can think of it as fitting to the errors in the data, rather than the "true" patterns found in the population
+
+---
+# Convergence issues
+
+* As your models get increasingly complicated, you're likely to run into convergence issues. 
+
+* Simplifying your residual variance-covariance structure may help 
+  + Keeps the basic model structure intact
+
 
 --
+Aside - see [here](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#troubleshooting) for convergence troubleshooting with **lme4**. The `allFit()` function is often helpful but very computationally intensive.
 
-
-```r
-sim_d &lt;- sim_d %&gt;% 
-  mutate(days3 = days_from_start^3)
-
-cubic &lt;- lmer(score ~ days_from_start + days2 + days3 +
-                (days_from_start|sid), 
-             data = sim_d,
-             control = lmerControl(optimizer = "Nelder_Mead"))
-```
-
-```
-## Warning: Some predictor variables are on very different scales: consider rescaling
-```
 
 ---
-# Cubic summary
+# Summary
+* As is probably fairly evident from the code - there are many more structures you could explore. However, most are not implemented through **lme4**.
 
+* Simplifying the residual variance-covariance can sometimes lead to better fitting models
 
-```r
-arm::display(cubic)
-```
-
-```
-## lmer(formula = score ~ days_from_start + days2 + days3 + (days_from_start | 
-##     sid), data = sim_d, control = lmerControl(optimizer = "Nelder_Mead"))
-##                 coef.est coef.se
-## (Intercept)     43.64     0.49  
-## days_from_start  4.93     0.04  
-## days2           -0.12     0.00  
-## days3            0.00     0.00  
-## 
-## Error terms:
-##  Groups   Name            Std.Dev. Corr 
-##  sid      (Intercept)     9.48          
-##           days_from_start 0.15     0.55 
-##  Residual                 2.81          
-## ---
-## number of obs: 2760, groups: sid, 500
-## AIC = 16311.2, DIC = 16211.2
-## deviance = 16253.2
-```
-
----
-# Compare
-
-
-```r
-anova(linear, quad, cubic)
-```
-
-```
-## refitting model(s) with ML (instead of REML)
-```
-
-```
-## Data: sim_d
-## Models:
-## linear: score ~ days_from_start + (days_from_start | sid)
-## quad: score ~ days_from_start + days2 + (days_from_start | sid)
-## cubic: score ~ days_from_start + days2 + days3 + (days_from_start | 
-## cubic:     sid)
-##        npar   AIC   BIC   logLik deviance  Chisq Df Pr(&gt;Chisq)    
-## linear    6 20999 21035 -10493.7    20987                         
-## quad      7 18259 18301  -9122.6    18245 2742.2  1  &lt; 2.2e-16 ***
-## cubic     8 16269 16317  -8126.6    16253 1992.0  1  &lt; 2.2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
----
-# Predictions
-
-
-```r
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(days3 = days_from_start^3)
-
-pred_frame %&gt;% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %&gt;% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa")
-```
-
----
-class: middle
-
-![](w5p1_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
-
----
-# Alternative
-Instead of modeling additional parameters, just transform the data
-
---
-## Common transformations
-
-* log
-* square root
-* inverse `\(1/x\)`
-
----
-# Try log
-If you're familiar with log growth, the scatterplots we've been looking at probably resemble this trend quite well.
-
-Let's try log transforming our time variable, then fit with it - bonus, we save two estimated parameters.
-
-Note - I will have to use `log(x + 1)` instead of `log(x)` because `log(0)` `\(= - \infty\)`  and `log(1)` `\(= 0\)`.
-
----
-
-
-```r
-sim_d &lt;- sim_d %&gt;% 
-  mutate(days_log = log(days_from_start + 1))
-
-log_m &lt;- lmer(score ~ days_log + (days_log|sid), 
-              data = sim_d)
-
-arm::display(log_m)
-```
-
-```
-## lmer(formula = score ~ days_log + (days_log | sid), data = sim_d)
-##             coef.est coef.se
-## (Intercept) 26.08     0.32  
-## days_log    24.43     0.15  
-## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr 
-##  sid      (Intercept) 6.16          
-##           days_log    3.05     0.20 
-##  Residual             1.52          
-## ---
-## number of obs: 2760, groups: sid, 500
-## AIC = 13703.9, DIC = 13687
-## deviance = 13689.5
-```
-
----
-# Compare
-
-
-```r
-anova(linear, quad, cubic, log_m)
-```
-
-```
-## refitting model(s) with ML (instead of REML)
-```
-
-```
-## Data: sim_d
-## Models:
-## linear: score ~ days_from_start + (days_from_start | sid)
-## log_m: score ~ days_log + (days_log | sid)
-## quad: score ~ days_from_start + days2 + (days_from_start | sid)
-## cubic: score ~ days_from_start + days2 + days3 + (days_from_start | 
-## cubic:     sid)
-##        npar   AIC   BIC   logLik deviance Chisq Df Pr(&gt;Chisq)    
-## linear    6 20999 21035 -10493.7    20987                        
-## log_m     6 13702 13737  -6844.7    13690  7298  0               
-## quad      7 18259 18301  -9122.6    18245     0  1          1    
-## cubic     8 16269 16317  -8126.6    16253  1992  1     &lt;2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-It use the same number of parameters as the linear model, but fits *far* better.
-
----
-# Predictions
-
-
-```r
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(days_log = log(days_from_start + 1))
-
-pred_frame &lt;- pred_frame %&gt;% 
-  mutate(pred_log = predict(log_m, newdata = ., allow.new.levels = TRUE))
-```
-
---
-Let's first look at these predictions on the log scale
-
----
-# Predictions on log scale
-
-
-```r
-ggplot(pred_frame, aes(days_log)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_log), color = "#4D4F57")
-```
-
-![](w5p1_files/figure-html/unnamed-chunk-64-1.png)&lt;!-- --&gt;
-
----
-# On raw scale
-
-
-```r
-pred_frame %&gt;% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %&gt;% 
-  ggplot(aes(days_from_start)) +
-  geom_point(aes(y = score), data = sim_d, color = "gray80") +
-  geom_line(aes(y = pred_linear), color = "#33B1AE") +
-  geom_line(aes(y = pred_quad), color = "#808AFF") +
-  geom_line(aes(y = pred_cubic), color = "#ff66fa") +
-  geom_line(aes(y = pred_log), color = "#4D4F57")
-```
-
----
-# On raw scale
-
-![](w5p1_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
+* May also be helpful with convergence and avoid overfitting
 
 ---
 class: inverse-green middle
-# Next time
-Bayesian Methods
-
-## Now: Homework 2
+# Now
+## Homework 2
+### Next time: Modeling growth (part 1)
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
