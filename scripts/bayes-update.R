@@ -4,7 +4,7 @@ set.seed(123)
 true_data <- rnorm(50, 5, 1)
 
 grid <- tibble(
-  mean = seq(-3, 8, 0.1),
+  mean = seq(-3, 10, 0.1),
   prob = dnorm(mean, 2, 1)
 ) 
 

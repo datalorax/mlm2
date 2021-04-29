@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>An introduction to Bayesian estimation</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Daniel Anderson" />
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <link href="libs/countdown-0.3.5/countdown.css" rel="stylesheet" />
+    <script src="libs/countdown-0.3.5/countdown.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="new.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# An introduction to Bayesian estimation
+### Daniel Anderson
+### Week 7
+
+---
+
+
+
+
+layout: true
+
+  &lt;script&gt;
+    feather.replace()
+  &lt;/script&gt;
+  
+  &lt;div class="slides-footer"&gt;
+  &lt;span&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w7p1.pdf"&gt;
+    &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w7p1.html"&gt;
+    &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://mlm2-2021.netlify.app"&gt;
+    &lt;i class = "footer-icon" data-feather="globe"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2"&gt;
+    &lt;i class = "footer-icon" data-feather="github"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;/span&gt;
+  &lt;/div&gt;
+  
+
+---
+# Agenda
+
+* Introduce Bayes theorem
+
+* Go through an example with estimating a mean
+
+* Discuss Bayes in the context of regression modeling
+
+* Implementation in multilevel models in R with [**{brms}**](https://github.com/paul-buerkner/brms)
+
+* Model diagnostics and checking for convergence
+
+---
+# A disclaimer
+* There is **no** chance we'll really be able to do Bayes justice in this class
+
+* The hope for today is that you'll get an introduction
+
+* By the end you should be able to fit the models you already can, but in a Bayes framework
+
+* Hopefully you also recognize the tradeoffs, and potential extensions
+
+---
+class: inverse-blue middle
+# Bayes theorem
+
+---
+# In equation form
+You'll see this presented many different ways, perhaps mostly commonly as
+
+$$
+p(B \mid A) = \frac{ p(A \mid B) \times p(B)}{p(A)}
+$$
+where `\(\mid\)` is read as "given" and `\(p\)` is the probability
+
+--
+
+I prefer to give `\(A\)` and `\(B\)` more meaningful names
+
+--
+
+$$
+p(\text{prior} \mid \text{data}) = \frac{ p(\text{data} \mid \text{prior}) \times p(\text{prior})}{\text{data}}
+$$
+
+---
+# A real example
+Classifying a student with a learning disability. We want to know 
+
+$$
+p(\text{LD} \mid \text{Test}_p) = \frac{ p(\text{Test}_p \mid \text{LD}) \times p(\text{LD})}{\text{Test}_p}
+$$
+--
+Notice, this means we need to know:
+
+--
+
+* True positive rate of the test, `\(p(\text{Test}_p \mid \text{LD})\)`
+
+
+--
+
+* Base rate for learning disabilities, `\(p(\text{LD})\)`
+
+
+--
+* Base rate for testing positive, `\(\text{Test}_p\)`
+
+---
+# Estimating
+If we have these things, we can estimate the probability that a student has a learning disability, given a positive test.
+
+
+--
+## Let's assume: 
+* `\(p(\text{Test}_p \mid \text{LD}) = 0.90\)`
+
+* `\(p(\text{LD}) = 0.10\)`
+
+* `\(\text{Test}_p = 0.20\)`
+
+---
+
+$$
+p(\text{LD} \mid \text{Test}_p) = \frac{ .90 \times .10}{.20}
+$$
+
+
+--
+$$
+p(\text{LD} \mid \text{Test}_p) = 0.45
+$$
+
+
+--
+A bit less than you might have expected? Probability is hard...
+
+
+--
+When we see things like "90% true positive rate" we want to interpret it as `\(p(\text{LD} \mid \text{Test}_p)\)`, when it's actually `\(p(\text{Test}_p \mid \text{LD})\)`
+
+---
+# Pieces
+If we know all the pieces, we can estimate Bayes theorem directly. 
+
+
+--
+![](https://media2.giphy.com/media/2ZVrNVOtaM2q1zluYs/giphy.gif)
+
+Unfortunately this is almost never the case...
+
+---
+# Alternative view
+
+$$
+\text{updated beliefs} = \frac{\text{likelihood of data} \times \text{prior information}}{\text{average likelihood}}
+$$
+
+--
+How do we calculate the likelihood of the data? We have to assume some distribution.
+
+---
+# Example with IQ
+
+.footnote[This example borrowed from [TJ Mahr](https://cdn.rawgit.com/tjmahr/Psych710_BayesLecture/55f446a0/bayes_slides.html)]
+
+
+```r
+#install.packages("carData")
+iqs &lt;- carData::Burt$IQbio
+iqs
+```
+
+```
+##  [1]  82  80  88 108 116 117 132  71  75  93  95  88 111  63  77  86  83  93  97
+## [20]  87  94  96 112 113 106 107  98
+```
+
+--
+IQ scores are generally assumed to be generated from a distribution that looks like this:
+
+$$
+IQ_i \sim N(100, 15)
+$$
+
+--
+![](w7p1_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+---
+# Likelihood
+What's the likelihood of a score of 80, assuming this distribution?
+
+--
+![](w7p1_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+--
+
+
+```r
+dnorm(80, mean = 100, sd = 15)
+```
+
+```
+## [1] 0.010934
+```
+
+---
+# Likelihood of the data
+We sum the likelihood to get the overall likelihood of the data. However, this leads to very small numbers. Computationally, it's easier to sum the *log* of these likelihoods.
+
+--
+
+```r
+dnorm(iqs, mean = 100, sd = 15, log = TRUE)
+```
+
+```
+##  [1] -4.346989 -4.515878 -3.946989 -3.769211 -4.195878 -4.269211 -5.902544
+##  [8] -5.495878 -5.015878 -3.735878 -3.682544 -3.946989 -3.895878 -6.669211
+## [15] -4.802544 -4.062544 -4.269211 -3.735878 -3.646989 -4.002544 -3.706989
+## [22] -3.662544 -3.946989 -4.002544 -3.706989 -3.735878 -3.635878
+```
+
+--
+
+```r
+sum(dnorm(iqs, mean = 100, sd = 15, log = TRUE))
+```
+
+```
+## [1] -114.3065
+```
+
+---
+# Alternative distributions
+
+What if we assumed the data were generated from an alternative distribution, say `\(IQ_i \sim N(115, 5)\)`?
+
+--
+
+```r
+sum(dnorm(iqs, mean = 115, sd = 5, log = TRUE))
+```
+
+```
+## [1] -416.3662
+```
+
+--
+The value is *much* lower. In most models, we are estimating `\(\mu\)` and `\(\sigma\)`, and trying to find values that *maximize* the sum of the log likelihoods.
+
+---
+# Visually
+
+The real data generating distribution
+
+![](w7p1_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+
+---
+# Visually
+
+The poorly fitting one
+
+![](w7p1_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+# Non-Bayesian
+In a frequentist regression model, we would find parameters that *maximize* the likelihood. Note - the distributional mean is often conditional.
+
+
+--
+This is part of why I've come to prefer notation that emphasizes the data generating process. 
+
+---
+# Example
+I know we've talked about this before, but a simple linear regression model like this
+
+
+```r
+m &lt;- lm(IQbio ~ class, data = carData::Burt)
+```
+
+--
+is generally displayed like this
+
+
+$$
+\normalsize
+`\begin{aligned}
+\operatorname{IQbio} &amp;= \alpha + \beta_{1}(\operatorname{class}_{\operatorname{low}}) + \beta_{2}(\operatorname{class}_{\operatorname{medium}}) + \epsilon
+\end{aligned}`
+$$
+
+
+--
+But we could display the same thing like this
+$$
+`\begin{align}
+\operatorname{IQbio} &amp;\sim N(\widehat{\mu}, \widehat{\sigma}) \\
+\widehat{\mu} = \alpha &amp;+ \beta_{1}(\operatorname{class}_{\operatorname{low}}) + \beta_{2}(\operatorname{class}_{\operatorname{medium}})
+\end{align}`
+$$
+
+---
+class: inverse-red middle
+
+# Priors
+
+---
+# Bayesian posterior
+
+$$
+\text{posterior} = \frac{ \text{likelihood} \times \text{prior}}{\text{average likelihood}}
+$$
+
+
+--
+The above is how we estimate with Bayes. 
+
+
+--
+In words, it states that our updated beliefs (posterior) depend on the evidence from our data (likelihood) and our prior knowledge/conceptions/information (prior).
+
+
+--
+Our prior will shift in accordance with the evidence from the data
+
+---
+# Basic example
+Let's walk through a basic example where we're just estimating a mean. We'll assume we somehow magically know the variance. Please follow along.
+
+
+--
+First, generate some data
+
+
+```r
+set.seed(123)
+true_data &lt;- rnorm(50, 5, 1)
+```
+
+---
+# Grid search
+We're now going to specify a grid of possible means for our data. Let's search anywhere from -3 to 12 in 0.1 intervals.
+
+--
+
+```r
+grid &lt;- tibble(possible_mean = seq(-3, 12, 0.1))
+```
+
+--
+
+Next, we'll specify a *prior distribution*. That is - how likely do we *think* each of these possible means are?
+
+
+--
+Let's say our best guess is `\(mu = 2\)`. Values on either side of `\(2\)` should be less likely.  
+
+--
+
+```r
+prior &lt;- dnorm(grid$possible_mean, mean = 2, sd = 1)
+```
+
+---
+# Plot our prior
+
+
+```r
+grid %&gt;% 
+  mutate(prior = prior) %&gt;% 
+  ggplot(aes(possible_mean, prior)) +
+  geom_line()
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+Note that the *strength* of our prior depends on the standard deviation
+
+This would be our best guess as to where the data would fall *before* observing the data.
+
+---
+# Look at other priors
+
+
+```r
+grid %&gt;% 
+  mutate(prior1 = dnorm(possible_mean, mean = 2, sd = 1),
+         prior2 = dnorm(possible_mean, mean = 2, sd = 2),
+         prior3 = dnorm(possible_mean, mean = 2, sd = 3)) %&gt;% 
+  ggplot(aes(possible_mean)) +
+  geom_line(aes(y = prior1)) + 
+  geom_line(aes(y = prior2), color = "cornflowerblue") + 
+  geom_line(aes(y = prior3), color = "firebrick")  
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+
+---
+# Set prior
+* Let's go with a fairly conservative prior, with `\(\mu = 2, \sigma = 3\)`.
+
+* We also need to normalize it so the probability sums to 1.0
+
+--
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(prior = dnorm(possible_mean, mean = 2, sd = 3),
+         prior = prior / sum(prior)) # normalize
+```
+
+
+---
+# Observe 1 data point
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(likelihood = dnorm(true_data[1], possible_mean, 2))
+grid
+```
+
+```
+## # A tibble: 151 x 3
+##    possible_mean       prior   likelihood
+##            &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;
+##  1          -3   0.003477802 0.0001973758
+##  2          -2.9 0.003674439 0.0002374240
+##  3          -2.8 0.003877883 0.0002848850
+##  4          -2.7 0.004088046 0.0003409800
+##  5          -2.6 0.004304813 0.0004071013
+##  6          -2.5 0.004528041 0.0004848308
+##  7          -2.4 0.004757554 0.0005759600
+##  8          -2.3 0.004993151 0.0006825094
+##  9          -2.2 0.005234594 0.0008067505
+## 10          -2.1 0.005481619 0.0009512268
+## # … with 141 more rows
+```
+
+---
+# Compute posterior
+
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(posterior = likelihood * prior,
+         posterior = posterior / sum(posterior)) # normalize
+```
+
+---
+# Plot
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+
+
+---
+# Observe a second data point
+
+The old posterior becomes our new prior
+
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(likelihood = dnorm(true_data[2], possible_mean, 2),
+         posterior = likelihood * posterior,
+         posterior = posterior / sum(posterior))
+```
+
+---
+# Plot
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-23-1.png)&lt;!-- --&gt;
+
+
+---
+# Observe a third data point
+
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(likelihood = dnorm(true_data[3], possible_mean, 2),
+         posterior = likelihood * posterior,
+         posterior = posterior / sum(posterior))
+```
+
+---
+# Plot
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
+
+---
+# All the data
+
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(prior = dnorm(grid$possible_mean, mean = 2, sd = 3),
+         prior = prior / sum(prior),
+         posterior = prior) # best guess before seeing data
+
+for(i in seq_along(true_data)) {
+  grid &lt;- grid %&gt;% 
+    mutate(likelihood = dnorm(true_data[i], possible_mean, 2),
+           posterior = likelihood * posterior,
+           posterior = posterior / sum(posterior))
+}
+```
+
+---
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-27-1.png)&lt;!-- --&gt;
+
+---
+# Posterior
+* We can summarize our posterior distribution
+ 
+* This is a fundamental difference between Bayesian &amp; frequentist approaches
+
+  + In Bayes, our data is assumed fixed, our parameters random
+  
+  + In frequentist, our data is assumed random, our parameters fixed
+
+
+--
+Most likely?
+
+
+```r
+grid %&gt;% 
+  filter(posterior == max(posterior))
+```
+
+```
+## # A tibble: 1 x 4
+##   possible_mean       prior likelihood posterior
+##           &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+## 1             5 0.008459494  0.1992979 0.1416204
+```
+
+---
+# Sampling
+* Now that we have a posterior distribution, we can sample from it to help us with inference
+
+* Each possible mean should be sampled in accordance with its probability specified by the posterior.
+
+--
+* Let's draw 10,000 samples
+
+
+```r
+posterior_samples &lt;- sample(grid$possible_mean, 
+                            size = 10000,
+                            replace = TRUE,
+                            prob = grid$posterior)
+```
+---
+# Inference
+First, let's plot the samples
+
+--
+
+```r
+ggplot(data.frame(sample = posterior_samples), aes(sample)) +
+  geom_histogram(bins = 100)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
+
+
+---
+# Central tendency
+
+
+```r
+mean(posterior_samples)
+```
+
+```
+## [1] 5.00441
+```
+
+```r
+median(posterior_samples)
+```
+
+```
+## [1] 5
+```
+
+--
+## Spread
+
+
+```r
+sd(posterior_samples)
+```
+
+```
+## [1] 0.278466
+```
+
+
+---
+# Credible intervals
+Let's compute an 80% credible interval
+
+
+```r
+tibble(posterior_samples) %&gt;% 
+  summarize(ci_80 = quantile(posterior_samples, c(0.1, 0.9)))
+```
+
+```
+## # A tibble: 2 x 1
+##   ci_80
+##   &lt;dbl&gt;
+## 1   4.6
+## 2   5.4
+```
+
+--
+## What's the chance the "true" mean is less than 4.8?
+
+
+```r
+sum(posterior_samples &lt; 4.8) / length(posterior_samples) * 100
+```
+
+```
+## [1] 18.05
+```
+
+---
+# Ranges
+
+What's the probability the "true" mean is between 5.2 and 5.5?
+
+--
+
+```r
+sum(posterior_samples &gt;= 5.2 &amp; posterior_samples &lt;= 5.5) / 
+  length(posterior_samples) * 100
+```
+
+```
+## [1] 27.94
+```
+
+--
+Greater than 4.5?
+
+
+```r
+sum(posterior_samples &gt; 4.5) / length(posterior_samples) * 100
+```
+
+```
+## [1] 95.05
+```
+
+--
+Note this is much more natural than frequentist statistics
+
+
+---
+# Change our prior
+Let's try again with a tighter prior
+
+
+```r
+grid &lt;- grid %&gt;% 
+  mutate(prior = dnorm(grid$possible_mean, mean = 2, sd = 0.1),
+         prior = prior / sum(prior),
+         posterior = prior) # best guess before seeing data
+
+for(i in seq_along(true_data)) {
+  grid &lt;- grid %&gt;% 
+    mutate(likelihood = dnorm(true_data[i], possible_mean, 2),
+           posterior = likelihood * posterior,
+           posterior = posterior / sum(posterior))
+}
+```
+
+---
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-38-1.png)&lt;!-- --&gt;
+
+
+```r
+grid %&gt;% 
+  filter(posterior == max(posterior))
+```
+
+```
+## # A tibble: 1 x 4
+##   possible_mean       prior likelihood posterior
+##           &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+## 1           2.3 0.004431848 0.08476010 0.3915258
+```
+
+---
+# More data
+Same thing, but this time with tons of data
+
+---
+
+
+```r
+true_data &lt;- rnorm(5000, 5, 1)
+grid &lt;- grid %&gt;% 
+  mutate(prior = dnorm(grid$possible_mean, mean = 2, sd = 0.1),
+         prior = prior / sum(prior),
+         posterior = prior) # best guess before seeing data
+
+for(i in seq_along(true_data)) {
+  grid &lt;- grid %&gt;% 
+    mutate(likelihood = dnorm(true_data[i], possible_mean, 2),
+           posterior = likelihood * posterior,
+           posterior = posterior / sum(posterior))
+}
+```
+
+---
+
+
+```r
+grid %&gt;% 
+  pivot_longer(-possible_mean) %&gt;% 
+ggplot(aes(possible_mean, value)) +
+  geom_line(aes(color = name))
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
+
+
+```r
+grid %&gt;% 
+  filter(posterior == max(posterior))
+```
+
+```
+## # A tibble: 1 x 4
+##   possible_mean         prior likelihood posterior
+##           &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+## 1           4.8 2.277577e-171  0.1994389 0.9678310
+```
+
+---
+# Taking a step back
+* The purpose of the prior is to include *what you already know* into your analysis
+
+* The strength of your prior should depend on your prior research
+
+* Larger samples will overwhelm priors quicker, particularly if they are diffuse
+
+* Think through the lens of updating your prior beliefs
+
+* This whole framework is quite different, but also gives us a lot of advantages in terms of probability interpretation, as we'll see
+
+---
+class: inverse-blue middle
+# Bayes for regression
+
+---
+class: inverse-blue middle
+
+# Implementation with {brms}
+
+.center[
+![](https://github.com/paul-buerkner/brms/raw/master/man/figures/brms.png)
+]
+
+---
+# What is it?
+* **b**ayesian **r**egression **m**odeling with **s**tan
+
+* Uses [stan](https://mc-stan.org/) as the model backend - basically writes the model code for you then sends it to stan
+
+* Allows model syntax similar to **lme4** 
+
+* Simple specification of priors - defaults are flat
+
+* Provides many methods for post-model fitting inference
+
+---
+# Fit a basic model
+Let's start with the default (uninformative) priors, and fit a standard, simple-linear regression model
+
+
+```r
+library(brms)
+sleep_m0 &lt;- brm(Reaction ~ Days, data = lme4::sleepstudy)
+```
+
+```
+## Running /Library/Frameworks/R.framework/Resources/bin/R CMD SHLIB foo.c
+## clang -I"/Library/Frameworks/R.framework/Resources/include" -DNDEBUG   -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/Rcpp/include/"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/unsupported"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/BH/include" -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/StanHeaders/include/src/"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/StanHeaders/include/"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppParallel/include/"  -I"/Library/Frameworks/R.framework/Versions/4.0/Resources/library/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DBOOST_NO_AUTO_PTR  -include '/Library/Frameworks/R.framework/Versions/4.0/Resources/library/StanHeaders/include/stan/math/prim/mat/fun/Eigen.hpp'  -D_REENTRANT -DRCPP_PARALLEL_USE_TBB=1   -I/usr/local/include   -fPIC  -Wall -g -O2  -c foo.c -o foo.o
+## In file included from &lt;built-in&gt;:1:
+## In file included from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/StanHeaders/include/stan/math/prim/mat/fun/Eigen.hpp:13:
+## In file included from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/Dense:1:
+## In file included from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/Core:88:
+## /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:628:1: error: unknown type name 'namespace'
+## namespace Eigen {
+## ^
+## /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:628:16: error: expected ';' after top level declarator
+## namespace Eigen {
+##                ^
+##                ;
+## In file included from &lt;built-in&gt;:1:
+## In file included from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/StanHeaders/include/stan/math/prim/mat/fun/Eigen.hpp:13:
+## In file included from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/Dense:1:
+## /Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppEigen/include/Eigen/Core:96:10: fatal error: 'complex' file not found
+## #include &lt;complex&gt;
+##          ^~~~~~~~~
+## 3 errors generated.
+## make: *** [foo.o] Error 1
+## 
+## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 1).
+## Chain 1: 
+## Chain 1: Gradient evaluation took 2.4e-05 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 0.052815 seconds (Warm-up)
+## Chain 1:                0.02405 seconds (Sampling)
+## Chain 1:                0.076865 seconds (Total)
+## Chain 1: 
+## 
+## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 2).
+## Chain 2: 
+## Chain 2: Gradient evaluation took 5e-06 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.05 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 0.053013 seconds (Warm-up)
+## Chain 2:                0.025009 seconds (Sampling)
+## Chain 2:                0.078022 seconds (Total)
+## Chain 2: 
+## 
+## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 3).
+## Chain 3: 
+## Chain 3: Gradient evaluation took 5e-06 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.05 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 0.050461 seconds (Warm-up)
+## Chain 3:                0.018405 seconds (Sampling)
+## Chain 3:                0.068866 seconds (Total)
+## Chain 3: 
+## 
+## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 4).
+## Chain 4: 
+## Chain 4: Gradient evaluation took 6e-06 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.06 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 0.047671 seconds (Warm-up)
+## Chain 4:                0.017159 seconds (Sampling)
+## Chain 4:                0.06483 seconds (Total)
+## Chain 4:
+```
+
+---
+# Model summary
+
+
+```r
+summary(sleep_m0)
+```
+
+```
+##  Family: gaussian 
+##   Links: mu = identity; sigma = identity 
+## Formula: Reaction ~ Days 
+##    Data: lme4::sleepstudy (Number of observations: 180) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Population-Level Effects: 
+##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept   251.31      6.62   237.87   263.73 1.00     4365     3249
+## Days         10.48      1.25     8.06    12.99 1.00     4277     3165
+## 
+## Family Specific Parameters: 
+##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## sigma    47.96      2.61    43.12    53.40 1.00     4318     2957
+## 
+## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# View fixed effect
+Let's look at our estimated relation between `Days` and `Reaction`
+
+--
+
+```r
+conditional_effects(sleep_m0)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-45-1.png)&lt;!-- --&gt;
+
+---
+# Wrong model
+Of course, this is the wrong model, we have a multilevel structure
+
+![](w7p1_files/figure-html/unnamed-chunk-46-1.png)&lt;!-- --&gt;
+
+---
+# Multilevel model
+Notice the syntax is essentially equivalent to **lme4**
+
+
+```r
+sleep_m1 &lt;- brm(Reaction ~ Days + (Days | Subject), data = lme4::sleepstudy)
+summary(sleep_m1)
+```
+
+
+
+
+```
+##  Family: gaussian 
+##   Links: mu = identity; sigma = identity 
+## Formula: Reaction ~ Days + (Days | Subject) 
+##    Data: lme4::sleepstudy (Number of observations: 180) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Group-Level Effects: 
+## ~Subject (Number of levels: 18) 
+##                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## sd(Intercept)          26.76      6.63    15.80    41.56 1.00     1960     2443
+## sd(Days)                6.54      1.53     4.18     9.99 1.00     1683     1939
+## cor(Intercept,Days)     0.10      0.30    -0.46     0.66 1.00     1223     1799
+## 
+## Population-Level Effects: 
+##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept   251.33      7.56   236.09   266.35 1.00     1917     2180
+## Days         10.51      1.67     7.34    13.86 1.00     1530     1949
+## 
+## Family Specific Parameters: 
+##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## sigma    25.94      1.54    23.16    29.15 1.00     4020     3168
+## 
+## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# Fixed effect
+The uncertainty has increased
+
+
+```r
+conditional_effects(sleep_m1)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-50-1.png)&lt;!-- --&gt;
+
+---
+# Checking your model
+
+
+```r
+pp_check(sleep_m1)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-51-1.png)&lt;!-- --&gt;
+
+---
+# More checks
+
+
+```r
+plot(sleep_m1)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-52-1.png)&lt;!-- --&gt;![](w7p1_files/figure-html/unnamed-chunk-52-2.png)&lt;!-- --&gt;
+
+---
+# Even more
+
+
+```r
+launch_shinystan(sleep_m1)
+```
+
+---
+# Another model
+
+
+```r
+kidney_m0 &lt;- brm(time ~ age + sex, data = kidney)
+pp_check(kidney_m0, type = "ecdf_overlay")
+```
+
+
+
+![](w7p1_files/figure-html/unnamed-chunk-56-1.png)&lt;!-- --&gt;
+
+---
+# Fixing this
+We need to change the assumptions of our model - specifically that the outcome is not normally distributed
+
+--
+Maybe Poisson?
+
+
+```r
+kidney_m1 &lt;- brm(time ~ age + sex, data = kidney, family = poisson())
+```
+
+
+
+---
+# Nope
+
+
+```r
+pp_check(kidney_m1, type = "ecdf_overlay")
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-59-1.png)&lt;!-- --&gt;
+
+
+---
+# Gamma w/log link
+
+```r
+kidney_m2 &lt;- brm(time ~ age + sex, data = kidney, family = Gamma("log"))
+pp_check(kidney_m2, type = "ecdf_overlay")
+```
+
+
+
+![](w7p1_files/figure-html/unnamed-chunk-62-1.png)&lt;!-- --&gt;
+
+
+---
+# Specifying priors
+Let's sample from *only* our priors to see what kind of predictions we get.
+
+Here, we're specifying that our beta coefficient prior is `\(\beta \sim N(0, 0.5)\)` 
+  
+
+```r
+kidney_m3 &lt;- brm(
+  time ~ age + sex, 
+  data = kidney,
+  family = Gamma("log"),
+  prior = prior(normal(0, 0.5), class = "b"),
+  sample_prior = "only"
+)
+```
+
+
+
+---
+
+```r
+kidney_m3
+```
+
+```
+## Warning: There were 1915 divergent transitions after warmup.
+## Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/
+## warnings.html#divergent-transitions-after-warmup
+```
+
+```
+##  Family: gamma 
+##   Links: mu = log; shape = identity 
+## Formula: time ~ age + sex 
+##    Data: kidney (Number of observations: 76) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Population-Level Effects: 
+##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept     4.24     21.62   -38.49    48.13 1.01      698      951
+## age          -0.01      0.49    -1.01     0.95 1.01      729      983
+## sexfemale    -0.01      0.52    -1.02     1.02 1.01      686      908
+## 
+## Family Specific Parameters: 
+##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## shape     0.57      5.37     0.00     3.27 1.01      427      489
+## 
+## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# Prior predictions
+Random sample of 100 points
+
+![](w7p1_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
+
+---
+# Why?
+It seemed like our prior was fairly tight
+
+
+--
+The exploding prior happens because of the log transformation
+
+* Age is coded in years
+
+* Imagine a coef of 1 (2 standard deviations above our prior)
+
+* Prediction for a 25 year old would be exp(25) = 7.2004899\times 10^{10}
+
+---
+# A note on prior specifications
+* It's hard
+
+* I don't have a ton of good advice
+
+* Be particularly careful when you're using distributions that have anything other than an identity link (e.g., log link, as we are here)
+
+---
+# One more model
+Let's fit a model we've fit previously
+
+
+--
+In Week 4, we fit this model
+
+
+```r
+library(lme4)
+popular &lt;- read_csv(here::here("data", "popularity.csv"))
+m_lmer &lt;- lmer(popular ~ extrav + (extrav|class), popular,
+               control = lmerControl(optimizer = "bobyqa"))
+```
+
+--
+Try fitting the same model with **{brms}** with the default, diffuse priors
+
+<div class="countdown" id="timer_6089fcdc" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# Bayesian verision
+
+
+
+
+```r
+m_brms &lt;- brm(popular ~ extrav + (extrav|class), popular)
+```
+
+---
+# lme4 model
+
+```r
+arm::display(m_lmer)
+```
+
+```
+## lmer(formula = popular ~ extrav + (extrav | class), data = popular, 
+##     control = lmerControl(optimizer = "bobyqa"))
+##             coef.est coef.se
+## (Intercept) 2.46     0.20   
+## extrav      0.49     0.03   
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  class    (Intercept) 1.73           
+##           extrav      0.16     -0.97 
+##  Residual             0.95           
+## ---
+## number of obs: 2000, groups: class, 100
+## AIC = 5791.4, DIC = 5762
+## deviance = 5770.7
+```
+
+
+---
+# brms model
+
+
+```r
+m_brms
+```
+
+```
+##  Family: gaussian 
+##   Links: mu = identity; sigma = identity 
+## Formula: popular ~ extrav + (extrav | class) 
+##    Data: popular (Number of observations: 2000) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Group-Level Effects: 
+## ~class (Number of levels: 100) 
+##                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+## sd(Intercept)             1.72      0.17     1.39     2.07 1.00     1261
+## sd(extrav)                0.16      0.03     0.11     0.22 1.00      817
+## cor(Intercept,extrav)    -0.95      0.03    -1.00    -0.89 1.01      572
+##                       Tail_ESS
+## sd(Intercept)             2400
+## sd(extrav)                2022
+## cor(Intercept,extrav)      769
+## 
+## Population-Level Effects: 
+##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept     2.46      0.20     2.07     2.86 1.00     1202     1522
+## extrav        0.49      0.03     0.44     0.54 1.00     1935     2290
+## 
+## Family Specific Parameters: 
+##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## sigma     0.95      0.02     0.92     0.98 1.00     5335     2710
+## 
+## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# Plotting the Bayes fit
+
+
+```r
+library(tidybayes)
+tibble(extrav = 1:10, class = 0) %&gt;% 
+  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %&gt;% 
+  ggplot(aes(extrav, .value)) +
+  geom_line(aes(group = .draw), size = 0.1)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-72-1.png)&lt;!-- --&gt;
+
+---
+# Add in raw data
+
+```r
+library(tidybayes)
+tibble(extrav = 1:10, class = 0) %&gt;% 
+  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %&gt;% 
+  ggplot(aes(extrav, .value)) +
+  geom_point(aes(extrav, popular), data = popular,
+*            color = "gray70") +
+  geom_line(aes(group = .draw), size = 0.1)
+```
+
+![](w7p1_files/figure-html/unnamed-chunk-73-1.png)&lt;!-- --&gt;
+
+---
+class: inverse-red middle
+# Wrapping up
+
+
+---
+# Advantages to Bayes
+* Opportunity to incorporate prior knowledge into the modeling process (you don't really *have* to - could just set wide priors)
+
+* Natural interpretation of uncertainty
+
+* Can often allow you to estimate models that are difficult if not impossible with frequentist methods
+
+
+--
+
+## Disadvatages
+
+* Generally going to be slower in implementation
+
+* You may run into pushback from others - particularly with respect to prior
+
+---
+# Notes on the posterioir
+* The posterior is the distribution of the parameters, given the data
+
+* You can think of it as the distribution of what we don't know, but are interested in (the model parameters), given what we know or have observed (the data), and our prior beliefs
+
+* Gives a complete picture of parameter uncertainty
+
+* We can do lots of things with the posterior that is hard to get otherwise
+
+* Next time, we'll discuss how missing values can be treated as unknown variables (parameters) in the model, and imputed from the posterior
+
+---
+class: inverse-green middle
+# Next time
+Continue discussing Bayes - more emphasis on model results &amp; plotting
+
+Fit and interpret multilevel logistic regression models
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"navigation": {
+"scroll": false
+},
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

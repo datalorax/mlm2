@@ -165,7 +165,7 @@ Icons in the schedule link to specific chapters.
 {{< week "05-14" >}}
   {{< description "Introduction to Bayesian estimation" "Basic concepts in Bayesian estimation: prior and posterior distributions, MCMC sampling, model convergence. We will fit similar models to those fit previously in the course, but using the brms package for Bayesian inference." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w7p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< assigned "assignments" "hw3" >}}
