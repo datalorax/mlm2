@@ -6,6 +6,16 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 
+galo_link <- "https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%2015/galo/Galo.sav"
+galo <- haven::read_sav(galo_link)
+galo %>% 
+  haven::as_factor() %>% 
+  select(-nmis) %>% 
+  rownames_to_column("sid") %>% 
+  select(sid:sex, advice:denom, galo) %>% 
+  write_csv(here::here("data", "galo.csv"))
+
+
 popular_link <- "https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%202/popularity/SPSS/popular2.sav"
 popular <- haven::read_sav(popular_link)
 popular %>% 

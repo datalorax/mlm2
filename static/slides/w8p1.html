@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Multilevel logistic regression</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Daniel Anderson" />
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="new.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Multilevel logistic regression
+## And more Bayesian estimation
+### Daniel Anderson
+### Week 8
+
+---
+
+
+
+
+layout: true
+
+  &lt;script&gt;
+    feather.replace()
+  &lt;/script&gt;
+  
+  &lt;div class="slides-footer"&gt;
+  &lt;span&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2/raw/main/static/slides/w8p1.pdf"&gt;
+    &lt;i class = "footer-icon" data-feather="download"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://mlm2.netlify.app/slides/w8p1.html"&gt;
+    &lt;i class = "footer-icon" data-feather="link"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://mlm2-2021.netlify.app"&gt;
+    &lt;i class = "footer-icon" data-feather="globe"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;a class = "footer-icon-link" href = "https://github.com/datalorax/mlm2"&gt;
+    &lt;i class = "footer-icon" data-feather="github"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+  
+  &lt;/span&gt;
+  &lt;/div&gt;
+  
+
+---
+# Agenda
+* Logistic regression review
+
+* Extending to multilevel logistic regression models with **lme4**
+
+* Fitting multilevel logistic regression models with **brms**
+
+* Plotting **brms** fits
+
+---
+class: inverse-blue middle
+# Review of logistic regression
+
+---
+# Data generating distribution
+Up to this point, we've been assuming the data were generated from a normal distribution.
+
+--
+
+For example, we might fit a simple linear regression model to the wages data like this
+
+$$
+`\begin{aligned}
+  \operatorname{wages}_{i}  &amp;\sim N \left(\widehat{y}, \sigma^2 \right) \\
+  \widehat{y} &amp;= \alpha + \beta_{1}(\operatorname{exper})
+\end{aligned}`
+$$
+
+--
+In code
+
+
+```r
+wages &lt;- read_csv(here::here("data", "wages.csv")) %&gt;% 
+  mutate(hourly_wage = exp(lnw))
+
+wages_lm &lt;- lm(hourly_wage ~ exper, data = wages)
+```
+
+---
+# Graphically
+
+
+```r
+ggplot(wages, aes(exper, hourly_wage)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+--
+Aside - you see why the log of wages was modeled instead?
+
+---
+# Log wages
+
+
+```r
+ggplot(wages, aes(exper, lnw)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+---
+# Move to binary model
+Let's split the wages data into a binary classification based on whether it's above or below the mean.
+
+--
+
+
+```r
+wages &lt;- wages %&gt;% 
+  mutate(
+    high_wage = ifelse(
+      hourly_wage &gt; mean(hourly_wage, na.rm = TRUE), 1, 0
+    )
+  )
+
+wages %&gt;% 
+  select(id, hourly_wage, high_wage)
+```
+
+```
+## # A tibble: 6,402 x 3
+##       id hourly_wage high_wage
+##    &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+##  1    31    4.441535         0
+##  2    31    4.191254         0
+##  3    31    4.344888         0
+##  4    31    5.748851         0
+##  5    31    6.896403         0
+##  6    31    5.523435         0
+##  7    31    8.052640         1
+##  8    31    8.406456         1
+##  9    36    7.257243         0
+## 10    36    6.037560         0
+## # … with 6,392 more rows
+```
+
+---
+# Plot
+
+
+```r
+means &lt;- wages %&gt;% 
+  group_by(high_wage) %&gt;% 
+  summarize(mean = mean(exper))
+
+ggplot(wages, aes(exper, high_wage)) +
+  geom_point(alpha = 0.01) +
+  geom_point(aes(x = mean), data = means, 
+             shape = 23, 
+             fill = "cornflowerblue")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+# We could fit a linear model
+
+
+```r
+m_lpm &lt;- lm(high_wage ~ exper, data = wages)
+arm::display(m_lpm)
+```
+
+```
+## lm(formula = high_wage ~ exper, data = wages)
+##             coef.est coef.se
+## (Intercept) 0.14     0.01   
+## exper       0.06     0.00   
+## ---
+## n = 6402, k = 2
+## residual sd = 0.45, R-Squared = 0.11
+```
+
+--
+This is referred to as a linear probability model (LPM) and they are pretty hotly contested, with proponents and detractors
+
+---
+# Plot
+
+
+```r
+ggplot(wages, aes(exper, high_wage)) +
+  geom_point(alpha = 0.01) +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+# Prediction
+
+What if somebody has an experience of 25 years?
+
+--
+
+
+```r
+predict(m_lpm, newdata = data.frame(exper = 25))
+```
+
+```
+##        1 
+## 1.535723
+```
+
+🤨
+
+Our prediction goes outside the range of our data.
+
+
+--
+As a rule, the assumed data generating process should match the boundaries of the data.
+
+
+--
+Of course, you could truncate after the fact. I think that's less than ideal (see [here](https://www.alexpghayes.com/blog/consistency-and-the-linear-probability-model/) or [here](https://github.com/alexpghayes/linear-probability-model/blob/master/presentation.pdf) for discussions contrasting LPM with logistic regression).
+
+---
+# The binomial model
+
+$$
+y_i \sim \text{Binomial}(n, p_i)
+$$
+
+--
+Think in terms of coin flips
+
+
+--
+`\(n\)` is the number of coin flips, while `\(p_i\)` is the probability of heads
+
+
+---
+# Example
+Flip 1 coin 10 times
+
+
+```r
+set.seed(42)
+rbinom(
+  n = 10, # number of trials
+  size = 1, # number of coins
+  prob = 0.5 # probability of heads
+)
+```
+
+```
+##  [1] 1 1 0 1 1 1 1 0 1 1
+```
+
+
+--
+
+Flip 10 coins 11 times
+
+
+```r
+set.seed(42)
+rbinom(n = 1, size = 10, prob = 0.5)
+```
+
+```
+## [1] 7
+```
+
+---
+# Modeling
+We now build a linear model for `\(p\)`, just like we previously built a linear model for `\(\mu\)`.
+
+
+--
+.center[
+.realbig[
+A problem
+]
+]
+
+Probability is bounded `\([0, 1]\)` 
+
+We need to ensure that our model respects these bounds
+
+
+---
+# Link functions
+
+We solve this problem by using a *link* function
+
+$$
+`\begin{aligned}
+y_i &amp;\sim \text{Binomial}(n, p_i) \\
+f(p_i) &amp;= \alpha + \beta(x_i) 
+\end{aligned}`
+$$
+
+* Link functions map the *linear* parameters to the *non-linear* parameters (like probability)
+
+* The *log* and *logit* links are most common
+
+
+---
+# Binomial logistic regression
+If we only have two categories, we commonly assume a binomial distribution, with a logit link.
+
+$$
+`\begin{aligned}
+y_i &amp;\sim \text{Binomial}(n, p_i) \\
+\text{logit}(p_i) &amp;= \alpha + \beta(x_i) 
+\end{aligned}`
+$$
+
+--
+where the logit link is defined by the *log-odds*
+
+$$
+\text{logit}(p_i) = \log\frac{p_i}{1-p_i}
+$$
+
+
+--
+So
+
+$$
+\log\frac{p_i}{1-p_i} = \alpha + \beta(x_i) 
+$$
+---
+# Inverse link
+
+What we probably want to interpret is probability
+
+--
+
+We can transform the log-odds to probability by exponentiating 
+
+$$
+p_i = \frac{\exp(\alpha + \beta(x_i))}{1 + \exp(\alpha + \beta(x_i))}
+$$
+--
+This is the logistic function, or the inverse-logit.
+
+
+---
+# Example logistic regression model
+
+
+```r
+m_glm &lt;- glm(high_wage ~ exper, 
+             data = wages, 
+*            family = binomial(link = "logit"))
+arm::display(m_glm)
+```
+
+```
+## glm(formula = high_wage ~ exper, family = binomial(link = "logit"), 
+##     data = wages)
+##             coef.est coef.se
+## (Intercept) -1.65     0.05  
+## exper        0.25     0.01  
+## ---
+##   n = 6402, k = 2
+##   residual deviance = 7655.2, null deviance = 8345.8 (difference = 690.5)
+```
+
+
+---
+# Coefficient interpretation
+The coefficients are reported on the *log-odds* scale. Other than that, interpretation is the same.
+
+
+--
+For example:
+
+The log-odds of a participant with zero yeras experience being in the high wage category was -1.65. 
+
+For every one year of additional experience, the log-odds of being in the high wage category increased by 0.25.
+
+
+---
+# Note
+* Outside of scientific audiences, almost nobody is going to understand the previous slide
+
+* You *cannot* just transform the coefficients and interpret them as probabilities (because it is non-linear on the probability scale).
+
+
+---
+# Log odds scale
+
+
+```r
+tibble(exper = 0:10) %&gt;% 
+  mutate(pred = predict(m_glm, newdata = .)) %&gt;% 
+  ggplot(aes(exper, pred)) +
+  geom_line()
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+--
+Perfectly straight line - change in log-odds are modeled as a linear function of experience
+
+---
+# Probability scale
+
+
+```r
+tibble(exper = 0:10) %&gt;% 
+  mutate(pred = predict(m_glm, newdata = ., type = "response")) %&gt;% 
+  ggplot(aes(exper, pred)) +
+  geom_line()
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+
+--
+In this case, experience is not a a very strong predictor, so the non-linearity is not overly strong
+
+
+--
+But still bound to `\([0, 1]\)`
+
+---
+# Probability predictions
+
+Let's make the predictions from the previous slide "by hand"
+
+--
+Recall:
+
+$$
+p_i = \frac{\exp(\alpha + \beta(x_i))}{1 + \exp(\alpha + \beta(x_i))}
+$$
+
+--
+And our coefficients are
+
+
+```r
+coef(m_glm)
+```
+
+```
+## (Intercept)       exper 
+##  -1.6467568   0.2536815
+```
+
+---
+# Intercept
+
+$$
+(p_i|\text{exper = 0}) = \frac{\exp(-1.65 + 0.25(0))}{1 + \exp(-1.65 + 0.25(0))}
+$$
+
+--
+$$
+(p_i|\text{exper = 0}) = \frac{\exp(-1.65)}{1 + \exp(-1.65)}
+$$
+
+--
+$$
+(p_i|\text{exper = 0}) = \frac{0.19}{1.19} = 0.16
+$$
+
+---
+# Five years experience
+
+Notice the exponentiation happens *after* adding the coefficients together
+
+$$
+(p_i|\text{exper = 5}) = \frac{\exp(-1.65 + 0.25(5))}{1 + \exp(-1.65 + 0.25(5))}
+$$
+
+--
+$$
+(p_i|\text{exper = 5}) = \frac{\exp(-0.4)}{1 + \exp(-0.4)}
+$$
+
+--
+$$
+(p_i|\text{exper = 5}) = \frac{0.67}{1.67} = 0.40
+$$
+
+
+---
+# More interpretation
+
+Let's try to make this so more people might understand.
+
+
+--
+First, show the logistic curve on the probability scale! Can help prevent linear interpretations
+
+
+--
+Discuss probabilities at different `\(x\)` values
+
+
+---
+# Example writeup
+
+There was a 16 percent chance that a participant with zero years experience would be in the *high wage* category. The logistic function, which mapped years of experience to the  probability of being in the *high-wage* category, was non-linear, as shown in Figure 1. For individuals with 5, 10, and 15 years of experience, however, the probabililty increased to a 41, 71, and 90 percent chance, respectively. 
+
+---
+class: inverse-red middle
+# Other distributions
+
+---
+background-image: url(img/distributions.png)
+background-size: contain
+
+.footnote[Figure from [McElreath](https://xcelab.net/rm/statistical-rethinking/)]
+
+---
+class: inverse-blue middle
+
+# Multilevel logistic regression
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"navigation": {
+"scroll": false
+},
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
