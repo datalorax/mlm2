@@ -195,10 +195,13 @@ rbinom(
 )
 ```
 
+--
+Side note - a binomial model with `size = 1` (or $n = 1$ in equation form) is equivalent to a Bernoulli distribution
+
 
 --
 
-Flip 10 coins 11 times
+Flip 10 coins 1 time
 
 ```{r }
 set.seed(42)
@@ -234,8 +237,19 @@ f(p_i) &= \alpha + \beta(x_i)
 \end{aligned}
 $$
 
-* Link functions map the *linear* parameters to the *non-linear* parameters (like probability)
+--
+* Instead of modeling $p_i$ directly, we model $f(p_i)$
 
+
+--
+* The specific $f$ is the link function
+
+
+--
+* Link functions map the *linear* space of the model to the *non-linear* parameters (like probability)
+
+
+--
 * The *log* and *logit* links are most common
 
 
@@ -254,7 +268,7 @@ $$
 where the logit link is defined by the *log-odds*
 
 $$
-\text{logit}(p_i) = \log\frac{p_i}{1-p_i}
+\text{logit}(p_i) = \log\left[\frac{p_i}{1-p_i}\right]
 $$
 
 
@@ -262,8 +276,9 @@ $$
 So
 
 $$
-\log\frac{p_i}{1-p_i} = \alpha + \beta(x_i) 
+\log\left[\frac{p_i}{1-p_i}\right] = \alpha + \beta(x_i) 
 $$
+
 ---
 # Inverse link
 
@@ -299,7 +314,7 @@ The coefficients are reported on the *log-odds* scale. Other than that, interpre
 --
 For example:
 
-The log-odds of a participant with zero yeras experience being in the high wage category was `r round(coef(m_glm)[1], 2)`. 
+The log-odds of a participant with zero years experience being in the high wage category was `r round(coef(m_glm)[1], 2)`. 
 
 For every one year of additional experience, the log-odds of being in the high wage category increased by `r round(coef(m_glm)[2], 2)`.
 
@@ -315,7 +330,7 @@ For every one year of additional experience, the log-odds of being in the high w
 # Log odds scale
 
 ```{r fig.height = 5}
-tibble(exper = 0:10) %>% 
+tibble(exper = 0:25) %>% 
   mutate(pred = predict(m_glm, newdata = .)) %>% 
   ggplot(aes(exper, pred)) +
   geom_line()
@@ -328,18 +343,14 @@ Perfectly straight line - change in log-odds are modeled as a linear function of
 # Probability scale
 
 ```{r fig.height = 5}
-tibble(exper = 0:10) %>% 
+tibble(exper = 0:25) %>% 
   mutate(pred = predict(m_glm, newdata = ., type = "response")) %>% 
   ggplot(aes(exper, pred)) +
   geom_line()
 ```
 
 --
-In this case, experience is not a a very strong predictor, so the non-linearity is not overly strong
-
-
---
-But still bound to $[0, 1]$
+Our model parameters map to probability non-linearly, and it is bound to $[0, 1]$
 
 ---
 # Probability predictions
@@ -396,6 +407,23 @@ $$
 (p_i|\text{exper = 5}) = \frac{0.67}{1.67} = 0.40
 $$
 
+---
+# Fifteen years experience
+
+$$
+(p_i|\text{exper = 15}) = \frac{\exp(-1.65 + 0.25(15))}{1 + \exp(-1.65 + 0.25(15))}
+$$
+
+--
+$$
+(p_i|\text{exper = 15}) = \frac{\exp(2.1)}{1 + \exp(2.1)}
+$$
+
+--
+$$
+(p_i|\text{exper = 15}) = \frac{8.16}{9.16} = 0.89
+$$
+
 
 ---
 # More interpretation
@@ -411,10 +439,33 @@ First, show the logistic curve on the probability scale! Can help prevent linear
 Discuss probabilities at different $x$ values
 
 
+--
+The "divide by 4" rule
+
+---
+# Divide by 4
+
+* Logistic curve is steepest when $p_i = 0.5$
+
+* The slope of the logistic curve (its derivative) is maximized at $\beta/4$
+
+* Aside from the intercept, we can say that the change is *no more* than $\beta/4$ 
+
+--
+## Example
+
+$$
+\frac{0.25}{4} = 0.0625
+$$
+
+--
+So, a one year increase in experience corresponds to, at most, a 6% increase in being in the high wage category
+
+
 ---
 # Example writeup
 
-There was a `r round(predict(m_glm, newdata = tibble(exper = 0), type = "response") * 100)` percent chance that a participant with zero years experience would be in the *high wage* category. The logistic function, which mapped years of experience to the  probability of being in the *high-wage* category, was non-linear, as shown in Figure 1. For individuals with 5, 10, and 15 years of experience, however, the probabililty increased to a `r round(predict(m_glm, newdata = tibble(exper = 5), type = "response") * 100)`, `r round(predict(m_glm, newdata = tibble(exper = 10), type = "response") * 100)`, and `r round(predict(m_glm, newdata = tibble(exper = 15), type = "response") * 100)` percent chance, respectively. 
+There was a `r round(predict(m_glm, newdata = tibble(exper = 0), type = "response") * 100)` percent chance that a participant with zero years experience would be in the *high wage* category. The logistic function, which mapped years of experience to the  probability of being in the *high-wage* category, was non-linear, as shown in Figure 1. At its steepest point, a one year increase in experience corresponded with approximately a 6% increase in the probability of being in the high-wage category. For individuals with 5, 10, and 15 years of experience, the probability increased to a `r round(predict(m_glm, newdata = tibble(exper = 5), type = "response") * 100)`, `r round(predict(m_glm, newdata = tibble(exper = 10), type = "response") * 100)`, and `r round(predict(m_glm, newdata = tibble(exper = 15), type = "response") * 100)` percent chance, respectively. 
 
 ---
 class: inverse-red middle
@@ -430,3 +481,168 @@ background-size: contain
 class: inverse-blue middle
 
 # Multilevel logistic regression
+
+---
+# The data
+Polling data from the 1988 election.
+
+```{r }
+polls <- rio::import(here::here("data", "polls.dta"),
+                     setclass = "tbl_df")
+polls
+```
+
+---
+# About the data
+
+* Collected one week before the election
+
+* Nationally representative sample
+
+* Should use post-stratification to control for non-response, but we'll hold off on that for now (See Gelman & Hill, Chapter 14 for more details)
+
+---
+# Baseline probability
+
+Let's assume we want to estimate the probability that Bush will be elected.
+
+--
+We could fit a single level model like this
+
+$$
+\begin{aligned}
+\operatorname{bush} &\sim \text{Binomial}\left(n = 1, \operatorname{prob}_{\operatorname{bush} = \operatorname{1}}= \hat{P}\right) \\
+ \log\left[ \frac { \hat{P} }{ 1 - \hat{P} } \right] 
+ &= \alpha
+\end{aligned}
+$$
+
+---
+# In code
+
+Can you write the code for the previous model?
+
+`r countdown::countdown(1)`
+
+--
+
+```{r}
+bush_sl <- glm(bush ~ 1, 
+               data = polls,
+               family = binomial(link = "logit"))
+```
+
+
+--
+
+```{r }
+arm::display(bush_sl)
+```
+
+--
+So, $p_i = \frac{\exp(0.25)}{1 + \exp(0.25)} = 0.56$
+
+---
+# State-level variability
+
+To estimate state-level variability, we just specify a distribution for the intercept variability.
+
+--
+
+$$
+\begin{aligned}
+\operatorname{bush} &\sim \text{Binomial}\left(n = 1, \operatorname{prob}_{\operatorname{bush} = \operatorname{1}}= \hat{P}\right) \\
+ \log\left[ \frac { \hat{P} }{ 1 - \hat{P} } \right] 
+ &= \alpha_{j[i]} \\
+    \alpha_{j}  &\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for state j = 1,} \dots \text{,J}
+\end{aligned}
+$$
+
+--
+Notice we're still specifying that the intercept variability is generated by a *normal* distribution.
+
+
+--
+What does this variability actually represent?
+
+
+--
+Variance in the log-odds
+
+---
+# Fitting the model
+
+If we're using **{lme4}**, we just swap `lmer()` for `glmer()` and specify the family and link function.
+
+--
+
+```{r }
+library(lme4)
+
+m0 <- glmer(bush ~ 1 + (1|state),
+           data = polls,
+           family = binomial(link = "logit"))
+arm::display(m0)
+```
+
+---
+# Interpretation
+
+* The average log odds of supporting bush was 0.25
+
+* This average varied between states with a standard deviation of 0.34
+
+---
+# State-level variation
+
+```{r }
+library(broom.mixed)
+m0_tidied <- tidy(m0, effects = "ran_vals", conf.int = TRUE)
+m0_tidied
+```
+
+---
+# Fancified Plot Code
+```{r eval = FALSE}
+m0_tidied %>% 
+  mutate(level = forcats::fct_reorder(level, estimate),
+         lean_bush = ) %>% 
+  ggplot(aes(estimate, level)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_point(aes(color = estimate)) +
+  geom_vline(xintercept = 0, color = "gray40", size = 3) +
+  labs(x = "Log-Odds Estimate", y = "") +
+  colorspace::scale_color_continuous_diverging(palette = "Blue-Red 2") +
+  guides(color = "none") +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+---
+# Fancified Plot
+```{r echo = FALSE, fig.height = 9}
+m0_tidied %>% 
+  mutate(level = forcats::fct_reorder(level, estimate),
+         lean_bush = ) %>% 
+  ggplot(aes(estimate, level)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_point(aes(color = estimate)) +
+  geom_vline(xintercept = 0, color = "gray40", size = 3) +
+  labs(x = "Log-Odds Estimate", y = "") +
+  colorspace::scale_color_continuous_diverging(palette = "Blue-Red 2") +
+  guides(color = "none") +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+---
+
+
+---
+# What to estimate
+* State-level variation
+
+* Correct for non-response
+
+* 
