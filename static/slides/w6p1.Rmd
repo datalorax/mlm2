@@ -31,6 +31,8 @@ update_geom_defaults('text', list(size = 9))
 
 ---
 # Agenda
+* More practice with equation/models
+
 * Thinking flexibly about time
 
   + Coefficient interpretation by time coding
@@ -42,6 +44,267 @@ update_geom_defaults('text', list(size = 9))
 .realbig[Note]
 
 The last bullet is not necessarily specific to growth models
+
+---
+class: inverse-blue middle
+# Equation/model practice
+
+---
+# The data
+Please load the following data
+
+`r countdown::countdown(2)`
+
+```{r message = FALSE}
+library(tidyverse)
+d <- read_csv(here::here("data", "longitudinal-sim.csv"))
+```
+
+---
+# Model 1
+Please translate the following model into `lme4::lmer()` code
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, message = FALSE}
+library(lme4)
+library(equatiomatic)
+m1 <- lmer(g5_spring ~ g4_spring + g3_spring + (1|scid) + (1|distid),
+          data = d)
+extract_eq(m1)
+```
+
+
+
+--
+Three equivalent specifications
+
+```{r eval = FALSE}
+m1a <- lmer(g5_spring ~ g4_spring + g3_spring + 
+              (1|scid) + (1|distid),
+            data = d)
+
+m1b <- lmer(g5_spring ~ g4_spring + g3_spring + (1|distid/scid),
+            data = d)
+
+m1c <- lmer(g5_spring ~ g4_spring + g3_spring + 
+              (1|distid) + (1|distid:scid),
+            data = d)
+```
+
+---
+# Compute starting group means
+
+`r countdown::countdown(minutes = 0, seconds = 30)`
+
+```{r }
+d <- d %>% 
+  group_by(scid) %>% 
+  mutate(sch_mean_start = mean(g3_fall)) %>% 
+  group_by(distid) %>% 
+  mutate(dist_mean_start = mean(g3_fall))
+```
+
+---
+# Model 2
+Don't worry if you run into convergence warnings
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, warning= FALSE}
+m2 <- lmer(g5_spring ~ g4_spring + g3_spring + 
+             sch_mean_start + 
+             (g3_spring|scid) + (1|distid),
+          data = d)
+extract_eq(m2, font_size = "small")
+```
+
+--
+
+```{r eval = FALSE}
+lmer(g5_spring ~ g4_spring + g3_spring + sch_mean_start + 
+       (g3_spring|scid) + (1|distid),
+     data = d)
+```
+
+
+---
+# Model 3
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, warning= FALSE}
+m3 <- lmer(g5_spring ~ g4_spring + g3_spring + 
+             sch_mean_start + 
+             (g4_spring + g3_spring|scid) + (g4_spring + g3_spring|distid),
+          data = d)
+extract_eq(m3, font_size = "small")
+```
+
+--
+
+```{r eval = FALSE}
+lmer(g5_spring ~ g4_spring + g3_spring + sch_mean_start + 
+       (g4_spring + g3_spring|scid) + 
+       (g4_spring + g3_spring|distid),
+     data = d)
+```
+
+---
+# Model 4
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, warning= FALSE}
+m4 <- lmer(g5_spring ~ g4_spring + g3_spring + 
+             sch_mean_start + sch_mean_start:g3_spring +
+             (g4_spring + g3_spring|scid) + 
+             (g4_spring + g3_spring|distid),
+          data = d)
+extract_eq(m4, font_size = "small")
+```
+
+--
+```{r eval = FALSE}
+lmer(g5_spring ~ g4_spring + g3_spring + 
+       sch_mean_start + sch_mean_start:g3_spring +
+       (g4_spring + g3_spring|scid) + (g4_spring + g3_spring|distid),
+     data = d)
+```
+
+---
+# Model 5
+A little bit tricky
+
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, warning= FALSE, message = FALSE}
+m5 <- lmer(g5_spring ~ g4_spring + g3_spring + 
+             dist_mean_start +
+             (g4_spring + g3_spring||scid) + (g4_spring + g3_spring||distid),
+          data = d)
+extract_eq(m5, font_size = "small")
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(g5_spring ~ g4_spring + g3_spring + dist_mean_start +
+       (g4_spring + g3_spring||scid) + 
+       (g4_spring + g3_spring||distid),
+     data = d)
+```
+
+
+---
+# Move to long
+
+```{r }
+l <- d %>% 
+  pivot_longer(
+    cols = starts_with("g"),
+    names_to = "timepoint",
+    values_to = "score"
+  )
+l
+```
+
+---
+# Recode timepoint
+
+First create a data frame that maps the existing values to the new values you want.
+
+```{r }
+wave_frame <- tibble(
+  timepoint = paste0(
+    "g", 
+    rep(3:5, each = 3), 
+    rep(c("_fall", "_winter", "_spring"), 3)
+  ),
+  wave = 0:8
+)
+wave_frame
+```
+
+---
+# Join
+
+```{r }
+l <- left_join(l, wave_frame)
+l
+```
+
+---
+# Model 6
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+m6 <- lmer(score ~ wave +
+             (wave|sid) + (wave|scid) + (1|distid),
+          data = l)
+extract_eq(m6)
+```
+
+--
+
+```{r eval = FALSE}
+lmer(score ~ wave +
+       (wave|sid) + (wave|scid) + (1|distid),
+     data = d)
+```
+
+
+---
+# Model 7
+This one takes a while to fit, so don't worry about actually fitting it, just try to write the code.
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, message = FALSE, cache = TRUE}
+m7 <- lmer(score ~ wave + sch_mean_start + dist_mean_start +
+             wave:sch_mean_start + wave:dist_mean_start +
+             (wave|sid) + (wave|scid) + (sch_mean_start|distid),
+          data = l)
+extract_eq(m7, font_size = "scriptsize")
+```
+
+--
+
+```{r eval = FALSE}
+lmer(score ~ wave + sch_mean_start + dist_mean_start +
+       wave:sch_mean_start + wave:dist_mean_start +
+       (wave|sid) + (wave|scid) + (sch_mean_start|distid),
+     data = l)
+```
+
+---
+# Model 8
+
+## Last one
+
+`r countdown::countdown(2)`
+
+```{r echo = FALSE, warning = FALSE}
+m8 <- lmer(score ~ wave * sch_mean_start + dist_mean_start +
+             (wave|sid),
+          data = l)
+extract_eq(m8, font_size = "scriptsize")
+```
+
+--
+
+```{r eval = FALSE}
+lmer(score ~ wave * sch_mean_start + dist_mean_start +
+       (wave|sid),
+     data = l)
+```
+
+---
+class: inverse-blue middle
+# Growth modeling
 
 ---
 # The data
@@ -632,6 +895,7 @@ sim_d
 # Complexities
 Notice these data do have some complexities
 
+
 --
 Unbalance
 ```{r }
@@ -709,6 +973,7 @@ tibble(x = 0:100,
 # Fit a model
 Let's try fitting a linear model and a quadratic model and see which fits better.
 
+
 --
 You try fitting the linear model first, with `date` predicting `score`, and both the intercept and slope varying across students.
 
@@ -720,6 +985,7 @@ You try fitting the linear model first, with `date` predicting `score`, and both
 Let's first center date and put it in interpretable units.
 
 I'll center it on the first time point.
+
 
 --
 First - what do dates look like when converted to numbers?
@@ -785,8 +1051,12 @@ pred_frame <- tibble(
     days2 = days_from_start^2,
     sid = -999
   ) %>% 
-  mutate(pred_linear = predict(linear, newdata = ., allow.new.levels = TRUE),
-         pred_quad = predict(quad, newdata = ., allow.new.levels = TRUE))
+  mutate(pred_linear = predict(linear, 
+                               newdata = ., 
+                               allow.new.levels = TRUE),
+         pred_quad = predict(quad, 
+                             newdata = ., 
+                             allow.new.levels = TRUE))
 pred_frame
 ```
 
@@ -841,7 +1111,9 @@ pred_frame <- pred_frame %>%
   mutate(days3 = days_from_start^3)
 
 pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
+  mutate(pred_cubic = predict(cubic, 
+                              newdata = ., 
+                              allow.new.levels = TRUE)) %>% 
   ggplot(aes(days_from_start)) +
   geom_point(aes(y = score), data = sim_d, color = "gray80") +
   geom_line(aes(y = pred_linear), color = "#33B1AE") +
@@ -913,7 +1185,9 @@ pred_frame <- pred_frame %>%
   mutate(days_log = log(days_from_start + 1))
 
 pred_frame <- pred_frame %>% 
-  mutate(pred_log = predict(log_m, newdata = ., allow.new.levels = TRUE))
+  mutate(pred_log = predict(log_m, 
+                            newdata = ., 
+                            allow.new.levels = TRUE))
 ```
 
 --
@@ -933,7 +1207,9 @@ ggplot(pred_frame, aes(days_log)) +
 
 ```{r eval = FALSE}
 pred_frame %>% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %>% 
+  mutate(pred_cubic = predict(cubic, 
+                              newdata = ., 
+                              allow.new.levels = TRUE)) %>% 
   ggplot(aes(days_from_start)) +
   geom_point(aes(y = score), data = sim_d, color = "gray80") +
   geom_line(aes(y = pred_linear), color = "#33B1AE") +

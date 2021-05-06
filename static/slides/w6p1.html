@@ -59,6 +59,8 @@ layout: true
 
 ---
 # Agenda
+* More practice with equation/models
+
 * Thinking flexibly about time
 
   + Coefficient interpretation by time coding
@@ -72,6 +74,711 @@ layout: true
 The last bullet is not necessarily specific to growth models
 
 ---
+class: inverse-blue middle
+# Equation/model practice
+
+---
+# The data
+Please load the following data
+
+<div class="countdown" id="timer_609482bb" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+
+```r
+library(tidyverse)
+d &lt;- read_csv(here::here("data", "longitudinal-sim.csv"))
+```
+
+---
+# Model 1
+Please translate the following model into `lme4::lmer()` code
+
+<div class="countdown" id="timer_60948314" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+`\begin{aligned}
+  \operatorname{g5\_spring}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1}(\operatorname{g4\_spring}) + \beta_{2}(\operatorname{g3\_spring}), \sigma^2 \right) \\
+    \alpha_{j}  &amp;\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for scid j = 1,} \dots \text{,J} \\
+    \alpha_{k}  &amp;\sim N \left(\mu_{\alpha_{k}}, \sigma^2_{\alpha_{k}} \right)
+    \text{, for distid k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+
+
+--
+Three equivalent specifications
+
+
+```r
+m1a &lt;- lmer(g5_spring ~ g4_spring + g3_spring + 
+              (1|scid) + (1|distid),
+            data = d)
+
+m1b &lt;- lmer(g5_spring ~ g4_spring + g3_spring + (1|distid/scid),
+            data = d)
+
+m1c &lt;- lmer(g5_spring ~ g4_spring + g3_spring + 
+              (1|distid) + (1|distid:scid),
+            data = d)
+```
+
+---
+# Compute starting group means
+
+<div class="countdown" id="timer_6094856d" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">00</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
+</div>
+
+
+```r
+d &lt;- d %&gt;% 
+  group_by(scid) %&gt;% 
+  mutate(sch_mean_start = mean(g3_fall)) %&gt;% 
+  group_by(distid) %&gt;% 
+  mutate(dist_mean_start = mean(g3_fall))
+```
+
+---
+# Model 2
+Don't worry if you run into convergence warnings
+
+<div class="countdown" id="timer_60948372" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{g5\_spring}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1}(\operatorname{g4\_spring}) + \beta_{2j[i]}(\operatorname{g3\_spring}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{2j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{sch\_mean\_start}) \\
+      &amp;\mu_{\beta_{2j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{2j}} \\ 
+     \rho_{\beta_{2j}\alpha_{j}} &amp; \sigma^2_{\beta_{2j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid j = 1,} \dots \text{,J} \\    \alpha_{k}  &amp;\sim N \left(\mu_{\alpha_{k}}, \sigma^2_{\alpha_{k}} \right)
+    \text{, for distid k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+--
+
+
+```r
+lmer(g5_spring ~ g4_spring + g3_spring + sch_mean_start + 
+       (g3_spring|scid) + (1|distid),
+     data = d)
+```
+
+
+---
+# Model 3
+
+<div class="countdown" id="timer_609482ca" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{g5\_spring}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{g4\_spring}) + \beta_{2j[i],k[i]}(\operatorname{g3\_spring}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j} \\
+      &amp;\beta_{2j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{sch\_mean\_start}) \\
+      &amp;\mu_{\beta_{1j}} \\
+      &amp;\mu_{\beta_{2j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} &amp; \rho_{\alpha_{j}\beta_{2j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}} &amp; \rho_{\beta_{1j}\beta_{2j}} \\ 
+     \rho_{\beta_{2j}\alpha_{j}} &amp; \rho_{\beta_{2j}\beta_{1j}} &amp; \sigma^2_{\beta_{2j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k} \\
+      &amp;\beta_{2k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}} \\
+      &amp;\mu_{\beta_{2k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} &amp; \rho_{\alpha_{k}\beta_{2k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}} &amp; \rho_{\beta_{1k}\beta_{2k}} \\ 
+     \rho_{\beta_{2k}\alpha_{k}} &amp; \rho_{\beta_{2k}\beta_{1k}} &amp; \sigma^2_{\beta_{2k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for distid k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+--
+
+
+```r
+lmer(g5_spring ~ g4_spring + g3_spring + sch_mean_start + 
+       (g4_spring + g3_spring|scid) + 
+       (g4_spring + g3_spring|distid),
+     data = d)
+```
+
+---
+# Model 4
+
+<div class="countdown" id="timer_60948526" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{g5\_spring}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{g4\_spring}) + \beta_{2j[i],k[i]}(\operatorname{g3\_spring}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j} \\
+      &amp;\beta_{2j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{sch\_mean\_start}) \\
+      &amp;\mu_{\beta_{1j}} \\
+      &amp;\gamma^{\beta_{2}}_{0} + \gamma^{\beta_{2}}_{1}(\operatorname{sch\_mean\_start})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} &amp; \rho_{\alpha_{j}\beta_{2j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}} &amp; \rho_{\beta_{1j}\beta_{2j}} \\ 
+     \rho_{\beta_{2j}\alpha_{j}} &amp; \rho_{\beta_{2j}\beta_{1j}} &amp; \sigma^2_{\beta_{2j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k} \\
+      &amp;\beta_{2k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}} \\
+      &amp;\mu_{\beta_{2k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} &amp; \rho_{\alpha_{k}\beta_{2k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}} &amp; \rho_{\beta_{1k}\beta_{2k}} \\ 
+     \rho_{\beta_{2k}\alpha_{k}} &amp; \rho_{\beta_{2k}\beta_{1k}} &amp; \sigma^2_{\beta_{2k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for distid k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+--
+
+```r
+lmer(g5_spring ~ g4_spring + g3_spring + 
+       sch_mean_start + sch_mean_start:g3_spring +
+       (g4_spring + g3_spring|scid) + (g4_spring + g3_spring|distid),
+     data = d)
+```
+
+---
+# Model 5
+A little bit tricky
+
+
+<div class="countdown" id="timer_609484a8" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{g5\_spring}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{g4\_spring}) + \beta_{2j[i],k[i]}(\operatorname{g3\_spring}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j} \\
+      &amp;\beta_{2j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}} \\
+      &amp;\mu_{\beta_{2j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{j}} &amp; 0 &amp; 0 \\ 
+     0 &amp; \sigma^2_{\beta_{1j}} &amp; 0 \\ 
+     0 &amp; 0 &amp; \sigma^2_{\beta_{2j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k} \\
+      &amp;\beta_{2k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{dist\_mean\_start}) \\
+      &amp;\mu_{\beta_{1k}} \\
+      &amp;\mu_{\beta_{2k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{ccc}
+     \sigma^2_{\alpha_{k}} &amp; 0 &amp; 0 \\ 
+     0 &amp; \sigma^2_{\beta_{1k}} &amp; 0 \\ 
+     0 &amp; 0 &amp; \sigma^2_{\beta_{2k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for distid k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+
+--
+
+
+```r
+lmer(g5_spring ~ g4_spring + g3_spring + dist_mean_start +
+       (g4_spring + g3_spring||scid) + 
+       (g4_spring + g3_spring||distid),
+     data = d)
+```
+
+
+---
+# Move to long
+
+
+```r
+l &lt;- d %&gt;% 
+  pivot_longer(
+    cols = starts_with("g"),
+    names_to = "timepoint",
+    values_to = "score"
+  )
+l
+```
+
+```
+## # A tibble: 202,500 x 7
+## # Groups:   distid [100]
+##    distid scid  sid   sch_mean_start dist_mean_start timepoint    score
+##     &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;          &lt;dbl&gt;           &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+##  1      1 1-1   1-1-1       195.1831        189.6743 g3_fall   203.0107
+##  2      1 1-1   1-1-1       195.1831        189.6743 g3_winter 202.4761
+##  3      1 1-1   1-1-1       195.1831        189.6743 g3_spring 212.2639
+##  4      1 1-1   1-1-1       195.1831        189.6743 g4_fall   205.3442
+##  5      1 1-1   1-1-1       195.1831        189.6743 g4_winter 214.2586
+##  6      1 1-1   1-1-1       195.1831        189.6743 g4_spring 220.2867
+##  7      1 1-1   1-1-1       195.1831        189.6743 g5_fall   220.5970
+##  8      1 1-1   1-1-1       195.1831        189.6743 g5_winter 220.9811
+##  9      1 1-1   1-1-1       195.1831        189.6743 g5_spring 237.0075
+## 10      1 1-1   1-1-2       195.1831        189.6743 g3_fall   195.4607
+## # … with 202,490 more rows
+```
+
+---
+# Recode timepoint
+
+First create a data frame that maps the existing values to the new values you want.
+
+
+```r
+wave_frame &lt;- tibble(
+  timepoint = paste0(
+    "g", 
+    rep(3:5, each = 3), 
+    rep(c("_fall", "_winter", "_spring"), 3)
+  ),
+  wave = 0:8
+)
+wave_frame
+```
+
+```
+## # A tibble: 9 x 2
+##   timepoint  wave
+##   &lt;chr&gt;     &lt;int&gt;
+## 1 g3_fall       0
+## 2 g3_winter     1
+## 3 g3_spring     2
+## 4 g4_fall       3
+## 5 g4_winter     4
+## 6 g4_spring     5
+## 7 g5_fall       6
+## 8 g5_winter     7
+## 9 g5_spring     8
+```
+
+---
+# Join
+
+
+```r
+l &lt;- left_join(l, wave_frame)
+```
+
+```
+## Joining, by = "timepoint"
+```
+
+```r
+l
+```
+
+```
+## # A tibble: 202,500 x 8
+## # Groups:   distid [100]
+##    distid scid  sid   sch_mean_start dist_mean_start timepoint    score  wave
+##     &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;          &lt;dbl&gt;           &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;int&gt;
+##  1      1 1-1   1-1-1       195.1831        189.6743 g3_fall   203.0107     0
+##  2      1 1-1   1-1-1       195.1831        189.6743 g3_winter 202.4761     1
+##  3      1 1-1   1-1-1       195.1831        189.6743 g3_spring 212.2639     2
+##  4      1 1-1   1-1-1       195.1831        189.6743 g4_fall   205.3442     3
+##  5      1 1-1   1-1-1       195.1831        189.6743 g4_winter 214.2586     4
+##  6      1 1-1   1-1-1       195.1831        189.6743 g4_spring 220.2867     5
+##  7      1 1-1   1-1-1       195.1831        189.6743 g5_fall   220.5970     6
+##  8      1 1-1   1-1-1       195.1831        189.6743 g5_winter 220.9811     7
+##  9      1 1-1   1-1-1       195.1831        189.6743 g5_spring 237.0075     8
+## 10      1 1-1   1-1-2       195.1831        189.6743 g3_fall   195.4607     0
+## # … with 202,490 more rows
+```
+
+---
+# Model 6
+
+<div class="countdown" id="timer_60948525" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+`\begin{aligned}
+  \operatorname{score}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i],l[i]} + \beta_{1j[i],k[i]}(\operatorname{wave}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for sid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid k = 1,} \dots \text{,K} \\    \alpha_{l}  &amp;\sim N \left(\mu_{\alpha_{l}}, \sigma^2_{\alpha_{l}} \right)
+    \text{, for distid l = 1,} \dots \text{,L}
+\end{aligned}`
+$$
+
+--
+
+
+```r
+lmer(score ~ wave +
+       (wave|sid) + (wave|scid) + (1|distid),
+     data = d)
+```
+
+
+---
+# Model 7
+This one takes a while to fit, so don't worry about actually fitting it, just try to write the code.
+
+<div class="countdown" id="timer_6094836c" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{score}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i],l[i]} + \beta_{1j[i],k[i]}(\operatorname{wave}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for sid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1l[i]}^{\alpha}(\operatorname{sch\_mean\_start}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{sch\_mean\_start})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for scid k = 1,} \dots \text{,K} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{l} \\
+      &amp;\gamma_{1l}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{dist\_mean\_start}) + \gamma_{2}^{\alpha}(\operatorname{dist\_mean\_start} \times \operatorname{wave}) \\
+      &amp;\mu_{\gamma_{1l}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{l}} &amp; \rho_{\alpha_{l}\gamma_{1l}} \\ 
+     \rho_{\gamma_{1l}\alpha_{l}} &amp; \sigma^2_{\gamma_{1l}}
+  \end{array}
+\right)
+ \right)
+    \text{, for distid l = 1,} \dots \text{,L}
+\end{aligned}`
+$$
+
+--
+
+
+```r
+lmer(score ~ wave + sch_mean_start + dist_mean_start +
+       wave:sch_mean_start + wave:dist_mean_start +
+       (wave|sid) + (wave|scid) + (sch_mean_start|distid),
+     data = l)
+```
+
+---
+# Model 8
+
+## Last one
+
+<div class="countdown" id="timer_60948406" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{score}_{i}  &amp;\sim N \left(\alpha_{j[i]} + \beta_{1j[i]}(\operatorname{wave}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{sch\_mean\_start}) + \gamma_{2}^{\alpha}(\operatorname{dist\_mean\_start}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{sch\_mean\_start})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for sid j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+--
+
+
+```r
+lmer(score ~ wave * sch_mean_start + dist_mean_start +
+       (wave|sid),
+     data = l)
+```
+
+---
+class: inverse-blue middle
+# Growth modeling
+
+---
 # The data
 ### Sample of the Children of the National Longitudinal Study of Youth
 
@@ -82,7 +789,7 @@ Outcome = `piat` = Peabody Individual Achievement Test
 --
 Please read in `cnlsy.csv` now
 
-<div class="countdown" id="timer_6088de97" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_609483e0" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -122,7 +829,7 @@ d
 # Fit a basic model
 Please try to fit a model that accounts for the within-subjects design in some way and includes a random intercept and slope.
 
-<div class="countdown" id="timer_6088dedc" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6094834a" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -167,7 +874,7 @@ But what does a one unit increase in `wave_c` actually mean?
 # More meaningful
 * Note that each `wave` is tied to a specific age group (the approximate age of participants at that age). Can we use this? Try!
 
-<div class="countdown" id="timer_6088dd56" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_6094859b" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -277,7 +984,7 @@ They're identical!
 # Slightly different
 Compare model predictions
 
-![](w6p1_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
 
 ---
 # Age
@@ -293,7 +1000,7 @@ ggplot(d, aes(agegrp, age)) +
               color = "cornflowerblue")
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
 
 ---
 # Model assumptions
@@ -306,7 +1013,7 @@ ggplot(d, aes(agegrp, age)) +
 
 Fit another model with `age` as the time variable instead. How do the results compare?
 
-<div class="countdown" id="timer_6088e088" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60948470" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -424,7 +1131,7 @@ ggplot(pred_frame, aes(age, piat)) +
   facet_wrap(~id)
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
 
 ---
 class: inverse-orange middle
@@ -444,7 +1151,7 @@ The differences in the model predictions overall appear modest, but it does disp
 ### Challenge
 Can you change the model so the coefficient represents monthly growth?
 
-<div class="countdown" id="timer_6088dedc" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_609483ba" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -465,14 +1172,14 @@ d
 ##       id  wave agegrp       age  piat wave_c agegrp_c       age6 age_months
 ##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
 ##  1     1     1    6.5  6           18      0        0 0            0       
-##  2     1     2    8.5  8.333333    35      1        2 2.333333    28.      
-##  3     1     3   10.5 10.33333     59      2        4 4.333333    52.00000 
+##  2     1     2    8.5  8.333333    35      1        2 2.333333    28       
+##  3     1     3   10.5 10.33333     59      2        4 4.333333    52       
 ##  4     2     1    6.5  6           18      0        0 0            0       
 ##  5     2     2    8.5  8.5         25      1        2 2.5         30       
-##  6     2     3   10.5 10.58333     28      2        4 4.583333    55.00000 
+##  6     2     3   10.5 10.58333     28      2        4 4.583333    55       
 ##  7     3     1    6.5  6.083333    18      0        0 0.08333333   1.000000
-##  8     3     2    8.5  8.416667    23      1        2 2.416667    29.00000 
-##  9     3     3   10.5 10.41667     32      2        4 4.416667    53.      
+##  8     3     2    8.5  8.416667    23      1        2 2.416667    29       
+##  9     3     3   10.5 10.41667     32      2        4 4.416667    53       
 ## 10     4     1    6.5  6           18      0        0 0            0       
 ## # … with 257 more rows
 ```
@@ -576,7 +1283,7 @@ wages &lt;- read_csv(here::here("data", "wages.csv"))
 
 ```
 ## 
-## ── Column specification ────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   id = col_double(),
 ##   lnw = col_double(),
@@ -589,7 +1296,7 @@ wages &lt;- read_csv(here::here("data", "wages.csv"))
 ## )
 ```
 
-<div class="countdown" id="timer_6088dde1" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60948470" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -618,21 +1325,21 @@ wages %&gt;%
 
 ```
 ## # A tibble: 13 x 8
-##       id      lnw    exper   ged black hispanic   hgc    uerate
-##    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
-##  1   206 2.028    1.874        0     0        0    10  9.200000
-##  2   206 2.297    2.814        0     0        0    10 11       
-##  3   206 2.482    4.314        0     0        0    10  6.295   
-##  4   332 1.63000  0.125        0     0        1     8  7.1     
-##  5   332 1.476    1.625        0     0        1     8  9.6     
-##  6   332 1.804    2.413000     0     0        1     8  7.2     
-##  7   332 1.439    3.393        0     0        1     8  6.195   
-##  8   332 1.748    4.47         0     0        1     8  5.595   
-##  9   332 1.526    5.178        0     0        1     8  4.595   
-## 10   332 2.044    6.082        0     0        1     8  4.295   
-## 11   332 2.179000 7.043        0     0        1     8  3.395   
-## 12   332 2.186    8.197000     0     0        1     8  4.395000
-## 13   332 4.035    9.092        0     0        1     8  6.695
+##       id   lnw exper   ged black hispanic   hgc uerate
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+##  1   206 2.028 1.874     0     0        0    10  9.2  
+##  2   206 2.297 2.814     0     0        0    10 11    
+##  3   206 2.482 4.314     0     0        0    10  6.295
+##  4   332 1.63  0.125     0     0        1     8  7.1  
+##  5   332 1.476 1.625     0     0        1     8  9.6  
+##  6   332 1.804 2.413     0     0        1     8  7.2  
+##  7   332 1.439 3.393     0     0        1     8  6.195
+##  8   332 1.748 4.47      0     0        1     8  5.595
+##  9   332 1.526 5.178     0     0        1     8  4.595
+## 10   332 2.044 6.082     0     0        1     8  4.295
+## 11   332 2.179 7.043     0     0        1     8  3.395
+## 12   332 2.186 8.197     0     0        1     8  4.395
+## 13   332 4.035 9.092     0     0        1     8  6.695
 ```
 
 ---
@@ -710,7 +1417,7 @@ Let's fit a more interesting model. Try to fit a model that addresses the follow
 &gt; Is the relation between experience and log wages the same across coded race/ethnicity categories? 
 Do these relations depend on highest grade completed?
 
-<div class="countdown" id="timer_6088de12" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_609483d9" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -790,11 +1497,11 @@ pred_frame %&gt;%
   geom_line(aes(color = race_eth)) 
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-53-1.png)&lt;!-- --&gt;
 
 ---
 # All hgc
-![](w6p1_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-54-1.png)&lt;!-- --&gt;
 
 ---
 # Interactions
@@ -836,7 +1543,7 @@ pred_frame %&gt;%
   geom_line(aes(color = race_eth)) 
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-57-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -849,7 +1556,7 @@ pred_frame %&gt;%
   facet_wrap(~hgc_9)
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-58-1.png)&lt;!-- --&gt;
 
 ---
 # Focus on hgc
@@ -872,7 +1579,7 @@ pred_frame %&gt;%
 ---
 class: full-slide-fig middle
 
-![](w6p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
 
 ---
 # Coefficient interpretation
@@ -951,6 +1658,7 @@ sim_d
 # Complexities
 Notice these data do have some complexities
 
+
 --
 Unbalance
 
@@ -1003,7 +1711,7 @@ range(sim_d$date)
 # Plot
 Show the overall relation between `date` and `score`. What do you notice?
 
-<div class="countdown" id="timer_6088de9c" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_609484f2" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1015,7 +1723,7 @@ ggplot(sim_d, aes(date, score)) +
   geom_smooth(se = FALSE, color = "#33B1AE", size = 2)
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-45-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
 
 Ideas on how to model this?
 
@@ -1028,23 +1736,24 @@ ggplot(sim_d, aes(date, score)) +
   geom_smooth(se = FALSE, method = "lm", color = "#808AFF", size = 2)
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-46-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-67-1.png)&lt;!-- --&gt;
 
 Linear modeling is not going to work...
 
 ---
 # Polynomials
 
-![](w6p1_files/figure-html/unnamed-chunk-47-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-68-1.png)&lt;!-- --&gt;
 
 ---
 # Fit a model
 Let's try fitting a linear model and a quadratic model and see which fits better.
 
+
 --
 You try fitting the linear model first, with `date` predicting `score`, and both the intercept and slope varying across students.
 
-<div class="countdown" id="timer_6088df55" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60948411" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1054,6 +1763,7 @@ You try fitting the linear model first, with `date` predicting `score`, and both
 Let's first center date and put it in interpretable units.
 
 I'll center it on the first time point.
+
 
 --
 First - what do dates look like when converted to numbers?
@@ -1190,8 +1900,12 @@ pred_frame &lt;- tibble(
     days2 = days_from_start^2,
     sid = -999
   ) %&gt;% 
-  mutate(pred_linear = predict(linear, newdata = ., allow.new.levels = TRUE),
-         pred_quad = predict(quad, newdata = ., allow.new.levels = TRUE))
+  mutate(pred_linear = predict(linear, 
+                               newdata = ., 
+                               allow.new.levels = TRUE),
+         pred_quad = predict(quad, 
+                             newdata = ., 
+                             allow.new.levels = TRUE))
 pred_frame
 ```
 
@@ -1221,7 +1935,7 @@ ggplot(pred_frame, aes(days_from_start)) +
   geom_line(aes(y = pred_quad), color = "#808AFF")
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-55-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-76-1.png)&lt;!-- --&gt;
 
 This is definitely looking better, but it's too high in the lower tail and maybe a bit too low in the upper
 
@@ -1230,7 +1944,7 @@ This is definitely looking better, but it's too high in the lower tail and maybe
 
 You try first - extend what we just did to model a cubic trend
 
-<div class="countdown" id="timer_6088de0d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60948504" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1248,7 +1962,8 @@ cubic &lt;- lmer(score ~ days_from_start + days2 + days3 +
 ```
 
 ```
-## Warning: Some predictor variables are on very different scales: consider rescaling
+## Warning: Some predictor variables are on very different scales: consider
+## rescaling
 ```
 
 ---
@@ -1315,7 +2030,9 @@ pred_frame &lt;- pred_frame %&gt;%
   mutate(days3 = days_from_start^3)
 
 pred_frame %&gt;% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %&gt;% 
+  mutate(pred_cubic = predict(cubic, 
+                              newdata = ., 
+                              allow.new.levels = TRUE)) %&gt;% 
   ggplot(aes(days_from_start)) +
   geom_point(aes(y = score), data = sim_d, color = "gray80") +
   geom_line(aes(y = pred_linear), color = "#33B1AE") +
@@ -1326,7 +2043,7 @@ pred_frame %&gt;%
 ---
 class: middle
 
-![](w6p1_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-81-1.png)&lt;!-- --&gt;
 
 ---
 # Alternative
@@ -1417,7 +2134,9 @@ pred_frame &lt;- pred_frame %&gt;%
   mutate(days_log = log(days_from_start + 1))
 
 pred_frame &lt;- pred_frame %&gt;% 
-  mutate(pred_log = predict(log_m, newdata = ., allow.new.levels = TRUE))
+  mutate(pred_log = predict(log_m, 
+                            newdata = ., 
+                            allow.new.levels = TRUE))
 ```
 
 --
@@ -1433,7 +2152,7 @@ ggplot(pred_frame, aes(days_log)) +
   geom_line(aes(y = pred_log), color = "#4D4F57")
 ```
 
-![](w6p1_files/figure-html/unnamed-chunk-64-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-85-1.png)&lt;!-- --&gt;
 
 ---
 # On raw scale
@@ -1441,7 +2160,9 @@ ggplot(pred_frame, aes(days_log)) +
 
 ```r
 pred_frame %&gt;% 
-  mutate(pred_cubic = predict(cubic, newdata = ., allow.new.levels = TRUE)) %&gt;% 
+  mutate(pred_cubic = predict(cubic, 
+                              newdata = ., 
+                              allow.new.levels = TRUE)) %&gt;% 
   ggplot(aes(days_from_start)) +
   geom_point(aes(y = score), data = sim_d, color = "gray80") +
   geom_line(aes(y = pred_linear), color = "#33B1AE") +
@@ -1453,7 +2174,7 @@ pred_frame %&gt;%
 ---
 # On raw scale
 
-![](w6p1_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
+![](w6p1_files/figure-html/unnamed-chunk-87-1.png)&lt;!-- --&gt;
 
 ---
 class: inverse-green middle
