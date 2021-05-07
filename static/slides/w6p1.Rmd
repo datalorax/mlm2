@@ -168,7 +168,8 @@ extract_eq(m4, font_size = "small")
 ```{r eval = FALSE}
 lmer(g5_spring ~ g4_spring + g3_spring + 
        sch_mean_start + sch_mean_start:g3_spring +
-       (g4_spring + g3_spring|scid) + (g4_spring + g3_spring|distid),
+       (g4_spring + g3_spring|scid) + 
+       (g4_spring + g3_spring|distid),
      data = d)
 ```
 
