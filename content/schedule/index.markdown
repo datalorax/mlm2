@@ -154,7 +154,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-5/" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/27zk2rwlQWU" >}}
 {{< /wrap >}}
 {{< /week >}}
 
