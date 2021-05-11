@@ -285,12 +285,11 @@ Flip 10 coins 1 time
 
 
 ```r
-set.seed(42)
 rbinom(n = 1, size = 10, prob = 0.5)
 ```
 
 ```
-## [1] 7
+## [1] 5
 ```
 
 ---
@@ -445,7 +444,9 @@ Perfectly straight line - change in log-odds are modeled as a linear function of
 
 ```r
 tibble(exper = 0:25) %&gt;% 
-  mutate(pred = predict(m_glm, newdata = ., type = "response")) %&gt;% 
+  mutate(pred = predict(m_glm, 
+                        newdata = ., 
+                        type = "response")) %&gt;% 
   ggplot(aes(exper, pred)) +
   geom_line()
 ```
@@ -633,6 +634,7 @@ polls
 
 Let's assume we want to estimate the probability that Bush will be elected.
 
+
 --
 We could fit a single level model like this
 
@@ -649,7 +651,7 @@ $$
 
 Can you write the code for the previous model?
 
-<div class="countdown" id="timer_60948a4d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_609af2b4" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -781,8 +783,7 @@ m0_tidied
 
 ```r
 m0_tidied %&gt;% 
-  mutate(level = forcats::fct_reorder(level, estimate),
-         lean_bush = ) %&gt;% 
+  mutate(level = forcats::fct_reorder(level, estimate)) %&gt;% 
   ggplot(aes(estimate, level)) +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
   geom_point(aes(color = estimate)) +
@@ -799,15 +800,2396 @@ m0_tidied %&gt;%
 ![](w8p1_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
 
 ---
+# Extending the model
+
+Let's add some predictors
+
+* Include `age`, `female` and `black` as fixed effect predictors. 
+
+
+--
+You try first
+
+<div class="countdown" id="timer_609af18d" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+
+```r
+m1 &lt;- glmer(bush ~ age + female + black + (1|state),
+            data = polls,
+            family = binomial(link = "logit"))
+arm::display(m1)
+```
+
+```
+## glmer(formula = bush ~ age + female + black + (1 | state), data = polls, 
+##     family = binomial(link = "logit"))
+##             coef.est coef.se
+## (Intercept)  0.63     0.08  
+## age         -0.08     0.02  
+## female      -0.11     0.04  
+## black       -1.84     0.09  
+## 
+## Error terms:
+##  Groups   Name        Std.Dev.
+##  state    (Intercept) 0.41    
+##  Residual             1.00    
+## ---
+## number of obs: 11566, groups: state, 49
+## AIC = 15137.1, DIC = 14856.7
+## deviance = 14991.9
+```
+
+---
+# Varying slopes
+The average probability of a respondent who was coded `black == 1` supporting Bush was
+
+$$
+\small
+`\begin{equation}
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.63 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}{1 + \exp(0.63 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}
+\end{equation}`
+$$
+
+--
+$$
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.63 -1.84))}{1 + \exp(0.63  -1.84)}
+$$
+
+--
+$$
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(-1.21))}{1 + \exp(-1.21)}
+$$
+
+--
+$$
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{0.29}{1.29}
+$$
+
+--
+$$
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = 0.22
+$$
+
+---
+# Vary by state?
+You try first - try to fit a model that estimates between-state variability in the relation between individuals coded `black`, and their probability of voting for Bush.
+
+<div class="countdown" id="timer_609af4ca" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+
+```r
+m2 &lt;- glmer(bush ~ age + female + black + (black|state),
+            data = polls,
+            family = binomial(link = "logit"))
+arm::display(m2)
+```
+
+```
+## glmer(formula = bush ~ age + female + black + (black | state), 
+##     data = polls, family = binomial(link = "logit"))
+##             coef.est coef.se
+## (Intercept)  0.63     0.09  
+## age         -0.08     0.02  
+## female      -0.11     0.04  
+## black       -1.66     0.19  
+## 
+## Error terms:
+##  Groups   Name        Std.Dev. Corr  
+##  state    (Intercept) 0.44           
+##           black       0.87     -0.46 
+##  Residual             1.00           
+## ---
+## number of obs: 11566, groups: state, 49
+## AIC = 15100.6, DIC = 14697.4
+## deviance = 14892.0
+```
+
+---
+# Look at random effects
+
+
+```r
+tidy(m2, effects = "ran_vals", conf.int = TRUE) %&gt;% 
+  arrange(level)
+```
+
+```
+## # A tibble: 98 x 8
+##    effect   group level term           estimate  std.error    conf.low conf.high
+##    &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+##  1 ran_vals state 1     (Intercept)  0.4768778  0.1716176   0.1405136  0.8132421
+##  2 ran_vals state 1     black        1.066310   0.4118916   0.2590174  1.873603 
+##  3 ran_vals state 10    (Intercept)  0.3000882  0.08425461  0.1349522  0.4652242
+##  4 ran_vals state 10    black       -0.1573159  0.3564822  -0.8560082  0.5413763
+##  5 ran_vals state 11    (Intercept)  0.2440950  0.1326607  -0.01591523 0.5041051
+##  6 ran_vals state 11    black       -0.6673062  0.4129716  -1.476716   0.1421032
+##  7 ran_vals state 13    (Intercept) -0.2406086  0.2710098  -0.7717781  0.2905609
+##  8 ran_vals state 13    black        0.2180538  0.8103454  -1.370194   1.806302 
+##  9 ran_vals state 14    (Intercept) -0.04190541 0.09568849 -0.2294514  0.1456406
+## 10 ran_vals state 14    black       -0.3926709  0.3611252  -1.100463   0.3151215
+## # … with 88 more rows
+```
+
+---
+# Compute log-odds
+First - compute means for each group - i.e., add the coefficients
+
+
+```r
+to_plot &lt;- tidy(m2, effects = "ran_vals", conf.int = TRUE) %&gt;% 
+  arrange(level, term) %&gt;% 
+  group_by(level) %&gt;% 
+  mutate(estimate = cumsum(estimate)) %&gt;% 
+  ungroup()
+
+to_plot
+```
+
+```
+## # A tibble: 98 x 8
+##    effect   group level term           estimate  std.error    conf.low conf.high
+##    &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+##  1 ran_vals state 1     (Intercept)  0.4768778  0.1716176   0.1405136  0.8132421
+##  2 ran_vals state 1     black        1.543188   0.4118916   0.2590174  1.873603 
+##  3 ran_vals state 10    (Intercept)  0.3000882  0.08425461  0.1349522  0.4652242
+##  4 ran_vals state 10    black        0.1427723  0.3564822  -0.8560082  0.5413763
+##  5 ran_vals state 11    (Intercept)  0.2440950  0.1326607  -0.01591523 0.5041051
+##  6 ran_vals state 11    black       -0.4232113  0.4129716  -1.476716   0.1421032
+##  7 ran_vals state 13    (Intercept) -0.2406086  0.2710098  -0.7717781  0.2905609
+##  8 ran_vals state 13    black       -0.02255476 0.8103454  -1.370194   1.806302 
+##  9 ran_vals state 14    (Intercept) -0.04190541 0.09568849 -0.2294514  0.1456406
+## 10 ran_vals state 14    black       -0.4345764  0.3611252  -1.100463   0.3151215
+## # … with 88 more rows
+```
+
+---
+# Create factor level
+
+
+```r
+lev_order &lt;- to_plot %&gt;% 
+  filter(term == "(Intercept)") %&gt;% 
+  mutate(lev = forcats::fct_reorder(level, estimate))
+
+to_plot &lt;- to_plot %&gt;% 
+  mutate(level = factor(level, levels = levels(lev_order$lev)))
+```
+
+---
+# Plot
+
+```r
+to_plot %&gt;% 
+  mutate(
+    group = ifelse(term == "(Intercept)", "Non-Black", "Black")
+  ) %&gt;%
+  ggplot(aes(estimate, level)) +
+  geom_line(aes(group = level), color = "gray60") +
+  geom_point(aes(color = group)) +
+  geom_vline(xintercept = 0, color = "gray40", size = 3) +
+  labs(x = "Log-Odds Estimate", y = "") +
+  scale_color_brewer(palette = "Set2") +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+---
+# Plot
+![](w8p1_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
 
 
 ---
-# What to estimate
-* State-level variation
+# Probability scale
 
-* Correct for non-response
 
-* 
+```r
+to_plot %&gt;% 
+  mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black"),
+         prob = exp(estimate)/(1 + exp(estimate))) %&gt;%
+  ggplot(aes(prob, level)) +
+  geom_line(aes(group = level), color = "gray60", size = 1.2) +
+  geom_point(aes(color = group)) +
+  geom_vline(xintercept = 0.5, color = "gray40", size = 3) +
+  labs(x = "Probability Estimate", y = "") +
+  xlim(0, 1) +
+  scale_color_brewer(palette = "Set2") +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+---
+# Probability scale
+
+![](w8p1_files/figure-html/unnamed-chunk-31-1.png)&lt;!-- --&gt;
+
+
+---
+class: inverse-blue middle
+
+# Bayes
+
+---
+# Refit
+Can you fit the same model we just fit, but with **{brms}**?
+
+You try first
+
+<div class="countdown" id="timer_609af46e" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+---
+# Flat priors
+
+
+```r
+library(brms)
+m2_brms &lt;- brm(bush ~ age + female + black + (black|state),
+            data = polls,
+            family = bernoulli(link = "logit"),
+            backend = "cmdstan",
+            cores = 4)
+```
+
+```
+## Warning: Rows containing NAs were excluded from the model.
+```
+
+```
+## Running MCMC with 4 parallel chains...
+## 
+## Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 1 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 2 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 42.8 seconds.
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 finished in 43.5 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 44.6 seconds.
+## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 3 finished in 50.4 seconds.
+## 
+## All 4 chains finished successfully.
+## Mean chain execution time: 45.3 seconds.
+## Total execution time: 50.6 seconds.
+```
+
+---
+# Model summary
+
+
+```r
+summary(m2_brms)
+```
+
+```
+##  Family: bernoulli 
+##   Links: mu = logit 
+## Formula: bush ~ age + female + black + (black | state) 
+##    Data: polls (Number of observations: 11566) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Group-Level Effects: 
+## ~state (Number of levels: 49) 
+##                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+## sd(Intercept)            0.46      0.06     0.36     0.59 1.00      949
+## sd(black)                0.96      0.20     0.61     1.41 1.01     1202
+## cor(Intercept,black)    -0.40      0.19    -0.71     0.02 1.00     1417
+##                      Tail_ESS
+## sd(Intercept)            2013
+## sd(black)                2403
+## cor(Intercept,black)     2354
+## 
+## Population-Level Effects: 
+##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept     0.62      0.09     0.46     0.80 1.00      732     1254
+## age          -0.08      0.02    -0.12    -0.05 1.00     5674     3257
+## female       -0.11      0.04    -0.19    -0.03 1.00     5243     2793
+## black        -1.67      0.22    -2.10    -1.24 1.00     1050     1688
+## 
+## Samples were drawn using sample(hmc). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# Posterior predictive check
+
+
+```r
+pp_check(m2_brms, type = "bars")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+
+---
+# Posterior predictive check 2
+
+
+```r
+pp_check(m2_brms, type = "stat")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+
+---
+# New data
+Lung cancer data: Patients nested in doctors
+
+
+```r
+hdp &lt;- read_csv("https://stats.idre.ucla.edu/stat/data/hdp.csv") %&gt;% 
+  janitor::clean_names() %&gt;% 
+  select(did, tumorsize, pain, lungcapacity, age, remission)
+hdp
+```
+
+```
+## # A tibble: 8,525 x 6
+##      did tumorsize  pain lungcapacity      age remission
+##    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+##  1     1  67.98120     4    0.8010882 64.96824         0
+##  2     1  64.70246     2    0.3264440 53.91714         0
+##  3     1  51.56700     6    0.5650309 53.34730         0
+##  4     1  86.43799     3    0.8484109 41.36804         0
+##  5     1  53.40018     3    0.8864910 46.80042         0
+##  6     1  51.65727     4    0.7010307 51.92936         0
+##  7     1  78.91707     3    0.8908539 53.82926         0
+##  8     1  69.83325     3    0.6608795 46.56223         0
+##  9     1  62.85259     4    0.9088714 54.38936         0
+## 10     1  71.77790     5    0.9593268 50.54465         0
+## # … with 8,515 more rows
+```
+
+---
+# Predict remission
+Build a model where age, lung capacity, and tumor size predict whether or not the patient was in remission. Allow the intercept to vary by the doctor ID. Fit the model using **brms**
+
+<div class="countdown" id="timer_609af292" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
+```r
+lc &lt;- brm(remission ~ age*tumorsize + lungcapacity + (1|did),
+          data = hdp,
+          family = bernoulli(link = "logit"),
+          cores = 4,
+          backend = "cmdstan")
+```
+
+```
+## Running MCMC with 4 parallel chains...
+## 
+## Chain 1 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 2 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 finished in 318.8 seconds.
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 327.2 seconds.
+## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 3 finished in 370.6 seconds.
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 396.7 seconds.
+## 
+## All 4 chains finished successfully.
+## Mean chain execution time: 353.3 seconds.
+## Total execution time: 397.1 seconds.
+```
+
+
+---
+# Model summary
+
+```r
+summary(lc)
+```
+
+```
+##  Family: bernoulli 
+##   Links: mu = logit 
+## Formula: remission ~ age * tumorsize + lungcapacity + (1 | did) 
+##    Data: hdp (Number of observations: 8525) 
+## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+##          total post-warmup samples = 4000
+## 
+## Group-Level Effects: 
+## ~did (Number of levels: 407) 
+##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## sd(Intercept)     2.02      0.10     1.82     2.23 1.00      585     1315
+## 
+## Population-Level Effects: 
+##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept         1.72      1.54    -1.22     4.75 1.00     2648     2786
+## age              -0.05      0.03    -0.11     0.01 1.00     2736     2983
+## tumorsize        -0.01      0.02    -0.05     0.03 1.00     2751     2768
+## lungcapacity      0.07      0.19    -0.29     0.43 1.00     5041     2946
+## age:tumorsize    -0.00      0.00    -0.00     0.00 1.00     2727     2936
+## 
+## Samples were drawn using sample(hmc). For each parameter, Bulk_ESS
+## and Tail_ESS are effective sample size measures, and Rhat is the potential
+## scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+---
+# Posterior predictive check
+
+```r
+pp_check(lc, type = "bars")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
+
+---
+# Chains
+
+```r
+plot(lc)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-40-1.png)&lt;!-- --&gt;![](w8p1_files/figure-html/unnamed-chunk-40-2.png)&lt;!-- --&gt;
+
+
+---
+# Marginal predictions: Age
+
+```r
+conditional_effects(lc, "age")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
+
+---
+# Marginal predictions: tumor size
+
+```r
+conditional_effects(lc, "tumorsize")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-42-1.png)&lt;!-- --&gt;
+
+---
+# Marginal predictions: lung capacity
+
+```r
+conditional_effects(lc, "lungcapacity")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-43-1.png)&lt;!-- --&gt;
+
+---
+# Interaction
+
+
+```r
+conditional_effects(lc, c("age:tumorsize"))
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-44-1.png)&lt;!-- --&gt;
+
+---
+# Make predictions
+
+Check the relation for tumor size
+
+
+```r
+library(tidybayes)
+pred_tumor &lt;- expand.grid(
+    age = 20:80,
+    lungcapacity = mean(hdp$lungcapacity),
+    tumorsize = 30:120,
+    did = -999
+  ) %&gt;% 
+  add_fitted_draws(model = lc, n = 100,
+                   allow_new_levels = TRUE)
+pred_tumor
+```
+
+```
+## # A tibble: 555,100 x 9
+## # Groups:   age, lungcapacity, tumorsize, did, .row [5,551]
+##      age lungcapacity tumorsize   did  .row .chain .iteration .draw     .value
+##    &lt;int&gt;        &lt;dbl&gt;     &lt;int&gt; &lt;dbl&gt; &lt;int&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;      &lt;dbl&gt;
+##  1    20    0.7740865        30  -999     1     NA         NA    43 0.2271500 
+##  2    20    0.7740865        30  -999     1     NA         NA    77 0.4504585 
+##  3    20    0.7740865        30  -999     1     NA         NA    94 0.1457609 
+##  4    20    0.7740865        30  -999     1     NA         NA   125 0.4017479 
+##  5    20    0.7740865        30  -999     1     NA         NA   289 0.2284240 
+##  6    20    0.7740865        30  -999     1     NA         NA   303 0.8427924 
+##  7    20    0.7740865        30  -999     1     NA         NA   390 0.2476305 
+##  8    20    0.7740865        30  -999     1     NA         NA   401 0.05787808
+##  9    20    0.7740865        30  -999     1     NA         NA   433 0.8860349 
+## 10    20    0.7740865        30  -999     1     NA         NA   487 0.9145030 
+## # … with 555,090 more rows
+```
+
+---
+# Plot
+
+```r
+ggplot(pred_tumor, aes(age, .value)) +
+  stat_lineribbon()
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-46-1.png)&lt;!-- --&gt;
+
+---
+# Different plot
+
+
+```r
+pred_tumor %&gt;% 
+  filter(tumorsize %in% c(30, 60, 90, 120)) %&gt;% 
+ggplot(aes(age, .value)) +
+  geom_line(aes(group = .draw), alpha = 0.2) +
+  facet_wrap(~tumorsize) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-47-1.png)&lt;!-- --&gt;
+
+---
+# Variance by Doctor
+Let's look at the relation between age and proability of remission for each of the first nine doctors.
+
+--
+
+
+```r
+pred_age_doctor &lt;- expand.grid(
+    did = unique(hdp$did)[1:9],
+    age = 20:80,
+    tumorsize = mean(hdp$tumorsize),
+    lungcapacity = mean(hdp$lungcapacity)
+  ) %&gt;% 
+  add_fitted_draws(model = lc, n = 100)
+```
+
+---
+
+```r
+pred_age_doctor
+```
+
+```
+## # A tibble: 54,900 x 9
+## # Groups:   did, age, tumorsize, lungcapacity, .row [549]
+##      did   age tumorsize lungcapacity  .row .chain .iteration .draw     .value
+##    &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt; &lt;int&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;      &lt;dbl&gt;
+##  1     1    20  70.88067    0.7740865     1     NA         NA    22 0.04499670
+##  2     1    20  70.88067    0.7740865     1     NA         NA    28 0.03237024
+##  3     1    20  70.88067    0.7740865     1     NA         NA    43 0.04794223
+##  4     1    20  70.88067    0.7740865     1     NA         NA   119 0.05333320
+##  5     1    20  70.88067    0.7740865     1     NA         NA   145 0.1307981 
+##  6     1    20  70.88067    0.7740865     1     NA         NA   199 0.09737952
+##  7     1    20  70.88067    0.7740865     1     NA         NA   229 0.02292726
+##  8     1    20  70.88067    0.7740865     1     NA         NA   241 0.09375341
+##  9     1    20  70.88067    0.7740865     1     NA         NA   287 0.08265413
+## 10     1    20  70.88067    0.7740865     1     NA         NA   294 0.1202951 
+## # … with 54,890 more rows
+```
+
+---
+
+```r
+ggplot(pred_age_doctor, aes(age, .value)) +
+  geom_line(aes(group = .draw), alpha = 0.2) +
+  facet_wrap(~did)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-50-1.png)&lt;!-- --&gt;
+
+---
+# Going further
+* We can pull lots of different things from our model
+
+--
+* Let's start by looking at what's actually in the model
+
+
+--
+In this case `r_*` implies "random". These are the deviations from the average.
+
+
+```r
+get_variables(lc)
+```
+
+```
+##   [1] "b_Intercept"          "b_age"                "b_tumorsize"         
+##   [4] "b_lungcapacity"       "b_age:tumorsize"      "sd_did__Intercept"   
+##   [7] "Intercept"            "r_did[1,Intercept]"   "r_did[2,Intercept]"  
+##  [10] "r_did[3,Intercept]"   "r_did[4,Intercept]"   "r_did[5,Intercept]"  
+##  [13] "r_did[6,Intercept]"   "r_did[7,Intercept]"   "r_did[8,Intercept]"  
+##  [16] "r_did[9,Intercept]"   "r_did[10,Intercept]"  "r_did[11,Intercept]" 
+##  [19] "r_did[12,Intercept]"  "r_did[13,Intercept]"  "r_did[14,Intercept]" 
+##  [22] "r_did[15,Intercept]"  "r_did[16,Intercept]"  "r_did[17,Intercept]" 
+##  [25] "r_did[18,Intercept]"  "r_did[19,Intercept]"  "r_did[20,Intercept]" 
+##  [28] "r_did[21,Intercept]"  "r_did[22,Intercept]"  "r_did[23,Intercept]" 
+##  [31] "r_did[24,Intercept]"  "r_did[25,Intercept]"  "r_did[26,Intercept]" 
+##  [34] "r_did[27,Intercept]"  "r_did[28,Intercept]"  "r_did[29,Intercept]" 
+##  [37] "r_did[30,Intercept]"  "r_did[31,Intercept]"  "r_did[32,Intercept]" 
+##  [40] "r_did[33,Intercept]"  "r_did[34,Intercept]"  "r_did[35,Intercept]" 
+##  [43] "r_did[36,Intercept]"  "r_did[37,Intercept]"  "r_did[38,Intercept]" 
+##  [46] "r_did[39,Intercept]"  "r_did[40,Intercept]"  "r_did[41,Intercept]" 
+##  [49] "r_did[42,Intercept]"  "r_did[43,Intercept]"  "r_did[44,Intercept]" 
+##  [52] "r_did[45,Intercept]"  "r_did[46,Intercept]"  "r_did[47,Intercept]" 
+##  [55] "r_did[48,Intercept]"  "r_did[49,Intercept]"  "r_did[50,Intercept]" 
+##  [58] "r_did[51,Intercept]"  "r_did[52,Intercept]"  "r_did[53,Intercept]" 
+##  [61] "r_did[54,Intercept]"  "r_did[55,Intercept]"  "r_did[56,Intercept]" 
+##  [64] "r_did[57,Intercept]"  "r_did[58,Intercept]"  "r_did[59,Intercept]" 
+##  [67] "r_did[60,Intercept]"  "r_did[61,Intercept]"  "r_did[62,Intercept]" 
+##  [70] "r_did[63,Intercept]"  "r_did[64,Intercept]"  "r_did[65,Intercept]" 
+##  [73] "r_did[66,Intercept]"  "r_did[67,Intercept]"  "r_did[68,Intercept]" 
+##  [76] "r_did[69,Intercept]"  "r_did[70,Intercept]"  "r_did[71,Intercept]" 
+##  [79] "r_did[72,Intercept]"  "r_did[73,Intercept]"  "r_did[74,Intercept]" 
+##  [82] "r_did[75,Intercept]"  "r_did[76,Intercept]"  "r_did[77,Intercept]" 
+##  [85] "r_did[78,Intercept]"  "r_did[79,Intercept]"  "r_did[80,Intercept]" 
+##  [88] "r_did[81,Intercept]"  "r_did[82,Intercept]"  "r_did[83,Intercept]" 
+##  [91] "r_did[84,Intercept]"  "r_did[85,Intercept]"  "r_did[86,Intercept]" 
+##  [94] "r_did[87,Intercept]"  "r_did[88,Intercept]"  "r_did[89,Intercept]" 
+##  [97] "r_did[90,Intercept]"  "r_did[91,Intercept]"  "r_did[92,Intercept]" 
+## [100] "r_did[93,Intercept]"  "r_did[94,Intercept]"  "r_did[95,Intercept]" 
+## [103] "r_did[96,Intercept]"  "r_did[97,Intercept]"  "r_did[98,Intercept]" 
+## [106] "r_did[99,Intercept]"  "r_did[100,Intercept]" "r_did[101,Intercept]"
+## [109] "r_did[102,Intercept]" "r_did[103,Intercept]" "r_did[104,Intercept]"
+## [112] "r_did[105,Intercept]" "r_did[106,Intercept]" "r_did[107,Intercept]"
+## [115] "r_did[108,Intercept]" "r_did[109,Intercept]" "r_did[110,Intercept]"
+## [118] "r_did[111,Intercept]" "r_did[112,Intercept]" "r_did[113,Intercept]"
+## [121] "r_did[114,Intercept]" "r_did[115,Intercept]" "r_did[116,Intercept]"
+## [124] "r_did[117,Intercept]" "r_did[118,Intercept]" "r_did[119,Intercept]"
+## [127] "r_did[120,Intercept]" "r_did[121,Intercept]" "r_did[122,Intercept]"
+## [130] "r_did[123,Intercept]" "r_did[124,Intercept]" "r_did[125,Intercept]"
+## [133] "r_did[126,Intercept]" "r_did[127,Intercept]" "r_did[128,Intercept]"
+## [136] "r_did[129,Intercept]" "r_did[130,Intercept]" "r_did[131,Intercept]"
+## [139] "r_did[132,Intercept]" "r_did[133,Intercept]" "r_did[134,Intercept]"
+## [142] "r_did[135,Intercept]" "r_did[136,Intercept]" "r_did[137,Intercept]"
+## [145] "r_did[138,Intercept]" "r_did[139,Intercept]" "r_did[140,Intercept]"
+## [148] "r_did[141,Intercept]" "r_did[142,Intercept]" "r_did[143,Intercept]"
+## [151] "r_did[144,Intercept]" "r_did[145,Intercept]" "r_did[146,Intercept]"
+## [154] "r_did[147,Intercept]" "r_did[148,Intercept]" "r_did[149,Intercept]"
+## [157] "r_did[150,Intercept]" "r_did[151,Intercept]" "r_did[152,Intercept]"
+## [160] "r_did[153,Intercept]" "r_did[154,Intercept]" "r_did[155,Intercept]"
+## [163] "r_did[156,Intercept]" "r_did[157,Intercept]" "r_did[158,Intercept]"
+## [166] "r_did[159,Intercept]" "r_did[160,Intercept]" "r_did[161,Intercept]"
+## [169] "r_did[162,Intercept]" "r_did[163,Intercept]" "r_did[164,Intercept]"
+## [172] "r_did[165,Intercept]" "r_did[166,Intercept]" "r_did[167,Intercept]"
+## [175] "r_did[168,Intercept]" "r_did[169,Intercept]" "r_did[170,Intercept]"
+## [178] "r_did[171,Intercept]" "r_did[172,Intercept]" "r_did[173,Intercept]"
+## [181] "r_did[174,Intercept]" "r_did[175,Intercept]" "r_did[176,Intercept]"
+## [184] "r_did[177,Intercept]" "r_did[178,Intercept]" "r_did[179,Intercept]"
+## [187] "r_did[180,Intercept]" "r_did[181,Intercept]" "r_did[182,Intercept]"
+## [190] "r_did[183,Intercept]" "r_did[184,Intercept]" "r_did[185,Intercept]"
+## [193] "r_did[186,Intercept]" "r_did[187,Intercept]" "r_did[188,Intercept]"
+## [196] "r_did[189,Intercept]" "r_did[190,Intercept]" "r_did[191,Intercept]"
+## [199] "r_did[192,Intercept]" "r_did[193,Intercept]" "r_did[194,Intercept]"
+## [202] "r_did[195,Intercept]" "r_did[196,Intercept]" "r_did[197,Intercept]"
+## [205] "r_did[198,Intercept]" "r_did[199,Intercept]" "r_did[200,Intercept]"
+## [208] "r_did[201,Intercept]" "r_did[202,Intercept]" "r_did[203,Intercept]"
+## [211] "r_did[204,Intercept]" "r_did[205,Intercept]" "r_did[206,Intercept]"
+## [214] "r_did[207,Intercept]" "r_did[208,Intercept]" "r_did[209,Intercept]"
+## [217] "r_did[210,Intercept]" "r_did[211,Intercept]" "r_did[212,Intercept]"
+## [220] "r_did[213,Intercept]" "r_did[214,Intercept]" "r_did[215,Intercept]"
+## [223] "r_did[216,Intercept]" "r_did[217,Intercept]" "r_did[218,Intercept]"
+## [226] "r_did[219,Intercept]" "r_did[220,Intercept]" "r_did[221,Intercept]"
+## [229] "r_did[222,Intercept]" "r_did[223,Intercept]" "r_did[224,Intercept]"
+## [232] "r_did[225,Intercept]" "r_did[226,Intercept]" "r_did[227,Intercept]"
+## [235] "r_did[228,Intercept]" "r_did[229,Intercept]" "r_did[230,Intercept]"
+## [238] "r_did[231,Intercept]" "r_did[232,Intercept]" "r_did[233,Intercept]"
+## [241] "r_did[234,Intercept]" "r_did[235,Intercept]" "r_did[236,Intercept]"
+## [244] "r_did[237,Intercept]" "r_did[238,Intercept]" "r_did[239,Intercept]"
+## [247] "r_did[240,Intercept]" "r_did[241,Intercept]" "r_did[242,Intercept]"
+## [250] "r_did[243,Intercept]" "r_did[244,Intercept]" "r_did[245,Intercept]"
+## [253] "r_did[246,Intercept]" "r_did[247,Intercept]" "r_did[248,Intercept]"
+## [256] "r_did[249,Intercept]" "r_did[250,Intercept]" "r_did[251,Intercept]"
+## [259] "r_did[252,Intercept]" "r_did[253,Intercept]" "r_did[254,Intercept]"
+## [262] "r_did[255,Intercept]" "r_did[256,Intercept]" "r_did[257,Intercept]"
+## [265] "r_did[258,Intercept]" "r_did[259,Intercept]" "r_did[260,Intercept]"
+## [268] "r_did[261,Intercept]" "r_did[262,Intercept]" "r_did[263,Intercept]"
+## [271] "r_did[264,Intercept]" "r_did[265,Intercept]" "r_did[266,Intercept]"
+## [274] "r_did[267,Intercept]" "r_did[268,Intercept]" "r_did[269,Intercept]"
+## [277] "r_did[270,Intercept]" "r_did[271,Intercept]" "r_did[272,Intercept]"
+## [280] "r_did[273,Intercept]" "r_did[274,Intercept]" "r_did[275,Intercept]"
+## [283] "r_did[276,Intercept]" "r_did[277,Intercept]" "r_did[278,Intercept]"
+## [286] "r_did[279,Intercept]" "r_did[280,Intercept]" "r_did[281,Intercept]"
+## [289] "r_did[282,Intercept]" "r_did[283,Intercept]" "r_did[284,Intercept]"
+## [292] "r_did[285,Intercept]" "r_did[286,Intercept]" "r_did[287,Intercept]"
+## [295] "r_did[288,Intercept]" "r_did[289,Intercept]" "r_did[290,Intercept]"
+## [298] "r_did[291,Intercept]" "r_did[292,Intercept]" "r_did[293,Intercept]"
+## [301] "r_did[294,Intercept]" "r_did[295,Intercept]" "r_did[296,Intercept]"
+## [304] "r_did[297,Intercept]" "r_did[298,Intercept]" "r_did[299,Intercept]"
+## [307] "r_did[300,Intercept]" "r_did[301,Intercept]" "r_did[302,Intercept]"
+## [310] "r_did[303,Intercept]" "r_did[304,Intercept]" "r_did[305,Intercept]"
+## [313] "r_did[306,Intercept]" "r_did[307,Intercept]" "r_did[308,Intercept]"
+## [316] "r_did[309,Intercept]" "r_did[310,Intercept]" "r_did[311,Intercept]"
+## [319] "r_did[312,Intercept]" "r_did[313,Intercept]" "r_did[314,Intercept]"
+## [322] "r_did[315,Intercept]" "r_did[316,Intercept]" "r_did[317,Intercept]"
+## [325] "r_did[318,Intercept]" "r_did[319,Intercept]" "r_did[320,Intercept]"
+## [328] "r_did[321,Intercept]" "r_did[322,Intercept]" "r_did[323,Intercept]"
+## [331] "r_did[324,Intercept]" "r_did[325,Intercept]" "r_did[326,Intercept]"
+## [334] "r_did[327,Intercept]" "r_did[328,Intercept]" "r_did[329,Intercept]"
+## [337] "r_did[330,Intercept]" "r_did[331,Intercept]" "r_did[332,Intercept]"
+## [340] "r_did[333,Intercept]" "r_did[334,Intercept]" "r_did[335,Intercept]"
+## [343] "r_did[336,Intercept]" "r_did[337,Intercept]" "r_did[338,Intercept]"
+## [346] "r_did[339,Intercept]" "r_did[340,Intercept]" "r_did[341,Intercept]"
+## [349] "r_did[342,Intercept]" "r_did[343,Intercept]" "r_did[344,Intercept]"
+## [352] "r_did[345,Intercept]" "r_did[346,Intercept]" "r_did[347,Intercept]"
+## [355] "r_did[348,Intercept]" "r_did[349,Intercept]" "r_did[350,Intercept]"
+## [358] "r_did[351,Intercept]" "r_did[352,Intercept]" "r_did[353,Intercept]"
+## [361] "r_did[354,Intercept]" "r_did[355,Intercept]" "r_did[356,Intercept]"
+## [364] "r_did[357,Intercept]" "r_did[358,Intercept]" "r_did[359,Intercept]"
+## [367] "r_did[360,Intercept]" "r_did[361,Intercept]" "r_did[362,Intercept]"
+## [370] "r_did[363,Intercept]" "r_did[364,Intercept]" "r_did[365,Intercept]"
+## [373] "r_did[366,Intercept]" "r_did[367,Intercept]" "r_did[368,Intercept]"
+## [376] "r_did[369,Intercept]" "r_did[370,Intercept]" "r_did[371,Intercept]"
+## [379] "r_did[372,Intercept]" "r_did[373,Intercept]" "r_did[374,Intercept]"
+## [382] "r_did[375,Intercept]" "r_did[376,Intercept]" "r_did[377,Intercept]"
+## [385] "r_did[378,Intercept]" "r_did[379,Intercept]" "r_did[380,Intercept]"
+## [388] "r_did[381,Intercept]" "r_did[382,Intercept]" "r_did[383,Intercept]"
+## [391] "r_did[384,Intercept]" "r_did[385,Intercept]" "r_did[386,Intercept]"
+## [394] "r_did[387,Intercept]" "r_did[388,Intercept]" "r_did[389,Intercept]"
+## [397] "r_did[390,Intercept]" "r_did[391,Intercept]" "r_did[392,Intercept]"
+## [400] "r_did[393,Intercept]" "r_did[394,Intercept]" "r_did[395,Intercept]"
+## [403] "r_did[396,Intercept]" "r_did[397,Intercept]" "r_did[398,Intercept]"
+## [406] "r_did[399,Intercept]" "r_did[400,Intercept]" "r_did[401,Intercept]"
+## [409] "r_did[402,Intercept]" "r_did[403,Intercept]" "r_did[404,Intercept]"
+## [412] "r_did[405,Intercept]" "r_did[406,Intercept]" "r_did[407,Intercept]"
+## [415] "lp__"                 "z_1[1,1]"             "z_1[1,2]"            
+## [418] "z_1[1,3]"             "z_1[1,4]"             "z_1[1,5]"            
+## [421] "z_1[1,6]"             "z_1[1,7]"             "z_1[1,8]"            
+## [424] "z_1[1,9]"             "z_1[1,10]"            "z_1[1,11]"           
+## [427] "z_1[1,12]"            "z_1[1,13]"            "z_1[1,14]"           
+## [430] "z_1[1,15]"            "z_1[1,16]"            "z_1[1,17]"           
+## [433] "z_1[1,18]"            "z_1[1,19]"            "z_1[1,20]"           
+## [436] "z_1[1,21]"            "z_1[1,22]"            "z_1[1,23]"           
+## [439] "z_1[1,24]"            "z_1[1,25]"            "z_1[1,26]"           
+## [442] "z_1[1,27]"            "z_1[1,28]"            "z_1[1,29]"           
+## [445] "z_1[1,30]"            "z_1[1,31]"            "z_1[1,32]"           
+## [448] "z_1[1,33]"            "z_1[1,34]"            "z_1[1,35]"           
+## [451] "z_1[1,36]"            "z_1[1,37]"            "z_1[1,38]"           
+## [454] "z_1[1,39]"            "z_1[1,40]"            "z_1[1,41]"           
+## [457] "z_1[1,42]"            "z_1[1,43]"            "z_1[1,44]"           
+## [460] "z_1[1,45]"            "z_1[1,46]"            "z_1[1,47]"           
+## [463] "z_1[1,48]"            "z_1[1,49]"            "z_1[1,50]"           
+## [466] "z_1[1,51]"            "z_1[1,52]"            "z_1[1,53]"           
+## [469] "z_1[1,54]"            "z_1[1,55]"            "z_1[1,56]"           
+## [472] "z_1[1,57]"            "z_1[1,58]"            "z_1[1,59]"           
+## [475] "z_1[1,60]"            "z_1[1,61]"            "z_1[1,62]"           
+## [478] "z_1[1,63]"            "z_1[1,64]"            "z_1[1,65]"           
+## [481] "z_1[1,66]"            "z_1[1,67]"            "z_1[1,68]"           
+## [484] "z_1[1,69]"            "z_1[1,70]"            "z_1[1,71]"           
+## [487] "z_1[1,72]"            "z_1[1,73]"            "z_1[1,74]"           
+## [490] "z_1[1,75]"            "z_1[1,76]"            "z_1[1,77]"           
+## [493] "z_1[1,78]"            "z_1[1,79]"            "z_1[1,80]"           
+## [496] "z_1[1,81]"            "z_1[1,82]"            "z_1[1,83]"           
+## [499] "z_1[1,84]"            "z_1[1,85]"            "z_1[1,86]"           
+## [502] "z_1[1,87]"            "z_1[1,88]"            "z_1[1,89]"           
+## [505] "z_1[1,90]"            "z_1[1,91]"            "z_1[1,92]"           
+## [508] "z_1[1,93]"            "z_1[1,94]"            "z_1[1,95]"           
+## [511] "z_1[1,96]"            "z_1[1,97]"            "z_1[1,98]"           
+## [514] "z_1[1,99]"            "z_1[1,100]"           "z_1[1,101]"          
+## [517] "z_1[1,102]"           "z_1[1,103]"           "z_1[1,104]"          
+## [520] "z_1[1,105]"           "z_1[1,106]"           "z_1[1,107]"          
+## [523] "z_1[1,108]"           "z_1[1,109]"           "z_1[1,110]"          
+## [526] "z_1[1,111]"           "z_1[1,112]"           "z_1[1,113]"          
+## [529] "z_1[1,114]"           "z_1[1,115]"           "z_1[1,116]"          
+## [532] "z_1[1,117]"           "z_1[1,118]"           "z_1[1,119]"          
+## [535] "z_1[1,120]"           "z_1[1,121]"           "z_1[1,122]"          
+## [538] "z_1[1,123]"           "z_1[1,124]"           "z_1[1,125]"          
+## [541] "z_1[1,126]"           "z_1[1,127]"           "z_1[1,128]"          
+## [544] "z_1[1,129]"           "z_1[1,130]"           "z_1[1,131]"          
+## [547] "z_1[1,132]"           "z_1[1,133]"           "z_1[1,134]"          
+## [550] "z_1[1,135]"           "z_1[1,136]"           "z_1[1,137]"          
+## [553] "z_1[1,138]"           "z_1[1,139]"           "z_1[1,140]"          
+## [556] "z_1[1,141]"           "z_1[1,142]"           "z_1[1,143]"          
+## [559] "z_1[1,144]"           "z_1[1,145]"           "z_1[1,146]"          
+## [562] "z_1[1,147]"           "z_1[1,148]"           "z_1[1,149]"          
+## [565] "z_1[1,150]"           "z_1[1,151]"           "z_1[1,152]"          
+## [568] "z_1[1,153]"           "z_1[1,154]"           "z_1[1,155]"          
+## [571] "z_1[1,156]"           "z_1[1,157]"           "z_1[1,158]"          
+## [574] "z_1[1,159]"           "z_1[1,160]"           "z_1[1,161]"          
+## [577] "z_1[1,162]"           "z_1[1,163]"           "z_1[1,164]"          
+## [580] "z_1[1,165]"           "z_1[1,166]"           "z_1[1,167]"          
+## [583] "z_1[1,168]"           "z_1[1,169]"           "z_1[1,170]"          
+## [586] "z_1[1,171]"           "z_1[1,172]"           "z_1[1,173]"          
+## [589] "z_1[1,174]"           "z_1[1,175]"           "z_1[1,176]"          
+## [592] "z_1[1,177]"           "z_1[1,178]"           "z_1[1,179]"          
+## [595] "z_1[1,180]"           "z_1[1,181]"           "z_1[1,182]"          
+## [598] "z_1[1,183]"           "z_1[1,184]"           "z_1[1,185]"          
+## [601] "z_1[1,186]"           "z_1[1,187]"           "z_1[1,188]"          
+## [604] "z_1[1,189]"           "z_1[1,190]"           "z_1[1,191]"          
+## [607] "z_1[1,192]"           "z_1[1,193]"           "z_1[1,194]"          
+## [610] "z_1[1,195]"           "z_1[1,196]"           "z_1[1,197]"          
+## [613] "z_1[1,198]"           "z_1[1,199]"           "z_1[1,200]"          
+## [616] "z_1[1,201]"           "z_1[1,202]"           "z_1[1,203]"          
+## [619] "z_1[1,204]"           "z_1[1,205]"           "z_1[1,206]"          
+## [622] "z_1[1,207]"           "z_1[1,208]"           "z_1[1,209]"          
+## [625] "z_1[1,210]"           "z_1[1,211]"           "z_1[1,212]"          
+## [628] "z_1[1,213]"           "z_1[1,214]"           "z_1[1,215]"          
+## [631] "z_1[1,216]"           "z_1[1,217]"           "z_1[1,218]"          
+## [634] "z_1[1,219]"           "z_1[1,220]"           "z_1[1,221]"          
+## [637] "z_1[1,222]"           "z_1[1,223]"           "z_1[1,224]"          
+## [640] "z_1[1,225]"           "z_1[1,226]"           "z_1[1,227]"          
+## [643] "z_1[1,228]"           "z_1[1,229]"           "z_1[1,230]"          
+## [646] "z_1[1,231]"           "z_1[1,232]"           "z_1[1,233]"          
+## [649] "z_1[1,234]"           "z_1[1,235]"           "z_1[1,236]"          
+## [652] "z_1[1,237]"           "z_1[1,238]"           "z_1[1,239]"          
+## [655] "z_1[1,240]"           "z_1[1,241]"           "z_1[1,242]"          
+## [658] "z_1[1,243]"           "z_1[1,244]"           "z_1[1,245]"          
+## [661] "z_1[1,246]"           "z_1[1,247]"           "z_1[1,248]"          
+## [664] "z_1[1,249]"           "z_1[1,250]"           "z_1[1,251]"          
+## [667] "z_1[1,252]"           "z_1[1,253]"           "z_1[1,254]"          
+## [670] "z_1[1,255]"           "z_1[1,256]"           "z_1[1,257]"          
+## [673] "z_1[1,258]"           "z_1[1,259]"           "z_1[1,260]"          
+## [676] "z_1[1,261]"           "z_1[1,262]"           "z_1[1,263]"          
+## [679] "z_1[1,264]"           "z_1[1,265]"           "z_1[1,266]"          
+## [682] "z_1[1,267]"           "z_1[1,268]"           "z_1[1,269]"          
+## [685] "z_1[1,270]"           "z_1[1,271]"           "z_1[1,272]"          
+## [688] "z_1[1,273]"           "z_1[1,274]"           "z_1[1,275]"          
+## [691] "z_1[1,276]"           "z_1[1,277]"           "z_1[1,278]"          
+## [694] "z_1[1,279]"           "z_1[1,280]"           "z_1[1,281]"          
+## [697] "z_1[1,282]"           "z_1[1,283]"           "z_1[1,284]"          
+## [700] "z_1[1,285]"           "z_1[1,286]"           "z_1[1,287]"          
+## [703] "z_1[1,288]"           "z_1[1,289]"           "z_1[1,290]"          
+## [706] "z_1[1,291]"           "z_1[1,292]"           "z_1[1,293]"          
+## [709] "z_1[1,294]"           "z_1[1,295]"           "z_1[1,296]"          
+## [712] "z_1[1,297]"           "z_1[1,298]"           "z_1[1,299]"          
+## [715] "z_1[1,300]"           "z_1[1,301]"           "z_1[1,302]"          
+## [718] "z_1[1,303]"           "z_1[1,304]"           "z_1[1,305]"          
+## [721] "z_1[1,306]"           "z_1[1,307]"           "z_1[1,308]"          
+## [724] "z_1[1,309]"           "z_1[1,310]"           "z_1[1,311]"          
+## [727] "z_1[1,312]"           "z_1[1,313]"           "z_1[1,314]"          
+## [730] "z_1[1,315]"           "z_1[1,316]"           "z_1[1,317]"          
+## [733] "z_1[1,318]"           "z_1[1,319]"           "z_1[1,320]"          
+## [736] "z_1[1,321]"           "z_1[1,322]"           "z_1[1,323]"          
+## [739] "z_1[1,324]"           "z_1[1,325]"           "z_1[1,326]"          
+## [742] "z_1[1,327]"           "z_1[1,328]"           "z_1[1,329]"          
+## [745] "z_1[1,330]"           "z_1[1,331]"           "z_1[1,332]"          
+## [748] "z_1[1,333]"           "z_1[1,334]"           "z_1[1,335]"          
+## [751] "z_1[1,336]"           "z_1[1,337]"           "z_1[1,338]"          
+## [754] "z_1[1,339]"           "z_1[1,340]"           "z_1[1,341]"          
+## [757] "z_1[1,342]"           "z_1[1,343]"           "z_1[1,344]"          
+## [760] "z_1[1,345]"           "z_1[1,346]"           "z_1[1,347]"          
+## [763] "z_1[1,348]"           "z_1[1,349]"           "z_1[1,350]"          
+## [766] "z_1[1,351]"           "z_1[1,352]"           "z_1[1,353]"          
+## [769] "z_1[1,354]"           "z_1[1,355]"           "z_1[1,356]"          
+## [772] "z_1[1,357]"           "z_1[1,358]"           "z_1[1,359]"          
+## [775] "z_1[1,360]"           "z_1[1,361]"           "z_1[1,362]"          
+## [778] "z_1[1,363]"           "z_1[1,364]"           "z_1[1,365]"          
+## [781] "z_1[1,366]"           "z_1[1,367]"           "z_1[1,368]"          
+## [784] "z_1[1,369]"           "z_1[1,370]"           "z_1[1,371]"          
+## [787] "z_1[1,372]"           "z_1[1,373]"           "z_1[1,374]"          
+## [790] "z_1[1,375]"           "z_1[1,376]"           "z_1[1,377]"          
+## [793] "z_1[1,378]"           "z_1[1,379]"           "z_1[1,380]"          
+## [796] "z_1[1,381]"           "z_1[1,382]"           "z_1[1,383]"          
+## [799] "z_1[1,384]"           "z_1[1,385]"           "z_1[1,386]"          
+## [802] "z_1[1,387]"           "z_1[1,388]"           "z_1[1,389]"          
+## [805] "z_1[1,390]"           "z_1[1,391]"           "z_1[1,392]"          
+## [808] "z_1[1,393]"           "z_1[1,394]"           "z_1[1,395]"          
+## [811] "z_1[1,396]"           "z_1[1,397]"           "z_1[1,398]"          
+## [814] "z_1[1,399]"           "z_1[1,400]"           "z_1[1,401]"          
+## [817] "z_1[1,402]"           "z_1[1,403]"           "z_1[1,404]"          
+## [820] "z_1[1,405]"           "z_1[1,406]"           "z_1[1,407]"          
+## [823] "accept_stat__"        "treedepth__"          "stepsize__"          
+## [826] "divergent__"          "n_leapfrog__"         "energy__"
+```
+
+---
+# Get all draws
+Let's look at the intercept
+
+
+```r
+int &lt;- lc %&gt;% 
+  spread_draws(b_Intercept)
+int
+```
+
+```
+## # A tibble: 4,000 x 4
+##    .chain .iteration .draw b_Intercept
+##     &lt;int&gt;      &lt;int&gt; &lt;int&gt;       &lt;dbl&gt;
+##  1      1          1     1   2.00295  
+##  2      1          2     2   1.64483  
+##  3      1          3     3   1.73525  
+##  4      1          4     4  -0.405891 
+##  5      1          5     5   3.04027  
+##  6      1          6     6   0.958925 
+##  7      1          7     7   2.25661  
+##  8      1          8     8   0.89042  
+##  9      1          9     9   2.74626  
+## 10      1         10    10  -0.0759083
+## # … with 3,990 more rows
+```
+
+---
+# Plot the distribution
+
+
+```r
+ggplot(int, aes(b_Intercept)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(xintercept = median(int$b_Intercept),
+             color = "magenta",
+             size = 2)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-53-1.png)&lt;!-- --&gt;
+
+---
+# Grab random effects
+
+* The random effect name is `r_did`
+
+* We use brackets to assign new names
+
+
+```r
+spread_draws(lc, r_did[did, term])
+```
+
+```
+## # A tibble: 1,628,000 x 6
+## # Groups:   did, term [407]
+##      did term         r_did .chain .iteration .draw
+##    &lt;int&gt; &lt;chr&gt;        &lt;dbl&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;
+##  1     1 Intercept -5.58672      1          1     1
+##  2     1 Intercept -4.57339      1          2     2
+##  3     1 Intercept -3.48764      1          3     3
+##  4     1 Intercept -2.1097       1          4     4
+##  5     1 Intercept -3.79058      1          5     5
+##  6     1 Intercept -3.78305      1          6     6
+##  7     1 Intercept -1.91934      1          7     7
+##  8     1 Intercept -3.68508      1          8     8
+##  9     1 Intercept -2.07847      1          9     9
+## 10     1 Intercept -3.14987      1         10    10
+## # … with 1,627,990 more rows
+```
+
+---
+# Look at did distributions
+First 80 doctors
+
+```r
+dids &lt;- spread_draws(lc, r_did[did, ]) # all terms, which is just one
+dids %&gt;% 
+  filter(did %in% 1:80) %&gt;% 
+  ggplot(aes(x = r_did, y = factor(did))) +
+  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_blank())
+```
+
+
+---
+![](w8p1_files/figure-html/unnamed-chunk-56-1.png)&lt;!-- --&gt;
+
+---
+# Long format
+
+Use `gather_draws()` to return a long format, suitable for plotting (and many other things)
+
+
+```r
+fixed_l &lt;- lc %&gt;% 
+  gather_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
+               `b_age:tumorsize`)
+fixed_l
+```
+
+```
+## # A tibble: 20,000 x 5
+## # Groups:   .variable [5]
+##    .chain .iteration .draw .variable       .value
+##     &lt;int&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;            &lt;dbl&gt;
+##  1      1          1     1 b_Intercept  2.00295  
+##  2      1          2     2 b_Intercept  1.64483  
+##  3      1          3     3 b_Intercept  1.73525  
+##  4      1          4     4 b_Intercept -0.405891 
+##  5      1          5     5 b_Intercept  3.04027  
+##  6      1          6     6 b_Intercept  0.958925 
+##  7      1          7     7 b_Intercept  2.25661  
+##  8      1          8     8 b_Intercept  0.89042  
+##  9      1          9     9 b_Intercept  2.74626  
+## 10      1         10    10 b_Intercept -0.0759083
+## # … with 19,990 more rows
+```
+
+---
+# Plot the densities
+
+
+```r
+ggplot(fixed_l, aes(.value)) +
+  geom_density(fill = "#61adff", alpha = 0.7, color = NA) + 
+  facet_wrap(~.variable, scales = "free")
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-58-1.png)&lt;!-- --&gt;
+
+
+
+---
+# Multiple comparisons
+One of the nicest things about Bayes is that any comparison you want to make can be made without jumping through a lot of additional hoops (e.g., adjusting `\(\alpha\)`).
+
+
+--
+### Scenario
+Imagine a **35** year old has a tumor measuring **58 millimeters** and a lung capacity rating of **0.81**.
+
+
+--
+What would we estimate as the odds of remission if this patient had `did == 1` versus `did == 2`?
+
+
+---
+# Fixed effects
+
+Not really "fixed", but rather just average relation
+
+
+```r
+fe &lt;- lc %&gt;% 
+  spread_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
+               `b_age:tumorsize`)
+fe
+```
+
+```
+## # A tibble: 4,000 x 8
+##    .chain .iteration .draw b_Intercept       b_age b_tumorsize b_lungcapacity
+##     &lt;int&gt;      &lt;int&gt; &lt;int&gt;       &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;
+##  1      1          1     1   2.00295   -0.0564936  -0.0148761       0.175562 
+##  2      1          2     2   1.64483   -0.0416647  -0.0102736       0.149303 
+##  3      1          3     3   1.73525   -0.0541081  -0.00183466      0.180389 
+##  4      1          4     4  -0.405891  -0.00412764  0.020585        0.0775897
+##  5      1          5     5   3.04027   -0.0747228  -0.026066        0.0209833
+##  6      1          6     6   0.958925  -0.0313285   0.00155056      0.0918658
+##  7      1          7     7   2.25661   -0.0533059  -0.0155207      -0.0290726
+##  8      1          8     8   0.89042   -0.0358995   0.00375855      0.189672 
+##  9      1          9     9   2.74626   -0.0702684  -0.0124385       0.0382528
+## 10      1         10    10  -0.0759083 -0.011671    0.0196962       0.0430632
+## # … with 3,990 more rows, and 1 more variable: b_age:tumorsize &lt;dbl&gt;
+```
+
+---
+# Data
+
+```r
+age &lt;- 35
+tumor_size &lt;- 58
+lung_cap &lt;- 0.81
+```
+
+--
+population-level predictions
+
+
+```r
+pop_level &lt;- 
+  fe$b_Intercept +
+  (fe$b_age * age) +
+  (fe$b_tumorsize * tumor_size) +
+  (fe$b_lungcapacity * lung_cap) +
+  (fe$`b_age:tumorsize` * (age * tumor_size))
+pop_level
+```
+
+```
+##    [1] -0.455617880 -0.476793891 -0.218007588 -0.469701843 -0.357140737
+##    [6] -0.516878962 -0.421958171 -0.552735060 -0.172178472 -0.585600118
+##   [11] -0.480249767 -0.433201152 -0.257640410 -0.278580581 -0.409234997
+##   [16] -0.400637324 -0.382130548 -0.074959140 -0.311243283 -0.146947936
+##   [21] -0.667077420 -0.173115390 -0.474013480 -0.417416200 -0.530471479
+##   [26] -0.461901724 -0.913909830 -0.172764640 -0.521898992 -0.527196225
+##   [31] -0.409432919 -0.553727388 -0.569616980 -0.530055870 -0.402625124
+##   [36] -0.073364280 -0.686393620 -0.611404400 -0.472916110 -0.398771212
+##   [41] -0.423942888 -0.380399756 -0.510451560 -0.469437137 -0.377432620
+##   [46] -0.570140044 -0.397047662 -0.443465540 -0.544589520 -0.566756270
+##   [51] -0.371673770 -0.411334820 -0.392128067 -0.441169052 -0.236485590
+##   [56] -0.442591396 -0.325165813 -0.339360900 -0.080081711 -0.209060780
+##   [61] -0.018959622 -0.250630434 -0.219242635 -0.152269780 -0.572841254
+##   [66] -0.365753780 -0.504748205 -0.189232745 -0.539672783 -0.115553539
+##   [71] -0.548485925 -0.824594670 -0.454632290 -0.621527600 -0.422245090
+##   [76] -0.299765750 -0.370415310 -0.388876190 -0.469555052 -0.193093448
+##   [81] -0.386797266 -0.337234485 -0.144817500 -0.334469820 -0.505016707
+##   [86] -0.482402040 -0.314243630 -0.352202494 -0.586361236 -0.630676710
+##   [91] -0.469724058 -0.549636601 -0.334354350 -0.377111859 -0.347664657
+##   [96] -0.130896098 -0.213638490 -0.396876770 -0.330939480 -0.318148290
+##  [101] -0.259329490 -0.391702122 -0.316733380 -0.600725526 -0.361479096
+##  [106] -0.551766624 -0.315214457 -0.351232993 -0.397873032 -0.349238042
+##  [111] -0.484926411 -0.439189530 -0.478705650 -0.635281570 -0.241133213
+##  [116] -0.246609930 -0.071819302 -0.034325603 -0.649145630 -0.700917050
+##  [121] -0.222953770 -0.533025870 -0.599486618 -0.403790960 -0.260056010
+##  [126] -0.357984425 -0.559597240 -0.227173959 -0.594957200 -0.636689090
+##  [131] -0.432765060 -0.427418750 -0.294159750 -0.469606970 -0.408256150
+##  [136] -0.273093060 -0.227716970 -0.273017833 -0.776978694 -0.402417540
+##  [141] -0.761234010 -0.562456572 -0.460504920 -0.479848450 -0.726918790
+##  [146] -0.307885490 -0.563640350 -0.156874500 -0.603853870 -0.360119650
+##  [151] -0.439510246 -0.498303350 -0.436488500 -0.544606456 -0.434088319
+##  [156] -0.525044500 -0.491751984 -0.511066878 -0.375634385 -0.396813148
+##  [161] -0.120711628 -0.447569107 -0.598955900 -0.285020155 -0.443555390
+##  [166] -0.531471842 -0.341241490 -0.341231071 -0.215685512 -0.457760110
+##  [171] -0.428478630 -0.454933219 -0.411198175 -0.287879510 -0.514007970
+##  [176] -0.225042810 -0.334407045 -0.305516204 -0.352181250 -0.579043881
+##  [181] -0.390782600 -0.114867670 -0.467382634 -0.453715220 -0.448469364
+##  [186] -0.517241677 -0.506116786 -0.464813982 -0.311949400 -0.318529190
+##  [191] -0.428602067 -0.358267970 -0.564183020 -0.455770449 -0.469280170
+##  [196] -0.529705397 -0.464907897 -0.557146169 -0.367910570 -0.379883110
+##  [201] -0.490258890 -0.390489842 -0.628865181 -0.350459059 -0.551020999
+##  [206] -0.598548802 -0.657718730 -0.505845847 -0.689579788 -0.367926640
+##  [211] -0.456399680 -0.309413549 -0.266144941 -0.387119263 -0.432024710
+##  [216] -0.714062380 -0.458621710 -0.594825190 -0.436504218 -0.707639947
+##  [221] -0.425139435 -0.745135980 -0.855979050 -0.029059770 -0.340220650
+##  [226] -0.349829200 -0.302987241 -0.499461182 -0.562482610 -0.560309400
+##  [231] -0.786288240 -0.423022903 -0.589887760 -0.543448000 -0.398316452
+##  [236] -0.400705570 -0.755727523 -0.361891310 -0.486984403 -0.064131480
+##  [241] -0.470423440 -0.475652920 -0.298657760 -0.571893760 -0.495233100
+##  [246] -0.577194770 -0.596306776 -0.426503904 -0.639247532 -0.553939850
+##  [251] -0.283688255 -0.418609320 -0.433383970 -0.729367280 -0.576736630
+##  [256] -0.690263070 -0.260419072 -0.491294768 -0.377027825 -0.526509641
+##  [261] -0.805616240 -0.793814902 -0.515429930 -0.722950163 -0.252655620
+##  [266] -0.476424797 -0.512284608 -0.362468540 -0.350158942 -0.644483280
+##  [271] -0.310265269 -0.455191154 -0.447355020 -0.513039810 -0.288744469
+##  [276] -0.736253150 -0.685238440 -0.719475070 -0.607770417 -0.572592620
+##  [281] -0.283522180 -0.812941080 -0.751547100 -0.851246850 -0.552854990
+##  [286] -0.492614663 -0.557369936 -0.409131410 -0.717052740 -0.254512987
+##  [291] -0.563911930 -0.409910473 -0.406331271 -0.383986949 -0.555012617
+##  [296] -0.541086560 -0.472851440 -0.540865710 -0.311411275 -0.587464560
+##  [301] -0.404205580 -0.288320430 -0.440072161 -0.253807970 -0.376071755
+##  [306] -0.262892500 -0.415690050 -0.446884985 -0.466740054 -0.534947230
+##  [311] -0.835813610 -0.353975520 -0.449872800 -0.265051610 -0.256455160
+##  [316] -0.280897309 -0.706195576 -0.325772540 -0.312522638 -0.279913362
+##  [321] -0.423974670 -0.369907240 -0.489062313 -0.376667380 -0.514781242
+##  [326] -0.580556440 -0.383651688 -0.376442692 -0.586769847 -0.502639271
+##  [331] -0.519688971 -0.378119740 -0.353804534 -0.552346376 -0.464907251
+##  [336] -0.200312187 -0.722175920 -0.371699000 -0.282557537 -0.372757846
+##  [341] -0.399172634 -0.319129770 -0.315429880 -0.707942219 -0.214735810
+##  [346] -0.418578620 -0.508322714 -0.301319450 -0.423210030 -0.350205871
+##  [351] -0.658680470 -0.374602250 -0.438614720 -0.412915250 -0.418993886
+##  [356] -0.387728330 -0.384637090 -0.596397015 -0.649607396 -0.501360340
+##  [361] -0.395213310 -0.187814288 -0.485556619 -0.388462554 -0.579875850
+##  [366] -0.481782160 -0.489256188 -0.177345350 -0.313853726 -0.587535054
+##  [371] -0.496479110 -0.491195678 -0.234643535 -0.272574325 -0.012138020
+##  [376] -0.123775110 -0.285723830 -0.434573668 -0.262381040 -0.112449802
+##  [381] -0.286804497 -0.422488220 -0.260663140 -0.455282656 -0.428655052
+##  [386] -0.257748503 -0.310798610 -0.521455901 -0.431968345 -0.737216110
+##  [391] -0.448803600 -0.431198067 -0.420294200 -0.521638757 -0.361404720
+##  [396] -0.302493180 -0.383625980 -0.520052040 -0.673106744 -0.418707490
+##  [401] -0.547725130 -0.533418590 -0.269642660 -0.616506660 -0.347616000
+##  [406] -0.452026445 -0.619575697 -0.640449900 -0.560087580 -0.531673068
+##  [411] -0.644770200 -0.583004220 -0.463286358 -0.265523722 -0.283360533
+##  [416] -0.093413680 -0.449003650 -0.438723306 -0.483080286 -0.565839150
+##  [421] -0.359460770 -0.403515610 -0.355182730 -0.599249660 -0.512309820
+##  [426] -0.269648187 -0.534833830 -0.344327517 -0.350474949 -0.451673520
+##  [431] -0.474175681 -0.787909240 -0.490024262 -0.627789140 -0.653312610
+##  [436] -0.854656051 -0.603830890 -0.853598560 -0.267247900 -0.381970342
+##  [441] -0.542964410 -0.422081304 -0.319180598 -0.398235950 -0.484125427
+##  [446] -0.472575600 -0.464166882 -0.559302390 -0.761932810 -0.492885536
+##  [451] -0.510964325 -0.636430490 -0.643821886 -0.275007880 -0.549497324
+##  [456] -0.542952210 -0.508428720 -0.298239495 -0.371656748 -0.309903396
+##  [461] -0.361694775 -0.197815249 -0.180457310 -0.516405882 -0.182863470
+##  [466] -0.273645680 -0.438091740 -0.457418078 -0.164662550 -0.199876616
+##  [471] -0.174275082 -0.358129560 -0.420505680 -0.470854730 -0.644847113
+##  [476] -0.526080182 -0.543918570 -0.637665218 -0.355672335 -0.484569696
+##  [481] -0.712776800 -0.463841846 -0.509953589 -0.382851601 -0.315449960
+##  [486] -0.432691598 -0.486832360 -0.192141635 -0.489757531 -0.631096106
+##  [491] -0.726662793 -0.594245251 -0.337115130 -0.320308337 -0.370407512
+##  [496] -0.723228400 -0.533707640 -0.227591730 -0.295119783 -0.217319638
+##  [501] -0.419786010 -0.484751217 -0.458438520 -0.356576290 -0.292849730
+##  [506] -0.137205356 -0.593595240 -0.393114373 -0.370101842 -0.554174898
+##  [511] -0.464094420 -0.309065760 -0.493102503 -0.338944110 -0.194784740
+##  [516] -0.262458700 -0.483846400 -0.693457410 -0.345056370 -0.593711010
+##  [521] -0.434070430 -0.703010682 -0.501860470 -0.578593700 -0.528281370
+##  [526] -0.603254690 -0.275050600 -0.630768070 -0.601560520 -0.657264650
+##  [531] -0.494587204 -0.528746245 -0.397492330 -0.435050910 -0.531605786
+##  [536] -0.133868973 -0.196308884 -0.153158780 -0.491455251 -0.096196161
+##  [541] -0.401624220 -0.467484440 -0.322380270 -0.327804539 -0.261301916
+##  [546] -0.404797630 -0.633873103 -0.877026140 -0.766923387 -0.541262411
+##  [551] -0.977774671 -0.644511733 -0.370078073 -0.398679610 -0.668001620
+##  [556] -0.599829600 -0.593861461 -0.603612612 -0.806109410 -0.138677650
+##  [561] -0.553508199 -0.821806460 -0.355658230 -0.584767320 -0.755756193
+##  [566] -0.188148530 -0.492198949 -0.597760623 -0.227671664 -0.334414574
+##  [571] -0.169202130 -0.627890714 -0.274941375 -0.350644509 -0.214385750
+##  [576] -0.204822820 -0.289734456 -0.657547324 -0.423785957 -0.262002590
+##  [581] -0.285806070 -0.576613070 -0.304247784 -0.502790775 -0.325590680
+##  [586] -0.313922500 -0.542448126 -0.464574292 -0.538007317 -0.734350795
+##  [591] -0.412992410 -0.677476160 -0.370885610 -0.397578486 -0.689701462
+##  [596] -0.921467602 -0.453963270 -0.907402419 -0.770856010 -0.322651870
+##  [601] -0.469098266 -0.316490140 -0.234723304 -0.372554961 -0.660950340
+##  [606] -0.499610290 -0.591522550 -0.644034930 -0.613865250 -0.317318010
+##  [611] -0.415059620 -0.497274677 -0.482669261 -0.337578300 -0.594248298
+##  [616] -0.576431140 -0.252234626 -0.254293751 -0.178100221 -0.514279370
+##  [621]  0.010753000 -0.424595757 -0.639030910 -0.318078276 -0.555279270
+##  [626] -0.428396798 -0.399832300 -0.412040970 -0.758153250 -0.360055398
+##  [631] -0.492372200 -0.439985045 -0.319082830 -0.725334342 -0.101460235
+##  [636] -0.500647440 -0.237814503 -0.215622312 -0.022115660 -0.344136724
+##  [641] -0.320323512 -0.518497924 -0.638151760 -0.543543770 -0.172623620
+##  [646] -0.287698460 -0.700006222 -0.313420658 -0.274326210 -0.788877720
+##  [651] -0.629261012 -0.288930960 -0.317457374 -0.370336299 -0.509204479
+##  [656] -0.429405874 -0.234677927 -0.417300918 -0.336316693 -0.159495871
+##  [661] -0.398917030 -0.514560500 -0.609888512 -0.567922357 -0.400791056
+##  [666] -0.317675783 -0.377696509 -0.243838490 -0.523108112 -0.558117100
+##  [671] -0.509261302 -0.659583125 -0.365289305 -0.508549260 -0.547013373
+##  [676] -0.254420950 -0.263713000 -0.225780028 -0.479109452 -0.400604073
+##  [681] -0.383189080 -0.483123445 -0.441225875 -0.389798470 -0.583363969
+##  [686] -0.616030484 -0.348700730 -0.388216953 -0.540005280 -0.477482458
+##  [691] -0.472356540 -0.810342250 -0.304029588 -0.463181163 -0.450392940
+##  [696] -0.494312193 -0.404265278 -0.496506760 -0.187890181 -0.677900362
+##  [701] -0.334245346 -0.668438296 -0.669991668 -0.596405490 -0.484633960
+##  [706] -0.693948799 -0.476403810 -0.251602430 -0.403530160 -0.400356182
+##  [711] -0.509553449 -0.765901310 -0.656285270 -0.716848076 -0.697391753
+##  [716] -0.360548360 -0.467120727 -0.384730810 -0.633165570 -0.453761360
+##  [721] -0.700632240 -0.631108735 -0.213823600 -0.780689460 -0.440104550
+##  [726] -0.321658098 -0.414110380 -0.504983130 -0.346148770 -0.349460833
+##  [731] -0.282068488 -0.493162860 -0.361728824 -0.373500940 -0.446434483
+##  [736] -0.266379910 -0.409964716 -0.409573163 -0.412925200 -0.372433900
+##  [741] -0.394804020 -0.486235460 -0.204123620 -0.093783760 -0.464876985
+##  [746] -0.395356200 -0.305226519 -0.541335895 -0.229370326 -0.435467930
+##  [751] -0.419014277 -0.545443288 -0.343662855 -0.350450740 -0.508898655
+##  [756] -0.727304780 -0.521669076 -0.286939220 -0.282762032 -0.404486360
+##  [761] -0.326102633 -0.647421086 -0.355285060 -0.622769468 -0.501387078
+##  [766] -0.491383324 -0.648709408 -0.384125770 -0.458206560 -0.536047120
+##  [771] -0.354928413 -0.516992410 -0.218838590 -0.567606210 -0.227661000
+##  [776] -0.493609476 -0.557108822 -0.548728653 -0.254884364 -0.265455260
+##  [781] -0.422699620 -0.232526090 -0.290634308 -0.350769857 -0.011931710
+##  [786] -0.517316543 -0.247101720 -0.786749623 -0.491770362 -0.427893307
+##  [791] -0.524803679 -0.538520350 -0.653639474 -0.233913465 -0.477952470
+##  [796] -0.242485042 -0.493539448 -0.713907100 -0.748662420 -0.485096035
+##  [801] -0.407483610 -0.365256453 -0.510758510 -0.738054300 -0.429644387
+##  [806] -0.685729478 -0.608921550 -0.457510913 -0.153839600 -0.253104883
+##  [811] -0.353908410 -0.369016763 -0.658467190 -0.578442840 -0.661268755
+##  [816] -0.373251047 -0.368078394 -0.645644610 -0.474354985 -0.769876500
+##  [821] -0.569871540 -0.652671160 -0.358971770 -0.689634840 -0.644795553
+##  [826] -0.441435470 -0.879595757 -0.599571063 -0.570376076 -0.589692690
+##  [831] -0.464018895 -0.551222560 -0.423152370 -0.683819325 -0.513059910
+##  [836] -0.470881310 -0.474498019 -0.694674100 -0.440250990 -0.228715612
+##  [841] -0.621255880 -0.156710960 -0.505678256 -0.601130247 -0.406685268
+##  [846] -0.420870610 -0.604670810 -0.736992270 -0.615973319 -0.519156854
+##  [851] -0.579161138 -0.514996908 -0.379779030 -0.828576980 -0.288497773
+##  [856] -0.868404326 -0.478530840 -0.668946980 -0.641426520 -0.264576125
+##  [861] -0.229102681 -0.344363180 -0.417143580 -0.264900350 -0.388043807
+##  [866] -0.414324361 -0.526940280 -0.369420590 -0.258875460 -0.752753440
+##  [871] -0.663487680 -0.570854760 -0.617797980 -0.289155620 -0.235215620
+##  [876] -0.348780020 -0.618274812 -0.175026935 -0.294871336 -0.265294860
+##  [881] -0.307848780 -0.221427110 -0.528099720 -0.510929843 -0.598803450
+##  [886] -0.735715400 -0.582077772 -0.547845039 -0.582513150 -0.399976590
+##  [891] -0.643279015 -0.524303928 -0.651186695 -0.403916965 -0.432627960
+##  [896] -0.577411810 -0.474640290 -0.309391700 -0.735087040 -0.301156532
+##  [901] -0.313073916 -0.357134800 -0.573836103 -0.281963240 -0.286450210
+##  [906] -0.438066594 -0.602889400 -0.405242250 -0.318417330 -0.371400230
+##  [911] -0.364622389 -0.298475910 -0.306138866 -0.521713210 -0.333918110
+##  [916] -0.365264118 -0.208427050 -0.457743803 -0.469558403 -0.343934135
+##  [921] -0.332182442 -0.482547835 -0.177586802 -0.379673870 -0.394687279
+##  [926] -0.438973200 -0.476681480 -0.601068014 -0.563009380 -0.491142950
+##  [931] -0.445433100 -0.231652883 -0.597444220 -0.421819540 -0.201279416
+##  [936] -0.291151141 -0.248345760 -0.022043490 -0.079907260 -0.226295572
+##  [941] -0.551238717 -0.611854915 -0.413353773 -0.520215940 -0.600407487
+##  [946] -0.571319120 -0.448300345 -0.378946627 -0.265358440 -0.238866620
+##  [951] -0.310342542 -0.344101393 -0.357715780  0.024920550 -0.409349790
+##  [956] -0.044264740 -0.257645780 -0.357695104 -0.332835500 -0.308682066
+##  [961] -0.560812610 -0.551708228 -0.535665947 -0.669381290 -0.416503670
+##  [966] -0.593593564 -0.665866260 -0.619026121 -0.529371261 -0.313918020
+##  [971] -0.721548990 -0.762904072 -0.789579500 -0.708526349 -0.690253650
+##  [976] -0.795469602 -0.785712934 -0.623848107 -0.540231384 -0.466041120
+##  [981] -0.664607830 -0.383694240 -0.502339160 -0.194243770 -0.655658425
+##  [986] -0.398434890 -0.391333930 -0.435470960 -0.617691280 -0.495982502
+##  [991] -0.635252321 -0.560259970 -0.767603060 -0.730848920 -0.574160975
+##  [996] -0.447022623 -0.585903072 -0.742153250 -0.202583760 -0.508677490
+## [1001] -0.382875952 -0.199020037 -0.236166060 -0.495813690 -0.290813300
+## [1006] -0.276482158 -0.288575022 -0.573513290 -0.422639415 -0.455990070
+## [1011] -0.316319700 -0.316032250 -0.506646530 -0.531231556 -0.525302424
+## [1016] -0.537657510 -0.323773548 -0.293294980 -0.245136930 -0.244095150
+## [1021] -0.294474230 -0.271320680 -0.573309838 -0.474168328 -0.341828960
+## [1026] -0.481925148 -0.319350652 -0.593963077 -0.531164210 -0.365017840
+## [1031] -0.289132800 -0.660174757 -0.567127490 -0.530584197 -0.983994550
+## [1036] -0.500461230 -0.754565301 -0.599251185 -0.446589791 -0.466471114
+## [1041] -0.618977770 -0.591799030 -0.269134890 -0.582321900 -0.391791090
+## [1046] -0.629160590 -0.515647580 -0.546003268 -0.500966310 -0.338872936
+## [1051] -0.273330781 -0.410570174 -0.320144960 -0.498289827 -0.536395858
+## [1056] -0.619460990 -0.380830950 -0.545743720 -0.360795070 -0.408853171
+## [1061] -0.411210899 -0.236551810 -0.328943830 -0.243253892 -0.393265895
+## [1066] -0.397679212 -0.393622861 -0.507018513 -0.028729950 -0.285312380
+## [1071] -0.646254070 -0.541045870 -0.594667170 -0.867790499 -0.617144816
+## [1076] -0.302756870 -0.260952940 -0.375995990 -0.320595323 -0.461592520
+## [1081] -0.285212071 -0.321446683 -0.433963101 -0.604476000 -0.570089892
+## [1086] -0.692028440 -0.533554640 -0.563805883 -0.439323981 -0.507549094
+## [1091] -0.500853142 -0.439606315 -0.529880458 -0.555748427 -0.507854850
+## [1096] -0.351062951 -0.280602860 -0.233659520 -0.261703420 -0.229491160
+## [1101] -0.650503540 -0.535615050 -0.233536810 -0.440214658 -0.536392550
+## [1106] -0.458369842 -0.370012790 -0.395754314 -0.117756050 -0.432947398
+## [1111] -0.453772658 -0.350713682 -0.385203488 -0.434346350 -0.562133520
+## [1116] -0.624416484 -0.347041710 -0.455874150 -0.400335170 -0.306443506
+## [1121] -0.430101010 -0.267037531 -0.452156049 -0.379548950 -0.240570738
+## [1126] -0.170814652 -0.398619572 -0.543061905 -0.378131866 -0.183510689
+## [1131] -0.343239850 -0.358848180 -0.346366858 -0.506536350 -0.206283890
+## [1136] -0.007402553 -0.048279444 -0.391140411 -0.259185360 -0.508426397
+## [1141] -0.471895600 -0.297986810 -0.302229026 -0.630012640 -0.234763670
+## [1146] -0.359269170 -0.476893270 -0.537770647 -0.465793482 -0.562934999
+## [1151] -0.512528193 -0.403328990 -0.407353776 -0.414755480 -0.465587338
+## [1156] -0.501916594 -0.287626026 -0.602656160 -0.530989000 -0.600588930
+## [1161] -0.606914709 -0.582773980 -0.632873365 -0.406439690 -0.359220450
+## [1166] -0.630326051 -0.586086860 -0.600227682 -0.627131060 -0.478705171
+## [1171] -0.608613440 -0.912949030 -0.872149630 -0.510911088 -0.568275749
+## [1176] -0.520165130 -0.769261418 -0.097737340 -0.143628347 -0.488195800
+## [1181] -0.752976271 -0.380840153 -0.720088792 -0.477126003 -0.593464300
+## [1186] -0.436608940 -0.378900058 -0.324608250 -0.316858165 -0.502543117
+## [1191] -0.387949300 -0.239192979 -0.213412325 -0.381892109 -0.394233024
+## [1196] -0.364284954 -0.370776730 -0.353267467 -0.393051867 -0.661073347
+## [1201] -0.394509280 -0.406069580 -0.742582300 -0.380106911 -0.240568381
+## [1206] -0.198712990 -0.465486950 -0.154002097 -0.286256864 -0.086248775
+## [1211] -0.303272060 -0.198636572 -0.148689941 -0.270055220 -0.480125730
+## [1216] -0.000420440 -0.140061830 -0.487948450  0.004154390 -0.421198944
+## [1221] -0.097736210 -0.436381450 -0.453987300 -0.324496973 -0.504438636
+## [1226] -0.442552896 -0.700319355 -0.521285226 -0.554807745 -0.547738505
+## [1231] -0.633419520 -0.516105600 -0.688091088 -0.571362380 -0.402297031
+## [1236] -0.214127970 -0.428734954 -0.428108371 -0.677795198 -0.388437150
+## [1241] -0.620473070 -0.523416180 -0.391522327 -0.603800934 -0.468409542
+## [1246] -0.437463053 -0.435627487 -0.421640280 -0.356331980 -0.022274560
+## [1251] -0.180377799 -0.265959000 -0.282770270 -0.309137024 -0.292109792
+## [1256] -0.233267340 -0.438240680 -0.226071540 -0.457249460 -0.415439720
+## [1261] -0.379453012 -0.220117300 -0.332498620 -0.152149380 -0.362758950
+## [1266] -0.297001134 -0.399703920 -0.486495330 -0.103789970 -0.411992080
+## [1271] -0.451924980 -0.549451380 -0.613882840 -0.616858760 -0.583429441
+## [1276] -0.533890190 -0.638686350 -0.396367391 -0.481300418 -0.712923721
+## [1281] -0.628885910 -0.559643840 -0.458628814 -0.551594592 -0.600999838
+## [1286] -0.514485460 -0.585058930 -0.279131627 -0.462472463 -0.441908370
+## [1291] -0.530820430 -0.570987700 -0.529300014 -0.442555965 -0.389170263
+## [1296] -0.207996050 -0.184970223 -0.314695841 -0.277400460 -0.405669860
+## [1301] -0.120758641 -0.429366990 -0.431730277 -0.669534915 -0.611720974
+## [1306] -0.660881325 -0.571217069 -0.482803805 -0.594367825 -0.590520061
+## [1311] -0.788024300 -0.889794860 -0.679637830 -0.780620472 -0.719891070
+## [1316] -0.326311227 -0.528956694 -0.407526645 -0.140228631 -0.294389260
+## [1321] -0.383225982 -0.566124320 -0.452144147 -0.594561860 -0.655263190
+## [1326] -0.518076050 -0.449735281 -0.750704113 -0.539903970 -0.544816410
+## [1331] -0.562000727 -0.767575182 -0.365569770 -0.538333309 -0.690170357
+## [1336] -0.406703801 -0.595893385 -0.467396292 -0.615633994 -0.480244850
+## [1341] -0.280124679 -0.136615270 -0.250908290 -0.341406981 -0.431896204
+## [1346] -0.670036615 -0.711481940 -0.191848320 -0.384022693 -0.413317633
+## [1351] -0.275467583 -0.373843834 -0.130287235 -0.382535773 -0.310575736
+## [1356] -0.243152420 -0.497487700 -0.555683400 -0.392687520 -0.247581758
+## [1361] -0.391552910 -0.303456941 -0.537204492 -0.427550297 -0.275818136
+## [1366] -0.096315072 -0.359060204 -0.335709367 -0.386496748 -0.569739080
+## [1371] -0.365392057 -0.415131310 -0.470904920 -0.517075480 -0.104642830
+## [1376] -0.393548120 -0.743309052 -0.312460800 -0.103021070 -0.531675210
+## [1381] -0.490086240 -0.483647618 -0.196732620 -0.030777840 -0.146328030
+## [1386] -0.541923160 -0.392525947 -0.430526980 -0.447184509 -0.678660000
+## [1391] -0.398848623 -0.513737469 -0.365718380 -0.374304525 -0.568313830
+## [1396] -0.420424480 -0.418874734 -0.411635955 -0.465100943 -0.703569570
+## [1401] -0.565161300 -0.516188630 -0.404158080 -0.459697498 -0.540869873
+## [1406] -0.516777560 -0.545005715 -0.563062731 -0.579674768 -0.548343010
+## [1411] -0.520329141 -0.383989380 -0.781564462 -0.663761690 -0.694167399
+## [1416] -0.535175871 -0.720241790 -0.786143680 -0.802473067 -0.603034077
+## [1421] -0.474486690 -0.683653839 -0.519294808 -0.421535670 -0.597133964
+## [1426] -0.482027772 -0.495898490 -0.818188549 -0.367136720 -0.245243870
+## [1431] -0.414535750 -0.535114810 -0.326652250 -0.503966650 -0.295159660
+## [1436] -0.495652914 -0.595443034 -0.278435990 -0.328092210 -0.413432280
+## [1441] -0.216917220 -0.278470312 -0.400797936 -0.428056779 -0.551770268
+## [1446] -0.435611466 -0.538168295 -0.468511807 -0.418364140 -0.409734060
+## [1451] -0.351000741 -0.371128040 -0.539518060 -0.280961080 -0.262430516
+## [1456] -0.274203044 -0.182709900 -0.177762910 -0.555043630 -0.542568026
+## [1461] -0.757531533 -0.729276124 -0.734571600 -0.707037950 -0.796724530
+## [1466] -0.717932137 -0.396549067 -0.449160570 -0.822290155 -0.811154380
+## [1471] -0.289226180 -0.281874660 -1.012195590 -0.587628350 -0.438379071
+## [1476] -0.515642910 -0.622749020 -0.640455210 -0.476767242 -0.535713490
+## [1481] -0.473296247 -0.593332041 -0.644972261 -0.432615430 -0.313849806
+## [1486] -0.556829790 -0.309030703 -0.326937510 -0.554928750 -0.637687101
+## [1491] -0.441188060 -0.149902430 -0.119007387 -0.332654801 -0.434972308
+## [1496] -0.518345115 -0.426461438 -0.192354740 -0.467649390 -0.450859146
+## [1501] -0.227207047 -0.239053870 -0.329171394 -0.169571780 -0.038331437
+## [1506] -0.105712652 -0.432864990 -0.440368280 -0.541883660 -0.396965825
+## [1511] -0.538658350 -0.636915870 -0.564430490 -0.599730650 -0.449564020
+## [1516] -0.354220402 -0.443362892 -0.410123815 -0.437938557 -0.430955350
+## [1521] -0.204937130 -0.297532301 -0.342538179 -0.298418638 -0.438595403
+## [1526] -0.476564710 -0.530124675 -0.570085540 -0.597416170 -0.451021630
+## [1531] -0.643775973 -0.608289818 -0.474138500 -0.561747367 -0.365802530
+## [1536] -0.297485970 -0.145116841 -0.452589750 -0.464392080 -0.265362120
+## [1541] -0.307824500 -0.296566660 -0.378567080 -0.297531180 -0.413652213
+## [1546] -0.419502509 -0.531834888 -0.570560449 -0.467453131 -0.579930010
+## [1551] -0.158943000 -0.654908076 -0.291690750 -0.436264480 -0.545124890
+## [1556] -0.426018610 -0.467689458 -0.540892070 -0.700726510 -0.548143510
+## [1561] -0.604879197 -0.633522700 -0.250806735 -0.472031194 -0.324761640
+## [1566] -0.326129390 -0.097272378 -0.134844980 -0.092284709 -0.398223870
+## [1571] -0.170044898 -0.227832180 -0.418062360 -0.332768420 -0.284523380
+## [1576] -0.495314040 -0.437270000 -0.277381689 -0.622072703 -0.617917493
+## [1581] -0.674310543 -0.605092877 -0.406447039 -0.406937024 -0.550948870
+## [1586] -0.657200977 -0.533832710 -0.654213520 -0.641546735 -0.510992250
+## [1591] -0.260305310 -0.443198740 -0.297321950 -0.733745040 -0.645289715
+## [1596] -0.574327090 -0.554462481 -0.338695928 -0.350243280 -0.515113169
+## [1601] -0.364164470 -0.477796960 -0.180781940 -0.384534376 -0.255860372
+## [1606] -0.311378703 -0.360830709 -0.369053970 -0.522605350 -0.737862810
+## [1611] -0.319294790 -0.548009557 -0.559598250 -0.693981080 -0.727970970
+## [1616] -0.509067017 -0.588679989 -0.498244240 -0.581878870 -0.527834470
+## [1621] -0.494166682 -0.515987450 -0.520893590 -0.445851226 -0.458249990
+## [1626] -0.571429990 -0.426056380 -0.306352251 -0.247960955 -0.301063890
+## [1631] -0.638019063 -0.728856484 -0.696268940 -0.709205953 -0.594378330
+## [1636] -0.435955118 -0.330524902 -0.334348240 -0.271157180 -0.406864041
+## [1641] -0.248409440 -0.571659860 -0.484254660 -0.545548360 -0.593310496
+## [1646] -0.143360502 -0.514439190 -0.466087090 -0.421861320 -0.572550000
+## [1651] -0.326280550 -0.304265569 -0.782461625 -0.672154426 -0.496551383
+## [1656] -0.396895892 -0.295940157 -0.211066180 -0.543662383 -0.309085727
+## [1661] -0.652749264 -0.345943159 -0.236372540 -0.440949200 -0.595259710
+## [1666] -0.350157613 -0.222217738 -0.319083789 -0.392581424 -0.482418880
+## [1671] -0.370868930 -0.542408862 -0.450230740 -0.448407870 -0.693484855
+## [1676] -0.709931799 -0.352371860 -0.400434805 -0.386610599 -0.474194360
+## [1681] -0.560902550 -0.755879160 -0.456912373 -0.273976347 -0.528509793
+## [1686] -0.557638750 -0.370413824 -0.473188253 -0.609556990 -0.411372944
+## [1691] -0.641171050 -0.466128815 -0.488876720 -0.435931310 -0.651827629
+## [1696] -0.471652240 -0.538691281 -0.425067251 -0.566847487 -0.615819120
+## [1701] -0.417281994 -0.319417520 -0.653567830 -0.489133765 -0.360360926
+## [1706] -0.600390110 -0.294902540 -0.359076087 -0.624135360 -0.311821224
+## [1711] -0.448381550 -0.502961707 -0.505314750 -0.150463030 -0.397463763
+## [1716] -0.603678961 -0.732317220 -0.488472560 -0.202993710 -0.554138670
+## [1721] -0.688160260 -0.490457365 -0.510802534 -0.549927709 -0.468010011
+## [1726] -0.334890786 -0.295404370 -0.472954041 -0.497419075 -0.329857693
+## [1731] -0.348586214 -0.185118569 -0.410771310 -0.259714276 -0.360227544
+## [1736] -0.259328518 -0.244632037 -0.465364980 -0.428546585 -0.390638958
+## [1741] -0.552119570 -0.617626670 -0.669788038 -0.504028516 -0.370633908
+## [1746] -0.611837960 -0.408702827 -0.327330204 -0.313438480 -0.333802420
+## [1751] -0.273883960 -0.309796490 -0.374461168 -0.566429220 -0.265485291
+## [1756] -0.653425420 -0.406536920 -0.300838150 -0.567548095 -0.668976990
+## [1761] -0.485282780 -0.263049246 -0.168867917 -0.419322390 -0.497422380
+## [1766] -0.467622346 -0.181665385 -0.171654981 -0.429764323 -0.485102506
+## [1771] -0.402501883 -0.369152757 -0.425358219 -0.393520348 -0.566944650
+## [1776] -0.610353010 -0.388926050 -0.593362850 -0.459399120 -0.585716530
+## [1781] -0.299327445 -0.644300600 -0.329377500 -0.525307523 -0.497214486
+## [1786] -0.469894622 -0.435159250 -0.472401260 -0.626990105 -0.824571660
+## [1791] -0.560967790 -0.682663730 -0.543943780 -0.331491160 -0.549707346
+## [1796] -0.397171254 -0.426580290 -0.283508395 -0.201314450 -0.279914720
+## [1801] -0.234977980 -0.216242561 -0.333666605 -0.330071470 -0.628933740
+## [1806] -0.669046540 -0.534393230 -0.215250773 -0.396964060 -0.160499449
+## [1811] -0.305501040 -0.344342600 -0.592893649 -0.516589046 -0.500121010
+## [1816] -0.451816580 -0.392576210 -0.412374990 -0.570091082 -0.551948462
+## [1821] -0.629591166 -0.388518853 -0.391841910 -0.720149639 -0.636787019
+## [1826] -0.661093800 -0.393936359 -0.615188960 -0.066179360 -0.428593061
+## [1831] -0.179428055 -0.327279350 -0.494521490 -0.673597150 -0.440450970
+## [1836] -0.422631650 -0.384952140 -0.422924862 -0.315665265 -0.347784250
+## [1841] -0.446625292 -0.436272785 -0.673752643 -0.598418119 -0.833004060
+## [1846] -0.583199653 -0.317542010 -0.171063110 -0.038741130 -0.551577870
+## [1851] -0.607088630 -0.565501680 -0.425938730 -0.343033108 -0.573118309
+## [1856] -0.327635353 -0.481876502 -0.251042080 -0.468300517 -0.594482805
+## [1861] -0.722783110 -0.445556730 -0.421035714 -0.509126518 -0.820358010
+## [1866] -0.605936600 -0.498823966 -0.658384140 -0.401174525 -0.423140190
+## [1871] -0.386454942 -0.493801938 -0.395446830 -0.275808540 -0.257463586
+## [1876] -0.192664236 -0.216769010 -0.491033600 -0.550795481 -0.531428926
+## [1881] -0.637174641 -0.608734165 -0.492690981 -0.574952779 -0.671081998
+## [1886] -0.504103477 -0.511835990 -0.358377850 -0.712325490 -0.673920070
+## [1891] -0.629494020 -0.657557811 -0.632004555 -0.403305440 -0.315309640
+## [1896] -0.643905110 -0.360105960 -0.551713690 -0.478808645 -0.511761385
+## [1901] -0.687563814 -0.522110401 -0.382680664 -0.613525240 -0.627581498
+## [1906] -0.389143239 -0.434634429 -0.559363049 -0.592931951 -0.127220451
+## [1911] -0.363532503 -0.582558790 -0.341257966 -0.481390950 -0.347298290
+## [1916] -0.308502290 -0.290419620 -0.516002347 -0.254598965 -0.324612680
+## [1921] -0.390721043 -0.317527920 -0.188835437 -0.075930370 -0.237596710
+## [1926] -0.246731300 -0.612671320 -0.519491586 -0.640076077 -0.427761013
+## [1931] -0.535667200 -0.442217421 -0.632191000 -0.555634380 -0.390219930
+## [1936] -0.628242300 -0.419378340 -0.498461917 -0.375123450 -0.652151500
+## [1941] -0.291174900 -0.275829000 -0.451797290 -0.595069240 -0.484105480
+## [1946] -0.407792900 -0.530525759 -0.450463150 -0.542613860 -0.535606520
+## [1951] -0.481796875 -0.461692280 -0.501164494 -0.542705750 -0.279470320
+## [1956] -0.434816948 -0.148046477 -0.265210211 -0.470382394 -0.212434970
+## [1961] -0.386995410 -0.594351317 -0.545726951 -0.260027353 -0.393781404
+## [1966] -0.441811170 -0.689597740 -0.481428413 -0.646995380 -0.404899142
+## [1971] -0.325375077 -0.736923042 -0.572752540 -0.439956460 -0.560465320
+## [1976] -0.540872930 -0.568334600 -0.400538637 -0.357939095 -0.536135190
+## [1981] -0.495874150 -0.474870196 -0.378488726 -0.132587770 -0.627125799
+## [1986] -1.057027867 -0.315767730 -0.399997530 -0.455776925 -0.468944984
+## [1991] -0.481746173 -0.580768048 -0.360192810 -0.576549096 -0.599773821
+## [1996] -0.626468116 -0.622476936 -0.567896720 -0.664424110 -0.641723680
+## [2001] -0.521230237 -0.441238565 -0.399214470 -0.216584910 -0.892700110
+## [2006] -0.572539700 -0.552941530 -0.911456785 -0.647304746 -0.323381500
+## [2011] -0.550130708 -0.536474454 -0.441059323 -0.368392681 -0.656698337
+## [2016] -0.288762700 -0.427178620 -0.288541770 -0.240762940 -0.379958091
+## [2021] -0.361044715 -0.458267080 -0.436976330 -0.207245040 -0.448964910
+## [2026] -0.287013950 -0.201608843 -0.522435229 -0.392839757 -0.188095097
+## [2031] -0.548582964 -0.509693160 -0.306131020 -0.544167825 -0.607975256
+## [2036] -0.638937560 -0.556221380 -0.522076242 -0.418642110 -0.487265785
+## [2041] -0.434737570 -0.156996420 -0.440478850 -0.639233561 -0.438108964
+## [2046]  0.006302720 -0.196834084 -0.153527251 -0.619616108 -0.520798550
+## [2051] -0.330588550 -0.214378920 -0.267536609 -0.266809600 -0.511830286
+## [2056] -0.499798784 -0.353944720 -0.397546799 -0.471325370 -0.431745400
+## [2061] -0.687334450 -0.558085870 -0.739419730 -0.340762390 -0.231544100
+## [2066] -0.570707720 -0.374128870 -0.439532310 -0.441671670 -0.450138272
+## [2071] -0.631249110 -0.529579890 -0.632031890 -0.078180030 -0.289100827
+## [2076] -0.091466290 -0.606790022 -0.540902116 -0.525722549 -0.658946692
+## [2081] -0.625046937 -0.564377574 -0.654364596 -0.673438570 -0.668707430
+## [2086] -0.724024160 -0.808819583 -0.584118770 -0.708029090 -0.292603850
+## [2091] -0.588043890 -0.565051110 -0.405172521 -0.715213106 -0.500300450
+## [2096] -0.689902130 -0.626505320 -0.423687246 -0.575732900 -0.456540710
+## [2101] -0.715577900 -0.367285735 -0.653623486 -0.633035760 -0.459207030
+## [2106] -0.516244640 -0.762604899 -0.639586380 -0.528615014 -0.532454740
+## [2111] -0.413501174 -0.425671220 -0.452413770 -0.306120520 -0.513361703
+## [2116] -0.316493023 -0.360492710 -0.414313212 -0.281255280 -0.309075940
+## [2121] -0.341996106 -0.311814770 -0.295525500 -0.460675513 -0.443210622
+## [2126] -0.486897220 -0.556572240 -0.409673316 -0.352912981 -0.440749202
+## [2131] -0.378545740 -0.178051790 -0.405655459 -0.429726130 -0.500658250
+## [2136] -0.406182470 -0.598770257 -0.553728270 -0.291511474 -0.547811050
+## [2141] -0.432323895 -0.456862979 -0.416187594 -0.644609950 -0.508939275
+## [2146] -0.382326895 -0.577917350 -0.178460250 -0.339465370 -0.153105910
+## [2151] -0.341258700 -0.273743700 -0.384176215 -0.552869230 -0.518162710
+## [2156] -0.437692620 -0.469610100 -0.290616650 -0.512039010 -0.676572859
+## [2161] -0.526217001 -0.547695547 -0.342675330 -0.295267050 -0.200943450
+## [2166] -0.177405730 -0.236030951 -0.528559237 -0.425781428 -0.332236539
+## [2171] -0.393909562 -0.550577650 -0.513515067 -0.670167332 -0.352518790
+## [2176] -0.505332690 -0.340085630 -0.535747420 -0.460260020 -0.333584480
+## [2181] -0.448597380 -0.586848712 -0.373316700 -0.232880801 -0.802877032
+## [2186] -0.548199270 -0.650310080 -0.669295081 -0.660815360 -0.459956050
+## [2191] -0.415696278 -0.790581768 -0.647022200 -0.361715998 -0.554816772
+## [2196] -0.384171430 -0.473928266 -0.545652753 -0.578466700 -0.830436740
+## [2201] -0.686138250 -0.685106550 -0.692973630 -0.743569970 -0.603608400
+## [2206] -0.467793850 -0.416693144 -0.505759570 -0.545745460 -0.507088390
+## [2211] -0.329702893 -0.494422904 -0.509748514 -0.548620080 -0.629668796
+## [2216] -0.519333870 -0.592197368 -0.395559649 -0.502590940 -0.472163453
+## [2221] -0.555958750 -0.717777620 -0.423905386 -0.530963037 -0.369514424
+## [2226] -0.734528970 -0.411385640 -0.514587540 -0.554280840 -0.659247858
+## [2231] -0.767625130 -0.710455249 -0.613044279 -0.448332616 -0.562599820
+## [2236] -0.661556050 -0.498349970 -0.278218214 -0.442456140 -0.479237160
+## [2241] -0.608588358 -0.642194080 -0.496397024 -0.709893490 -0.839788710
+## [2246] -0.069143810 -0.212643710 -0.506268510 -0.402776490 -0.134769350
+## [2251] -0.476525947 -0.447256325 -0.412559531 -0.479221430 -0.319644000
+## [2256] -0.385051540 -0.483617090 -0.447896260 -0.551463905 -0.649265950
+## [2261] -0.427206725 -0.464067867 -0.548899236 -0.640095380 -0.574266318
+## [2266] -0.543499822 -0.381418090 -0.199316885 -0.178878018 -0.867686970
+## [2271] -0.552143967 -0.803643668 -0.398963991 -0.510652610 -0.463878910
+## [2276] -0.712708643 -0.663411623 -0.426230404 -0.415582400 -0.217423960
+## [2281] -0.205083815 -0.054932989 -0.286749340 -0.295469479 -0.245337280
+## [2286] -0.254108400 -0.313420400 -0.180160440 -0.117798100 -0.211774850
+## [2291] -0.340985625 -0.637896358 -0.523623326 -0.375651650 -0.377327971
+## [2296] -0.286608408 -0.536268860 -0.414929915 -0.424383300 -0.464868589
+## [2301] -0.078943791 -0.563438386 -0.399964252 -0.376057234 -0.336298149
+## [2306] -0.432206767 -0.338542389 -0.554303920 -0.318513450 -0.209843030
+## [2311] -0.284333474 -0.274962035 -0.278249194 -0.369305869 -0.566886906
+## [2316] -0.332185764 -0.329539110 -0.368925313 -0.336314127 -0.390720817
+## [2321] -0.054913576 -0.307101919 -0.550119953 -0.386641059 -0.317330296
+## [2326] -0.457640520 -0.533642300 -0.279889380 -0.496221381 -0.477244592
+## [2331] -0.564833187 -0.562591740 -0.556544807 -0.559536410 -0.822788530
+## [2336] -0.499400110 -0.519791820 -0.402174470 -0.498898320 -0.590567970
+## [2341] -0.409623204 -0.233932500 -0.370349660 -0.501401016 -0.558417892
+## [2346] -0.538543880 -0.148171610 -0.692305950 -0.582048418 -0.344601700
+## [2351] -0.385814710 -0.186230000 -0.159554531 -0.499619910 -0.308485550
+## [2356] -0.353425140 -0.513792760 -0.334605213 -0.468093464 -0.345990490
+## [2361] -0.451235890 -0.448167411 -0.343001400 -0.666918230 -0.462967590
+## [2366] -0.361903818 -0.593976018 -0.620704770 -0.549527640 -0.573673340
+## [2371] -0.581053630 -0.458528310 -0.563098234 -0.512511191 -0.442472842
+## [2376] -0.613470330 -0.530668700 -0.292864320 -0.424441639 -0.327426260
+## [2381] -0.263930490 -0.215927325 -0.392149090 -0.506357780 -0.399032810
+## [2386] -0.481383264 -0.654353171 -0.436278282 -0.447323071 -0.759331147
+## [2391] -0.682407533 -0.948730520 -0.717554151 -0.440765466 -0.530431900
+## [2396] -0.158203120 -0.622138456 -0.308822740 -0.306050587 -0.439421840
+## [2401] -0.422992160 -0.260951854 -0.460505684 -0.344282323 -0.641327627
+## [2406] -0.528879460 -0.485297490 -0.479247452 -0.667283340 -0.412517148
+## [2411] -0.453268761 -0.157715790 -0.339082643 -0.331715747 -0.613961380
+## [2416] -0.509341630 -0.448025848 -0.481026000 -0.382767858 -0.393434530
+## [2421] -0.564369330 -0.603389700 -0.522016730 -0.310599682 -0.326523612
+## [2426] -0.428425150 -0.422970532 -0.548633013 -0.362274240 -0.366334789
+## [2431] -0.355969458 -0.572903260 -0.544948400 -0.582984480 -0.220062730
+## [2436] -0.324101178 -0.564554352 -0.455553381 -0.456510210 -0.347676765
+## [2441] -0.530146669 -0.654898580 -0.415316433 -0.507358111 -0.526595750
+## [2446] -0.346332666 -0.425545872 -0.278437940 -0.577221663 -0.532939955
+## [2451] -0.385670179 -0.210862395 -0.418799801 -0.706826000 -0.526498000
+## [2456] -0.381766592 -0.116863420 -0.333942880 -0.256135986 -0.455254217
+## [2461] -0.244509620 -0.313170941 -0.191470740 -0.303138460 -0.353394440
+## [2466] -0.258624326 -0.319542720 -0.321423600 -0.555885520 -0.301030840
+## [2471] -0.535031650 -0.328646970 -0.398557804 -0.539855262 -0.460873308
+## [2476] -0.207702890 -0.210656460 -0.410017670 -0.564822660 -0.502761740
+## [2481] -0.327521150 -0.306691250 -0.354696950 -0.303432500 -0.384903520
+## [2486] -0.414760550 -0.434539481 -0.443893490 -0.469122100 -0.406778600
+## [2491] -0.557956550 -0.435336919 -0.231618170 -0.341156547 -0.364988490
+## [2496] -0.323979970 -0.168706520 -0.391511659 -0.672733950 -0.544963400
+## [2501] -0.617351150 -0.398791330 -0.446487225 -0.262111989 -0.434490440
+## [2506] -0.340973365 -0.421544340 -0.595466410 -0.464535680 -0.676615700
+## [2511] -0.353439024 -0.496152660 -0.459746540 -0.396431140 -0.254356340
+## [2516] -0.202544042 -0.260759832 -0.406231760 -0.424802194 -0.336448840
+## [2521] -0.188560702 -0.260582890 -0.292050420 -0.444094008 -0.166298380
+## [2526] -0.262503020 -0.317952570 -0.305826639 -0.334511991 -0.610057580
+## [2531] -0.405653319 -0.350552138 -0.515706130 -0.434700379 -0.496340294
+## [2536] -0.562287064 -0.330237240 -0.474343600 -0.651523235 -0.658555968
+## [2541] -0.697553799 -0.603875310 -0.578025620 -0.542683960 -0.707768030
+## [2546] -0.559787747 -0.423271143 -0.504581269 -0.575682014 -0.377914380
+## [2551] -0.286025640 -0.408551240 -0.308656129 -0.261289574 -0.428456340
+## [2556] -0.520730430 -0.451854378 -0.345092036 -0.517637036 -0.476618540
+## [2561] -0.572208171 -0.719733880 -0.555896878 -0.456183390 -0.620702957
+## [2566] -0.387002942 -0.503536130 -0.441953410 -0.419220329 -0.374023730
+## [2571] -0.314799775 -0.278168063 -0.406974300 -0.386616790 -0.504772800
+## [2576] -0.400910010 -0.478825400 -0.375066770 -0.483459230 -0.531483880
+## [2581] -0.729461050 -0.249868000 -0.553546615 -0.431242695 -0.567046559
+## [2586] -0.662385530 -0.551355280 -0.740796030 -0.599523920 -0.743166250
+## [2591] -0.409792934 -0.413438520 -0.311772072 -0.412765365 -0.571770390
+## [2596] -0.479377450 -0.650773300 -0.658237310 -0.593838910 -0.624198370
+## [2601] -0.578350430 -0.334342815 -0.238904210 -0.459804216 -0.633562796
+## [2606] -0.447603310 -0.648417710 -0.448961920 -0.409775097 -0.038161130
+## [2611] -0.161091413 -0.452927781 -0.399340170 -0.374645210 -0.438913109
+## [2616] -0.572593570 -0.771312300 -0.643742520 -0.596579000 -0.587954656
+## [2621] -0.411827990 -0.658719757 -0.629203361 -0.640287080 -0.786159380
+## [2626] -0.630454354 -0.666774150 -0.735807367 -0.680471899 -0.468545780
+## [2631] -0.753397530 -0.665874946 -0.543670015 -0.650555200 -0.425949101
+## [2636] -0.366394193 -0.357219190 -0.343185353 -0.485937618 -0.323509937
+## [2641] -0.307613891 -0.442731830 -0.185219840 -0.158558250 -0.472101343
+## [2646] -0.592848350 -0.349382040 -0.457410373 -0.436037850 -0.607238584
+## [2651] -0.416655180 -0.290001500 -0.314203140 -0.278655044 -0.466210935
+## [2656] -0.417833120 -0.651423971 -0.509788536 -0.564578220 -0.486758130
+## [2661] -0.378095800 -0.599450415 -0.641715819 -0.588572684 -0.537741574
+## [2666] -0.550163762 -0.512838630 -0.453680560 -0.521227970 -0.285281900
+## [2671] -0.354049200 -0.519927967 -0.567153040 -0.263366762 -0.330667031
+## [2676] -0.250853380 -0.943958478 -0.457881400 -0.409082076 -0.365614950
+## [2681] -0.767496724 -0.507764110 -0.489829290 -0.582817725 -0.453408252
+## [2686] -0.240671370 -0.307193862 -0.374679544 -0.518151190 -0.139105307
+## [2691] -0.237432555 -0.246366992 -0.258104513 -0.488008965 -0.588880131
+## [2696] -0.650236310 -0.711914790 -0.453797480 -0.189070920 -0.772408637
+## [2701] -0.566243390 -0.603810010 -0.705705630 -0.564492771 -0.634859084
+## [2706] -0.503994910 -0.470055630 -0.460646900 -0.386237658 -0.359884100
+## [2711] -0.347654949 -0.486561400 -0.310835150 -0.272444050 -0.260472462
+## [2716] -0.509566301 -0.629471870 -0.513487390 -0.641721020 -0.460044927
+## [2721] -0.541332025 -0.469762330 -0.561252050 -0.537065712 -0.580243884
+## [2726] -0.828055296 -0.561602981 -0.548765630 -0.632739687 -0.552375330
+## [2731] -0.615752040 -0.713523128 -0.510072820 -0.405685339 -0.757807254
+## [2736] -0.769869470 -0.506550726 -0.577536640 -0.785568810 -0.624677522
+## [2741] -0.486214430 -0.608902590 -0.589686915 -0.586813719 -0.498255447
+## [2746] -0.240110398 -0.235025505 -0.453967140 -0.230209076 -0.154747825
+## [2751] -0.545520189 -0.532019860 -0.709562312 -0.311356260 -0.604770630
+## [2756] -0.347260295 -0.410273873 -0.559365350 -0.399736300 -0.489868434
+## [2761] -0.680615805 -0.800452340 -0.699508944 -0.584831360 -0.633342850
+## [2766] -0.464253361 -0.226753010 -0.523614790 -0.597764477 -0.792687752
+## [2771] -0.583687220 -0.661238093 -0.700120021 -0.694695880 -0.776814707
+## [2776] -0.711081999 -0.722967610 -0.896386855 -0.488343848 -0.326982173
+## [2781] -0.338935778 -0.287070296 -0.182827026 -0.108638001 -0.567103298
+## [2786] -0.518416070 -0.426827875 -0.302548956 -0.304261817 -0.666442453
+## [2791] -0.170981142 -0.610355650 -0.195796840 -0.722711170 -0.368998537
+## [2796] -0.455626340 -0.321918580 -0.389924130 -0.395547345 -0.401012353
+## [2801] -0.337673342 -0.653885560 -0.603352220 -0.661057510 -0.536882110
+## [2806] -0.403327367 -0.383738398 -0.487251771 -0.503029630 -0.415985280
+## [2811] -0.310261715 -0.271991680 -0.548954668 -0.351823330 -0.534487285
+## [2816] -0.620562900 -0.840782810 -0.534112180 -0.539632520 -0.470064132
+## [2821] -0.593978428 -0.586598626 -0.327401662 -0.428465141 -0.589365160
+## [2826] -0.482304756 -0.442671320 -0.313801162 -0.568643230 -0.477815040
+## [2831] -0.631558000 -0.539720057 -0.519860818 -0.491378499 -0.427336274
+## [2836] -0.323445340 -0.395227400 -0.763465940 -0.164197062 -0.448640880
+## [2841] -0.401039340 -0.628633410 -0.422269276 -0.483870950 -0.456763407
+## [2846] -0.486232410 -0.486288860 -0.489321100 -0.400493858 -0.482738682
+## [2851] -0.696491040 -0.336056510 -0.315103250 -0.466167030 -0.738472330
+## [2856] -0.418935689 -0.654250160 -0.618580540 -0.379184119 -0.669081050
+## [2861] -0.593280381 -0.372591509 -0.503291563 -0.421141220 -0.312505030
+## [2866] -0.432223950 -0.339726898 -0.678867465 -0.506044604 -0.724103588
+## [2871] -0.385796284 -0.424042621 -0.514019360 -0.317271780 -0.485537806
+## [2876] -0.322555517 -0.278785160 -0.591828030 -0.339920599 -0.906955490
+## [2881] -0.266392481 -0.452061160 -0.400784032 -0.595285710 -0.226004818
+## [2886] -0.357816620 -0.344472826 -0.417056749 -0.525651965 -0.567586672
+## [2891] -0.418738005 -0.393721420 -0.322731998 -0.509042583 -0.448120482
+## [2896] -0.751209498 -0.882996930 -0.729911869 -0.623362300 -0.491796350
+## [2901] -0.665715330 -0.448313500 -0.891531550 -0.178382840 -0.461486750
+## [2906] -0.745339270 -0.818584240 -0.702466997 -0.809981780 -0.721875256
+## [2911] -0.908871284 -0.606110931 -0.543312847 -0.688404174 -0.637150408
+## [2916] -0.552066829 -0.634189470 -0.703693500 -0.657242772 -0.527437490
+## [2921] -0.525240576 -0.395290510 -0.715822560 -0.577246880 -0.529514527
+## [2926] -0.581267980 -0.502856373 -0.295364770 -0.355170263 -0.705355202
+## [2931] -0.497186160 -0.411775128 -0.426229634 -0.559554604 -0.600090566
+## [2936] -0.454105870 -0.556930990 -0.441606067 -0.647439470 -0.661763850
+## [2941] -0.633417720 -0.451147251 -0.456231454 -0.651008480 -0.168829467
+## [2946] -0.349412590 -0.607252883 -0.097838825 -0.620739089 -0.582413630
+## [2951] -0.200992690 -0.244028057 -0.144470401 -0.337405860 -0.372730513
+## [2956] -0.767242196 -0.482506940 -0.610991650 -0.211473850 -0.258210540
+## [2961] -0.270092270 -0.309000291 -0.402477760 -0.592610232 -0.581056045
+## [2966] -0.444626870 -0.522828682 -0.586646540 -0.239895876 -0.427677170
+## [2971] -0.311612654 -0.438897208 -0.672805370 -0.634857970 -0.334545764
+## [2976] -0.296541020 -0.433895920 -0.392358770 -0.420553060 -0.480474766
+## [2981] -0.502627790 -0.362775650 -0.285805110 -0.328058760 -0.352850300
+## [2986] -0.339679743 -0.304039690 -0.267065510 -0.335912079 -0.525603660
+## [2991] -0.262637189 -0.196005184 -0.269687918 -0.457638860 -0.366734290
+## [2996] -0.251626220 -0.461330480 -0.223831048 -0.390914269 -0.516610215
+## [3001] -0.517063712 -0.475875941 -0.480668070 -0.623634451 -0.340124930
+## [3006] -0.419628440 -0.340753658 -0.402068638 -0.185505032 -0.260761620
+## [3011] -0.512829480 -0.377200260 -0.440270510 -0.315517233 -0.384215704
+## [3016] -0.311697056 -0.446561583 -0.622400290 -0.597841090 -0.721854860
+## [3021] -0.453928532 -0.449497449 -0.364014380 -0.538631840 -0.436521950
+## [3026] -0.561964710 -0.381174499 -0.430854961 -0.486031795 -0.486031068
+## [3031] -0.462950733 -0.409822162 -0.574514119 -0.560531355 -0.559524658
+## [3036] -0.426199000 -0.348368317 -0.621423838 -0.520645230 -0.423536160
+## [3041] -0.382998924 -0.269303331 -0.267653550 -0.263428055 -0.594528862
+## [3046] -0.377666463 -0.573271090 -0.646502903 -0.733356710 -0.556061743
+## [3051] -0.452687037 -0.306897990 -0.440111690 -0.072189040 -0.157086180
+## [3056] -0.092829860 -0.306322519 -0.459041120 -0.485683560 -0.292208620
+## [3061] -0.324207880 -0.384523100 -0.246084929 -0.592556760 -0.590030600
+## [3066] -0.407174270 -0.386664295 -0.323725140 -0.429139860 -0.348745980
+## [3071] -0.389013250 -0.416164455 -0.583735160 -0.381404630 -0.353195500
+## [3076] -0.344289274 -0.616340550 -0.466127464 -0.262808214 -0.310241856
+## [3081] -0.295997251 -0.469773034 -0.157137970 -0.230177280 -0.256578170
+## [3086] -0.410229140 -0.451093619 -0.234324770 -0.400816220 -0.439273172
+## [3091] -0.461148826 -0.438170120 -0.549141745 -0.445742536 -0.438876920
+## [3096] -0.351919855 -0.267493597 -0.458230070 -0.529179651 -0.755197730
+## [3101] -0.464579973 -0.611526290 -0.580942920 -0.375625386 -0.544293575
+## [3106] -0.229413690 -0.327761070 -0.342081180 -0.603909790 -0.812454400
+## [3111] -0.557771272 -0.254302430 -0.318670300 -0.584204185 -0.593277327
+## [3116] -0.485400081 -0.562605538 -0.565586170 -0.593912939 -0.588351590
+## [3121] -0.697723600 -0.425586390 -0.521161350 -0.452363850 -0.661787818
+## [3126] -0.652663383 -0.598043030 -0.554892600 -0.744492720 -0.524430033
+## [3131] -0.603630422 -0.579985946 -0.682994730 -0.786410403 -0.620174660
+## [3136] -0.530017396 -0.373535870 -0.323471230 -0.292814810 -0.450795162
+## [3141] -0.646339775 -0.513124530 -0.325239910 -0.464022488 -0.353582300
+## [3146] -0.335292760 -0.332420670 -0.397840750 -0.420872225 -0.434829023
+## [3151] -0.580011261 -0.461730971 -0.158926200 -0.334730848 -0.294301840
+## [3156] -0.297872610 -0.321847230 -0.188276430 -0.270735200 -0.249841610
+## [3161] -0.385217675 -0.411133880 -0.462653445 -0.046306960 -0.037232135
+## [3166] -0.186076180 -0.173704599 -0.394030040 -0.250653270 -0.186281640
+## [3171] -0.297714770 -0.179246940 -0.227536236 -0.252749170 -0.183065210
+## [3176] -0.227683960 -0.335941930 -0.180601140 -0.213017200 -0.397905330
+## [3181] -0.387325680 -0.404267734 -0.416097870 -0.363883950 -0.412189280
+## [3186] -0.137065130 -0.682109740 -0.630667050 -0.376246980 -0.440690002
+## [3191] -0.604465480 -0.592996880 -0.641350460 -0.296551750 -0.356156480
+## [3196] -0.134805966 -0.491747716 -0.050369460 -0.248744235 -0.548598180
+## [3201] -0.332905086 -0.417532673 -0.454806094 -0.355427495 -0.598399490
+## [3206] -0.688872700 -0.548696814 -0.321488140 -0.275532949 -0.558129000
+## [3211] -0.639122117 -0.625381311 -0.606624025 -0.592470290 -0.664490561
+## [3216] -0.774705890 -0.890727605 -0.621471040 -0.612349000 -0.439901492
+## [3221] -0.656717605 -0.730976110 -0.611754450 -0.729860501 -0.421025010
+## [3226] -0.622465920 -0.471850352 -0.473287852 -0.853962553 -0.760111340
+## [3231] -0.531516825 -0.594815573 -0.890943070 -0.875987860 -0.741940647
+## [3236] -0.452332830 -0.533738600 -0.593788688 -0.579921620 -0.497822623
+## [3241] -0.322710631 -0.437229036 -0.465851871 -0.643915110 -0.609052210
+## [3246] -0.437384047 -0.284398160 -0.241696218 -0.248516026 -0.268236781
+## [3251] -0.427538067 -0.484964472 -0.681731460 -0.280229050 -0.444435486
+## [3256] -0.634171774 -0.462306679 -0.511364403 -0.437601260 -0.480225780
+## [3261] -0.456771010 -0.659058039 -0.608614980 -0.274483903 -0.282779927
+## [3266] -0.530852762 -0.653676597 -0.393872359 -0.285861400 -0.400986810
+## [3271] -0.464889450 -0.329723990 -0.662604790 -0.501007990 -0.636443654
+## [3276] -0.646472890 -0.426516739 -0.387820000 -0.441612720 -0.148867520
+## [3281] -0.137609630 -0.071411920 -0.520863660 -0.257885290 -0.150244309
+## [3286] -0.233025080 -0.494017070 -0.416390985 -0.543402569 -0.431413514
+## [3291] -0.605781932 -0.709802530 -0.551809190 -0.530639188 -0.404734585
+## [3296] -0.377090200 -0.322106992 -0.468335910 -0.536207287 -0.581306045
+## [3301] -0.619832523 -0.641220210 -0.570048085 -0.621828980 -0.610232390
+## [3306] -0.733074170 -0.617241920 -0.613185340 -0.578045100 -0.618625280
+## [3311] -0.826070800 -0.399108310 -0.699856880 -0.403019940 -0.483436690
+## [3316] -0.452160310 -0.423562840 -0.382197680 -0.404597650 -0.591365185
+## [3321] -0.278057835 -0.434136280 -0.497247720 -0.434917390 -0.728607634
+## [3326] -0.682309870 -0.551523454 -0.476741648 -0.624665060 -0.502485860
+## [3331] -0.689205307 -0.564932518 -0.365469933 -0.414707241 -0.378226384
+## [3336] -0.440325200 -0.444607020 -0.433848763 -0.556475205 -0.272053713
+## [3341] -0.519674441 -0.386077434 -0.691936280 -0.521782700 -0.503071350
+## [3346] -0.389609800 -0.543106826 -0.521586720 -0.619766592 -0.583185453
+## [3351] -0.380128332 -0.346871690 -0.547786381 -0.789128360 -0.624329840
+## [3356] -0.744303432 -0.617302934 -0.736532388 -0.532912180 -0.498954490
+## [3361] -0.537728617 -0.173174450 -0.460753673 -0.410372195 -0.500207617
+## [3366] -0.732885390 -0.308748174 -0.453932744 -0.352955210 -0.244118887
+## [3371] -0.326115116 -0.209518880 -0.644361980 -0.765369120 -0.540520209
+## [3376] -0.386647740 -0.350797252 -0.395285960 -0.465904290 -0.459811707
+## [3381] -0.455508540 -0.736168700 -0.335241860 -0.613751959 -0.423033869
+## [3386] -0.345499249 -0.506960920 -0.670443580 -0.599887432 -0.559856350
+## [3391] -0.631524180 -0.474242100 -0.409870072 -0.598604700 -0.440910743
+## [3396] -0.594329483 -0.542623462 -0.700477626 -0.550666370 -0.719717080
+## [3401] -0.459580970 -0.186475870 -0.329333920 -0.161630591 -0.406026011
+## [3406] -0.306504200 -0.503084720 -0.168772643 -0.466393047 -0.626516826
+## [3411] -0.317650925 -0.488308005 -0.300994147 -0.288446516 -0.316402410
+## [3416] -0.521745420 -0.433720685 -0.541116030 -0.531023147 -0.191981790
+## [3421] -0.478962289 -0.272663120 -0.022243850 -0.029171000 -0.318536110
+## [3426] -0.016570996 -0.243252577 -0.593236335 -0.571255450 -0.576115055
+## [3431] -0.472837890 -0.474022349 -0.480183270 -0.651172730 -0.397524570
+## [3436] -0.249796265 -0.355472318 -0.464965898 -0.604086380 -0.762322186
+## [3441] -0.610432070 -0.551042870 -0.432122474 -0.306826152 -0.353114464
+## [3446] -0.517986811 -0.482131718 -0.589437960 -0.438985210 -0.273405322
+## [3451] -0.658440777 -0.483717290 -0.511252461 -0.622699650 -0.205872820
+## [3456] -0.174094024 -0.106217930 -0.138508750 -0.126819660 -0.193385907
+## [3461] -0.232453533 -0.319231775 -0.136844230 -0.336254613 -0.551734820
+## [3466] -0.548238888 -0.115528729 -0.356258350 -0.251693915 -0.377333720
+## [3471] -0.504848950 -0.431520914 -0.467081790 -0.380870868 -0.640759210
+## [3476] -0.300564560 -0.477938521 -0.086076240 -0.593223089 -0.443701220
+## [3481] -0.371963210 -0.298623337 -0.442497447 -0.362553863 -0.356554608
+## [3486] -0.412925061 -0.490107130 -0.317416400 -0.293535129 -0.319192451
+## [3491] -0.406685204 -0.528010856 -0.578601059 -0.427281590 -0.268260856
+## [3496] -0.435980270 -0.353912559 -0.374607860 -0.465186512 -0.144848076
+## [3501] -0.234200500 -0.327434940 -0.196230430 -0.110427278 -0.383351670
+## [3506] -0.113931154 -0.332484043 -0.487864844 -0.368087270 -0.543121866
+## [3511] -0.291533861 -0.433061370 -0.540547803 -0.524290411 -0.470914874
+## [3516] -0.555052080 -0.422982700 -0.694065650 -0.503891992 -0.696961490
+## [3521] -0.529950930 -0.644888414 -0.575273061 -0.521501363 -0.443794964
+## [3526] -0.399768538 -0.724734372 -0.420225913 -0.228640600 -0.174256290
+## [3531] -0.299434750 -0.255359008 -0.462307340 -0.315910320 -0.421189354
+## [3536] -0.352980640 -0.645956692 -0.549936555 -0.484603396 -0.510733729
+## [3541] -0.457741824 -0.555335390 -0.670638060 -0.651449257 -0.638084523
+## [3546] -0.541979960 -0.473057469 -0.538971923 -0.564421350 -0.660785106
+## [3551] -0.462202230 -0.454625120 -0.513293050 -0.584689077 -0.645148550
+## [3556] -0.517536990 -0.569320396 -0.572330055 -0.405547630 -0.532207820
+## [3561] -0.469536346 -0.712023130 -0.472210347 -0.572682200 -0.566406882
+## [3566] -0.383519037 -0.395855040 -0.562391195 -0.490996631 -0.617697929
+## [3571] -0.311308790 -0.435119080 -0.478751329 -0.428578080 -0.491650190
+## [3576] -0.561406550 -0.629693224 -0.745714210 -0.727212690 -0.582607672
+## [3581] -0.642001113 -0.682923410 -0.470645240 -0.605628108 -0.418195809
+## [3586] -0.253231328 -0.305241823 -0.307540215 -0.636077503 -0.496227410
+## [3591] -0.445752750 -0.607878818 -0.153353980 -0.585052505 -0.090259967
+## [3596] -0.339493665 -0.177483445 -0.527106752 -0.259382649 -0.284953388
+## [3601] -0.483312160 -0.473877725 -0.300213570 -0.414138050 -0.392693320
+## [3606] -0.536669865 -0.642347870 -0.402407450 -0.432664400 -0.438266890
+## [3611] -0.480448170 -0.593928230 -0.795726365 -0.696238008 -0.746888852
+## [3616] -0.837059892 -0.867201991 -0.615186613 -0.371897050 -0.402360970
+## [3621] -0.349754420 -0.329827535 -0.455270920 -0.308192860 -0.438023660
+## [3626] -0.410549200 -0.177996720 -0.378590260 -0.266920946 -0.383229456
+## [3631] -0.567291684 -0.728102528 -0.156678640 -0.428410213 -0.375191952
+## [3636] -0.636113780 -0.163024597 -0.223790470 -0.377871371 -0.762363890
+## [3641] -0.542403460 -0.313556080 -0.198346397 -0.399628834 -0.561324674
+## [3646] -0.180853480 -0.349010540 -0.193776900 -0.495766093 -0.570850744
+## [3651] -0.442168740 -0.655058360 -0.399488230 -0.549984570 -0.432279957
+## [3656] -0.514330222 -0.393121230 -0.485420960 -0.549053330 -0.567476370
+## [3661] -0.465687902 -0.497231541 -0.513627930 -0.255204479 -0.395804826
+## [3666] -0.231951580 -0.508132480 -0.543304885 -0.684250250 -0.469802790
+## [3671] -0.427741200 -0.616806729 -0.227682380 -0.285513450 -0.308231114
+## [3676] -0.380757450 -0.383228580 -0.560134146 -0.381896990 -0.349338868
+## [3681] -0.433826136 -0.393427460 -0.576678240 -0.436073848 -0.632818431
+## [3686] -0.564707055 -0.634986300 -0.655438030 -0.781810442 -0.692508540
+## [3691] -0.642632800 -0.491073680 -0.728380523 -0.708181760 -0.374563430
+## [3696] -0.340575470 -0.420246983 -0.625195036 -0.658360171 -0.382512190
+## [3701] -0.939291640 -0.656684473 -0.568334270 -0.500370100 -0.488979474
+## [3706] -0.540404670 -0.508493579 -0.447602029 -0.426959122 -0.481708907
+## [3711] -0.476330490 -0.390264790 -0.287587595 -0.290802996 -0.413496101
+## [3716] -0.657645580 -0.387722791 -0.690571710 -0.633395530 -0.459227350
+## [3721] -0.371550832 -0.300351480 -0.376068130 -0.345553108 -0.260875070
+## [3726] -0.437699914 -0.278290509 -0.403554118 -0.200727799 -0.562564170
+## [3731] -0.525418820 -0.616770762 -0.433342152 -0.649430510 -0.532332090
+## [3736] -0.583725210 -0.516707370 -0.543655990 -0.650894373 -0.290675410
+## [3741] -0.262833326 -0.355554580 -0.441191658 -0.055687580 -0.286672220
+## [3746] -0.169654922 -0.326095814 -0.357705410 -0.294251881 -0.170278639
+## [3751] -0.042041260 -0.464146210 -0.335146914 -0.349445370 -0.320372380
+## [3756] -0.418181561 -0.581841886 -0.338470033 -0.468754089 -0.270326800
+## [3761] -0.380369733 -0.405312011 -0.683576450 -0.431929740 -0.418302420
+## [3766] -0.548594720 -0.508321240 -0.664603660 -0.486725836 -0.338393350
+## [3771] -0.682222640 -0.785772420 -0.746837178 -0.553548084 -0.533623293
+## [3776] -0.454567830 -0.658329902 -0.580172450 -0.759862475 -0.590120870
+## [3781] -0.736642152 -0.768806533 -0.736346612 -0.677389368 -0.633276960
+## [3786] -0.480193019 -0.418641884 -0.446013745 -0.463771656 -0.584804226
+## [3791] -0.777263850 -0.485602877 -0.417772325 -0.394347232  0.088098726
+## [3796]  0.015752600  0.213582640 -0.326575260 -0.594776380 -0.094400650
+## [3801] -0.278145410 -0.203724210 -0.678399923 -0.349431408 -0.192773326
+## [3806] -0.277613491 -0.258219280 -0.237644190 -0.383192274 -0.292378263
+## [3811] -0.356837180 -0.325150920 -0.119246350 -0.167403956 -0.317741180
+## [3816] -0.281352160 -0.145181468 -0.223108101  0.023176231 -0.272085570
+## [3821] -0.455767982 -0.250496110 -0.555969320 -0.371808040 -0.136373000
+## [3826] -0.329116372 -0.532030640 -0.621018350 -0.549575350 -0.451164140
+## [3831] -0.485642634 -0.449630200 -0.160012550 -0.292499160 -0.551299128
+## [3836] -0.769318400 -0.779096410 -0.531850760 -0.505869770 -0.445871410
+## [3841] -0.110489100 -0.685663950 -0.564155430 -0.826694030 -0.257658484
+## [3846] -0.461507730 -0.435297940 -0.406491700 -0.538240900 -0.374265700
+## [3851] -0.440589055 -0.797193859 -0.611032495 -0.550315680 -0.584761150
+## [3856] -0.800786588 -0.492281801 -0.362230170 -0.399537355 -0.311160120
+## [3861] -0.275117832 -0.656978064 -0.636336008 -0.445156635 -0.650752214
+## [3866] -0.738144983 -0.485547760 -0.452604850 -0.393779900 -0.352544515
+## [3871] -0.627189820 -0.465046086 -0.434965220 -0.744858310 -0.457494785
+## [3876] -0.559455129 -0.579626050 -0.387211856 -0.500008150 -0.640791541
+## [3881] -0.761472880 -0.529267000 -0.644732520 -0.421990310 -0.697674387
+## [3886] -0.804854180 -0.213232632 -0.654380365 -0.447550410 -0.690868630
+## [3891] -0.768704920 -0.754235380 -0.790313470 -0.677438485 -0.712030630
+## [3896] -0.741336578 -0.735585794 -0.594468660 -0.490523228 -0.555803880
+## [3901] -0.519040450 -0.923802250 -0.436234790 -0.614919860 -0.470515770
+## [3906] -0.536454002 -0.691942944 -0.474808420 -0.664885708 -0.504378860
+## [3911] -0.584051468 -0.603669843 -0.501346800 -0.536587310 -0.522782742
+## [3916] -0.394091121 -0.231777172 -0.170390250 -0.275059260 -0.220488570
+## [3921] -0.454875410 -0.407077274 -0.511040170 -0.576953840 -0.799808070
+## [3926] -0.519858211 -0.324688010 -0.446497784 -0.459839293 -0.507807615
+## [3931] -0.320749550 -0.431218313 -0.497103550 -0.283326830 -0.292425260
+## [3936] -0.475628154 -0.267406300 -0.348644950 -0.369170347 -0.330499150
+## [3941] -0.290464477 -0.392573881 -0.367480212 -0.543828820 -0.314010059
+## [3946] -0.906612420 -0.520547020 -0.409514261 -0.492402779 -0.505522609
+## [3951] -0.305490454 -0.291682270 -0.398675218 -0.464522522 -0.605617810
+## [3956] -0.569702630 -0.516287610 -0.496768110 -0.479764360 -0.309579445
+## [3961] -0.367937925 -0.227495230 -0.119814875 -0.307523300 -0.318584697
+## [3966] -0.449598000 -0.475880255 -0.322403057 -0.317045126 -0.342450020
+## [3971] -0.327680593 -0.492430449 -0.471220340 -0.123244650 -0.216248192
+## [3976] -0.386982670 -0.714381255 -0.640195560 -0.565431770 -0.722386190
+## [3981] -0.774719072 -0.815958290 -0.577220210 -0.512577370 -0.405065860
+## [3986] -0.445248150 -0.286942646 -0.254882770 -0.260865830 -0.366845870
+## [3991] -0.770918595 -0.505653780 -0.527957548 -0.571473960 -0.539045536
+## [3996] -0.632690385 -0.647683813 -0.228713828 -0.430043442 -0.296404970
+```
+
+---
+# Plot
+
+
+```r
+pd &lt;- tibble(population_level = pop_level) 
+
+ggplot(pd, aes(population_level)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(xintercept = median(pd$population_level),
+             color = "magenta",
+             size = 2)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-62-1.png)&lt;!-- --&gt;
+
+---
+# Add in did estimates
+
+
+```r
+did1 &lt;- filter(dids, did == 1)
+did2 &lt;- filter(dids, did == 2)
+
+pred_did1 &lt;- pop_level + did1$r_did
+pred_did2 &lt;- pop_level + did2$r_did
+```
+
+---
+# Distributions
+
+
+```r
+did12 &lt;- tibble(did = rep(1:2, each = length(pred_did1)),
+                pred = c(pred_did1, pred_did2))
+
+did12_medians &lt;- did12 %&gt;% 
+  group_by(did) %&gt;% 
+  summarize(did_median = median(pred))
+
+did12_medians
+```
+
+```
+## # A tibble: 2 x 2
+##     did did_median
+##   &lt;int&gt;      &lt;dbl&gt;
+## 1     1 -3.182379 
+## 2     2  0.3816568
+```
+
+---
+# Plot
+
+```r
+ggplot(did12, aes(pred)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = did_median), data = did12_medians,
+             color = "magenta",
+             size = 2) +
+  facet_wrap(~did, ncol = 1)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-65-1.png)&lt;!-- --&gt;
+
+---
+# Transform
+Let's look at this again on the probability scale. Note I'm using `brms::inv_logit_scaled()` to make the transformation.
+
+--
+
+```r
+ggplot(did12, aes(inv_logit_scaled(pred))) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
+             data = did12_medians,
+             color = "magenta") +
+  facet_wrap(~did, ncol = 1)
+```
+
+---
+![](w8p1_files/figure-html/unnamed-chunk-67-1.png)&lt;!-- --&gt;
+
+---
+# Difference
+* The difference in the probability of remission for our theoretical patient is large between the two doctors.
+
+* The median difference in log-odds is
+
+
+```r
+diff(did12_medians$did_median)
+```
+
+```
+## [1] 3.564036
+```
+
+so the patient is about 3.5 times **more likely** to have their cancer go into remission if they had did 2, instead of 1.
+
+--
+## How confident are we in this difference?
+
+---
+# Everything is a distribution
+Just compute the difference in these distributions, and we get a new distribution, which we can use to summarize our uncertainty
+
+--
+
+```r
+did12_wider &lt;- did12 %&gt;% 
+  mutate(.chain = rep(rep(1:4, each = 1000), 2),
+         .draw = rep(1:1000, 8)) %&gt;% 
+  pivot_wider(names_from = "did", values_from = "pred")
+
+did12_wider
+```
+
+```
+## # A tibble: 4,000 x 4
+##    .chain .draw       `1`        `2`
+##     &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+##  1      1     1 -6.042338  0.5953221
+##  2      1     2 -5.050184  0.4402181
+##  3      1     3 -3.705648  0.2019994
+##  4      1     4 -2.579402 -0.1188418
+##  5      1     5 -4.147721  0.3471453
+##  6      1     6 -4.299929  0.3533660
+##  7      1     7 -2.341298  0.1887208
+##  8      1     8 -4.237815  0.2715059
+##  9      1     9 -2.250648  0.2628675
+## 10      1    10 -3.735470  0.7168999
+## # … with 3,990 more rows
+```
+
+---
+# Compute difference
+
+```r
+did12_wider &lt;- did12_wider %&gt;% 
+  mutate(diff = `2` - `1`)
+
+did12_wider
+```
+
+```
+## # A tibble: 4,000 x 5
+##    .chain .draw       `1`        `2`     diff
+##     &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+##  1      1     1 -6.042338  0.5953221 6.63766 
+##  2      1     2 -5.050184  0.4402181 5.490402
+##  3      1     3 -3.705648  0.2019994 3.907647
+##  4      1     4 -2.579402 -0.1188418 2.46056 
+##  5      1     5 -4.147721  0.3471453 4.494866
+##  6      1     6 -4.299929  0.3533660 4.653295
+##  7      1     7 -2.341298  0.1887208 2.530019
+##  8      1     8 -4.237815  0.2715059 4.509321
+##  9      1     9 -2.250648  0.2628675 2.513516
+## 10      1    10 -3.735470  0.7168999 4.45237 
+## # … with 3,990 more rows
+```
+
+---
+# Summarize
+
+
+```r
+quantile(did12_wider$diff, 
+         probs = c(0.025, 0.5, 0.975))
+```
+
+```
+##     2.5%      50%    97.5% 
+## 1.612390 3.578425 6.260002
+```
+
+
+---
+# Plot distribution
+
+
+```r
+ggplot(did12_wider, aes(diff)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = median(diff)), 
+             color = "magenta",
+             size = 2)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-72-1.png)&lt;!-- --&gt;
+
+---
+# Directionality
+Let's say we want to simplify the question to directionality.
+
+
+--
+Is there a greater chance of remission for `did` 2 than 1?
+
+--
+
+```r
+table(did12_wider$diff &gt; 0) / 4000
+```
+
+```
+## 
+## TRUE 
+##    1
+```
+
+
+--
+The distributions are not overlapping at all - therefore, we are as certain as we can be that the odds of remission are higher with `did` 2 than 1.
+
+
+---
+# One more quick example
+Let's do the same thing, but comparing `did` 2 and 3.
+
+
+```r
+did3 &lt;- filter(dids, did == 3)
+pred_did3 &lt;- pop_level + did3$r_did
+
+did23 &lt;- did12_wider %&gt;% 
+  select(-`1`, -diff) %&gt;% 
+  mutate(`3` = pred_did3,
+         diff = `3` - `2`)
+did23
+```
+
+```
+## # A tibble: 4,000 x 5
+##    .chain .draw        `2`       `3`      diff
+##     &lt;int&gt; &lt;int&gt;      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1      1     1  0.5953221 0.7175721  0.12225 
+##  2      1     2  0.4402181 1.331636   0.891418
+##  3      1     3  0.2019994 0.9742824  0.772283
+##  4      1     4 -0.1188418 2.257488   2.37633 
+##  5      1     5  0.3471453 0.1513293 -0.195816
+##  6      1     6  0.3533660 2.284721   1.931355
+##  7      1     7  0.1887208 0.3922698  0.203549
+##  8      1     8  0.2715059 1.730255   1.458749
+##  9      1     9  0.2628675 2.109132   1.846264
+## 10      1    10  0.7168999 0.2357919 -0.481108
+## # … with 3,990 more rows
+```
+
+---
+# Directionality
+
+
+```r
+table(did23$diff &gt; 0) / 4000
+```
+
+```
+## 
+##   FALSE    TRUE 
+## 0.13675 0.86325
+```
+
+So there's roughly an 87% chance that the odds of remission are higher with with `did` 3 than 2.
+
+---
+# Plot data
+
+
+```r
+pd23 &lt;- did23 %&gt;% 
+  pivot_longer(`2`:diff, 
+               names_to = "Distribution",
+               values_to = "Log-Odds")
+pd23
+```
+
+```
+## # A tibble: 12,000 x 4
+##    .chain .draw Distribution `Log-Odds`
+##     &lt;int&gt; &lt;int&gt; &lt;chr&gt;             &lt;dbl&gt;
+##  1      1     1 2             0.5953221
+##  2      1     1 3             0.7175721
+##  3      1     1 diff          0.12225  
+##  4      1     2 2             0.4402181
+##  5      1     2 3             1.331636 
+##  6      1     2 diff          0.891418 
+##  7      1     3 2             0.2019994
+##  8      1     3 3             0.9742824
+##  9      1     3 diff          0.772283 
+## 10      1     4 2            -0.1188418
+## # … with 11,990 more rows
+```
+
+---
+
+```r
+ggplot(pd23, aes(`Log-Odds`)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  facet_wrap(~Distribution, ncol = 1)
+```
+
+![](w8p1_files/figure-html/unnamed-chunk-77-1.png)&lt;!-- --&gt;
+
+---
+class: inverse-green middle
+# Next time
+## Growth Modeling 2
+We'll continue to discuss and use Bayes
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
