@@ -32,15 +32,195 @@ update_geom_defaults('text', list(size = 9))
 ---
 # Agenda
 
+* Some equation practice
+
 * Introduce Bayes theorem
 
 * Go through an example with estimating a mean
 
 * Discuss Bayes in the context of regression modeling
 
-* Implementation in multilevel models in R with [**{brms}**](https://github.com/paul-buerkner/brms)
+* Implementation with multilevel models in R with [**{brms}**](https://github.com/paul-buerkner/brms)
 
 * Model diagnostics and checking for convergence
+
+---
+class: inverse-red middle
+# Equation practice
+
+---
+# The data
+From an example in the Mplus manual. I made up the column names. 
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r }
+mplus_d <- read_csv(here::here("data", "mplus920.csv"))
+mplus_d
+```
+
+
+---
+# Model 1
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+library(lme4)
+library(equatiomatic)
+
+m1 <- lmer(score ~ 1 + (1|distid),
+           data = mplus_d)
+
+extract_eq(m1)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ 1 + (1|distid), data = mplus_d)
+```
+
+---
+# Model 2
+### Fit the following model
+
+`r countdown::countdown(1)`
+
+```{r echo = FALSE, message = FALSE}
+m2 <- lmer(score ~ baseline + (1|schid) + (1|distid),
+           data = mplus_d)
+
+extract_eq(m2)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline + (1|schid) + (1|distid),
+     data = mplus_d)
+```
+
+---
+# Model 3
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+m3 <- lmer(score ~ baseline * dist_ses + (baseline|schid) + (1|distid),
+           data = mplus_d)
+
+extract_eq(m3)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline * dist_ses + 
+       (baseline|schid) + (1|distid),
+     data = mplus_d)
+```
+
+---
+# Model 4
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+m4 <- lmer(score ~ baseline + sch_treatment + dist_ses + 
+             (baseline|schid) + (1|distid),
+           data = mplus_d)
+
+extract_eq(m4)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline + sch_treatment + dist_ses + 
+       (baseline|schid) + (1|distid),
+     data = mplus_d)
+```
+
+
+---
+# Model 5
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+m5 <- lmer(score ~ baseline * sch_treatment + dist_ses + 
+             (baseline|schid) + (sch_treatment|distid),
+           data = mplus_d)
+
+extract_eq(m5)
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline * sch_treatment + dist_ses + 
+       (baseline|schid) + (sch_treatment|distid),
+     data = mplus_d)
+```
+
+
+---
+# Model 6
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+m6 <- lmer(score ~ baseline * sch_treatment + dist_ses + 
+             (baseline|schid) + (baseline * sch_treatment||distid),
+           data = mplus_d)
+
+extract_eq(m6, font_size = "small")
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline * sch_treatment + dist_ses + 
+       (baseline|schid) + 
+       (baseline * sch_treatment||distid),
+           data = mplus_d)
+```
+
+
+---
+# Final one
+### Fit the following model
+
+`r countdown::countdown(1, seconds = 30)`
+
+```{r echo = FALSE, message = FALSE}
+m7 <- lmer(score ~ baseline * sch_treatment * dist_ses + 
+             (baseline|schid) + (baseline |distid),
+           data = mplus_d)
+
+extract_eq(m7, font_size = "scriptsize")
+```
+
+
+--
+```{r eval = FALSE}
+lmer(score ~ baseline * sch_treatment + dist_ses + 
+             (baseline|schid) + (baseline * sch_treatment||distid),
+           data = mplus_d)
+```
+
+
+---
+class: inverse-blue middle
+# Bayes
+
+
 
 ---
 # A disclaimer
@@ -956,9 +1136,10 @@ m_brms
 # Plotting the Bayes fit
 
 ```{r fig.height = 5}
-library(tidybayes)
 tibble(extrav = 1:10, class = 0) %>% 
-  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %>% 
+  tidybayes::add_fitted_draws(m_brms, 
+                              allow_new_levels = TRUE, 
+                              n = 100) %>% 
   ggplot(aes(extrav, .value)) +
   geom_line(aes(group = .draw), size = 0.1)
 ```
@@ -973,6 +1154,40 @@ tibble(extrav = 1:10, class = 0) %>%
   geom_point(aes(extrav, popular), data = popular,
              color = "gray70") + #<<
   geom_line(aes(group = .draw), size = 0.1)
+```
+
+---
+# Speed
+We'll never reach the `lme4::lmer()` speeds, but we can make it faster.
+
+* Parallelize (not always as effective as you might hope)
+
+* Use the cmdstanr backend
+  + This requires a little bit of additional work, but is probably worth it if you're
+  fitting bigger models.
+
+```{r }
+install.packages(
+  "cmdstanr",
+  repos = c("https://mc-stan.org/r-packages/", getOption("repos"))
+)
+```
+
+---
+# Timings
+I'm not evaluating the below, but the timings were 114.368 seconds and 87.383 seconds, respectively.
+
+```{r eval = FALSE}
+library(tictoc)
+
+tic()
+m_brms <- brm(popular ~ extrav + (extrav|class), popular)
+toc()
+
+tic()
+m_brms2 <- brm(popular ~ extrav + (extrav|class), popular,
+               backend = "cmdstanr")#<<
+toc()
 ```
 
 ---

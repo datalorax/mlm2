@@ -6,6 +6,21 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 
+mplus_ex9.20 <- read_delim(
+    "https://www.statmodel.com/usersguide/chap9/ex9.20.dat",
+    delim = " ",
+    col_names = FALSE
+  ) %>% 
+  mutate(across(.fns = parse_number)) %>% 
+  rename(score = X1,
+         baseline = X2,
+         sch_treatment = X3,
+         dist_ses = X4,
+         schid = X5,
+         distid = X6) 
+  
+write_csv(mplus_ex9.20, here::here("data", "mplus920.csv"))  
+  
 galo_link <- "https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%2015/galo/Galo.sav"
 galo <- haven::read_sav(galo_link)
 galo %>% 
