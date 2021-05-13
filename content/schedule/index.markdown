@@ -168,10 +168,10 @@ Icons in the schedule link to specific chapters.
 {{< slides "w7p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< assigned "assignments" "hw3" >}}
+{{< assigned "homework-3" "hw3" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "hw2" >}}
+{{< due "homework-2" "hw2" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "clark2" "intro.html" "5" >}}
@@ -189,7 +189,7 @@ Icons in the schedule link to specific chapters.
 {{< week "05-21" >}}
   {{< description "Bayesian estimation 2: Multilevel logistic regression" "Extending on the models we've learned previously to deal with dichotomous outcomes. We will also continue our discussion of Bayesian estimation and use Bayes to estimate thse models." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w8p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 
@@ -219,7 +219,7 @@ Icons in the schedule link to specific chapters.
 
 {{< /wrap >}}
   {{< wrap >}}
-{{< due "assignments" "hw3" >}}
+{{< due "homework-3" "hw3" >}}
 {{< /wrap >}}
   {{< wrap >}}
 {{< readings "sw" "https://stats.idre.ucla.edu/r/examples/alda/r-applied-longitudinal-data-analysis-ch-6/" "" >}}

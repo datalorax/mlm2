@@ -6,6 +6,15 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 
+thai_edu <- haven::read_sav("https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%206/Thaieduc/thaieduc.sav")
+
+thai_edu %>% 
+  haven::as_factor() %>% 
+  janitor::clean_names() %>% 
+  drop_na() %>% 
+  rename(repeated_grade = `repeat`) %>% 
+  write_csv(here::here("data", "thai-education.csv"))  
+
 mplus_ex9.20 <- read_delim(
     "https://www.statmodel.com/usersguide/chap9/ex9.20.dat",
     delim = " ",
