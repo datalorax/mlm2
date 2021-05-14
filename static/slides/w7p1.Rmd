@@ -32,17 +32,25 @@ update_geom_defaults('text', list(size = 9))
 ---
 # Agenda
 
+.gray[[We're not going to get through it all]]
+
+* Review Homework 2
+
 * Some equation practice
 
 * Introduce Bayes theorem
 
-* Go through an example with estimating a mean
+  + Go through an example with estimating a mean
 
 * Discuss Bayes in the context of regression modeling
 
 * Implementation with multilevel models in R with [**{brms}**](https://github.com/paul-buerkner/brms)
 
 * Model diagnostics and checking for convergence
+
+---
+class: inverse-red middle
+# Homework 2 Review
 
 ---
 class: inverse-red middle
@@ -861,9 +869,87 @@ class: inverse-blue middle
 # Bayes for regression
 
 ---
+# More complicated
+* Remember our posterior is defined by
+
+
+$$
+\text{posterior} = \frac{ \text{likelihood} \times \text{prior}}{\text{average likelihood}}
+$$
+
+--
+When we just had a single parameter to estimate, $\mu$ this was tractable with grid search.
+
+
+--
+With even simple linear regression, however, we have three: $\alpha$, $\beta$, and $\sigma$
+
+
+--
+Our Bayesian model then becomes immensely more complicated:
+
+$$
+P(\alpha, \beta, \sigma \mid x) = \frac{ P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma)}{\iiint \, P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma) \,d\alpha \,d\beta \,d\sigma}
+$$
+
+
+---
+# How?
+Rather than trying to compute the integrals, we *simulate* observations from the joint posterior distribution.
+
+--
+This sounds a bit like magic - how do we do this?
+
+--
+Multiple different algorithms, but all use some form of Markov-Chain Monte-Carlo sampling
+
+---
+# Conceptually
+
+* Imagine the posterior as a hill
+
+* We start with the parameters set to random numbers
+
+  + Estimate the posterior with this values (our spot on the hill)
+
+* Use information from the prior sample to determine whether and how to change the current parameter values (try to go uphill)
+
+* Do this many, many times, so you have a full picture of the "hill"
+
+* Use these samples as your posterior distribution
+
+---
+# Metropolis-Hastings
+The specific algorithm we will use is called the Metropolis-Hastings algorithm
+
+* Compute a candidate "step" for the parameters
+
+* Calculate an acceptance ratio $\alpha = f(x')/f(x_t)$. This will fall between 0 and 1.
+
+* Generate number, $u$, from a random uniform distribution between 0 and 1 
+
+  + if $u \leq \alpha$, accept the candidate
+
+  + if $u \geq \alpha$, reject the candidate
+
+
+--
+This is complicated, but conceptually we're just trying to get samples from the joint posterior distribution in a way that conforms with the probability density of the posterior (i.e., the shape)
+
+---
+# Script
+* The `mh-alg.R` works through the Metropolis-Hastings algorithm to get samples from the joint posterior of a simple linear regression model.
+
+* The data are simulated, so we know the true values
+
+* It's complicated, and not required at all, but there for you if you want more info
+
+---
 class: inverse-blue middle
 
 # Implementation with {brms}
+
+Luckily, we don't have to program the MCMC algorithm ourselves
 
 .center[
 ![](https://github.com/paul-buerkner/brms/raw/master/man/figures/brms.png)
@@ -962,6 +1048,73 @@ plot(sleep_m1)
 
 ```{r eval = FALSE}
 launch_shinystan(sleep_m1)
+```
+
+---
+# Model comparison
+
+.footnote[See [here](https://arxiv.org/abs/1507.04544) for probably the best paper on this topic to date (imo)]
+
+* Two primary (modern) methods
+
+  + Leave-one-out Cross-Validation (LOO)
+  
+  + Widely Applicable Information Criterion (WAIC)
+
+--
+Both provide estimates of the *out-of-sample* predictive accuracy of the model. LOO is similar to K-fold CV, while WAIC is similarl to AIC/BIC (but an improved version for Bayes models)
+
+--
+Both can be computed using **brms**. LOO is approximated (not actually refit each time). 
+
+
+---
+# LOO
+
+```{r }
+loo(sleep_m0)
+loo(sleep_m1)
+```
+
+---
+# Plot
+
+Large values here (anything above 0.7) is an indication of model misspecification
+
+Smaller values do not guarantee a well-specified model, however
+
+```{r }
+plot(loo(sleep_m1), label_points = TRUE)
+```
+
+---
+# LOO Compare
+
+.footnote[This is a fairly complicated topic, and we won't spend a lot of time on it. See [here](https://mc-stan.org/loo/articles/loo2-example.html) for a bit more information specifically on the functions]
+
+The best fitting model will be on top. Use the se within your interpretation
+
+```{r }
+loo_compare(loo(sleep_m0), loo(sleep_m1))
+```
+
+
+---
+# WAIC
+Perhaps a bit more familiar. Just like other information criteria.
+
+```{r }
+waic(sleep_m0)
+waic(sleep_m1)
+```
+
+---
+# Compare
+
+You can use `waic` within `loo_compare()`
+
+```{r }
+loo_compare(waic(sleep_m0), waic(sleep_m1))
 ```
 
 ---
