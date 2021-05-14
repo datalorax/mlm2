@@ -1,5 +1,5 @@
 ---
-title: "An introduction to Bayesian estimation"
+title: "Introto Bayes"
 author: "Daniel Anderson "
 date: "Week 7"
 output:
@@ -241,7 +241,7 @@ class: inverse-blue middle
 * Hopefully you also recognize the tradeoffs, and potential extensions
 
 ---
-class: inverse-blue middle
+class: inverse-red middle
 # Bayes theorem
 
 ---
@@ -540,7 +540,7 @@ Next, we'll specify a *prior distribution*. That is - how likely do we *think* e
 
 
 --
-Let's say our best guess is $mu = 2$. Values on either side of $2$ should be less likely.  
+Let's say our best guess is $\mu = 2$. Values on either side of $2$ should be less likely.  
 
 --
 ```{r }
@@ -697,8 +697,8 @@ ggplot(aes(possible_mean, value)) +
   + In frequentist, our data is assumed random, our parameters fixed
 
 
---
-Most likely?
+---
+# Most likely?
 
 ```{r }
 grid %>% 
@@ -840,7 +840,7 @@ for(i in seq_along(true_data)) {
 
 ---
 
-```{r }
+```{r fig.height = 4.5}
 grid %>% 
   pivot_longer(-possible_mean) %>% 
 ggplot(aes(possible_mean, value)) +
@@ -878,15 +878,15 @@ $$
 $$
 
 --
-When we just had a single parameter to estimate, $\mu$ this was tractable with grid search.
+When we just had a single parameter to estimate, $\mu$, this was tractable with grid search.
 
 
 --
-With even simple linear regression, however, we have three: $\alpha$, $\beta$, and $\sigma$
+With even simple linear regression, however, we have three parameters: $\alpha$, $\beta$, and $\sigma$
 
 
 --
-Our Bayesian model then becomes immensely more complicated:
+Our Bayesian model then becomes considerably more complicated:
 
 $$
 P(\alpha, \beta, \sigma \mid x) = \frac{ P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma)}{\iiint \, P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma) \,d\alpha \,d\beta \,d\sigma}
@@ -894,11 +894,13 @@ $$
 
 
 ---
-# How?
+# Estimation
 Rather than trying to compute the integrals, we *simulate* observations from the joint posterior distribution.
+
 
 --
 This sounds a bit like magic - how do we do this?
+
 
 --
 Multiple different algorithms, but all use some form of Markov-Chain Monte-Carlo sampling
@@ -912,15 +914,15 @@ Multiple different algorithms, but all use some form of Markov-Chain Monte-Carlo
 
   + Estimate the posterior with this values (our spot on the hill)
 
-* Use information from the prior sample to determine whether and how to change the current parameter values (try to go uphill)
+* Use information from the prior sample to determine whether and how to change the current parameter values 
 
-* Do this many, many times, so you have a full picture of the "hill"
+* Try to "walk" around in a way to a complete "picture" of the hill from the samples
 
 * Use these samples as your posterior distribution
 
 ---
 # Metropolis-Hastings
-The specific algorithm we will use is called the Metropolis-Hastings algorithm
+We will use is called the Metropolis-Hastings algorithm:
 
 * Compute a candidate "step" for the parameters
 
@@ -934,15 +936,15 @@ The specific algorithm we will use is called the Metropolis-Hastings algorithm
 
 
 --
-This is complicated, but conceptually we're just trying to get samples from the joint posterior distribution in a way that conforms with the probability density of the posterior (i.e., the shape)
+Complicated, but conceptually we're trying to sample the joint posterior distribution in a way that conforms with the probability density of the posterior (i.e., the shape)
 
 ---
 # Script
-* The `mh-alg.R` works through the Metropolis-Hastings algorithm to get samples from the joint posterior of a simple linear regression model.
+* The `mh-alg.R` script works through the Metropolis-Hastings algorithm to get samples from the joint posterior of a simple linear regression model.
 
 * The data are simulated, so we know the true values
 
-* It's complicated, and not required at all, but there for you if you want more info
+* It's complicated, and not required at all, but it's there for you if you want more info
 
 ---
 class: inverse-blue middle
