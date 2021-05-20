@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Introto Bayes</title>
+    <title>Intro to Bayes</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
     <script src="libs/header-attrs-2.7/header-attrs.js"></script>
@@ -19,7 +19,7 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# Introto Bayes
+# Intro to Bayes
 ### Daniel Anderson
 ### Week 7
 
@@ -72,9 +72,6 @@ layout: true
 
 * Discuss Bayes in the context of regression modeling
 
-* Implementation with multilevel models in R with [**{brms}**](https://github.com/paul-buerkner/brms)
-
-* Model diagnostics and checking for convergence
 
 ---
 class: inverse-red middle
@@ -88,7 +85,7 @@ class: inverse-red middle
 # The data
 From an example in the Mplus manual. I made up the column names. 
 
-<div class="countdown" id="timer_609dd656" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6cc26" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -120,7 +117,7 @@ mplus_d
 # Model 1
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd623" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6ce2f" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -143,7 +140,7 @@ lmer(score ~ 1 + (1|distid), data = mplus_d)
 # Model 2
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd62a" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6cd9f" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -169,7 +166,7 @@ lmer(score ~ baseline + (1|schid) + (1|distid),
 # Model 3
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd6a3" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6cd17" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -219,7 +216,7 @@ lmer(score ~ baseline * dist_ses +
 # Model 4
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd65d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6cd21" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -270,7 +267,7 @@ lmer(score ~ baseline + sch_treatment + dist_ses +
 # Model 5
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd5b5" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6ce85" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -346,7 +343,7 @@ lmer(score ~ baseline * sch_treatment + dist_ses +
 # Model 6
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd41d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6cc75" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -430,7 +427,7 @@ lmer(score ~ baseline * sch_treatment + dist_ses +
 # Final one
 ### Fit the following model
 
-<div class="countdown" id="timer_609dd419" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60a6ccde" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -497,8 +494,8 @@ $$
 --
 
 ```r
-lmer(score ~ baseline * sch_treatment + dist_ses + 
-             (baseline|schid) + (baseline * sch_treatment||distid),
+lmer(score ~ baseline * sch_treatment * dist_ses + 
+             (baseline|schid) + (baseline |distid),
            data = mplus_d)
 ```
 
@@ -631,8 +628,8 @@ iqs
 ```
 
 ```
-##  [1]  82  80  88 108 116 117 132  71  75  93  95  88 111  63  77  86  83  93  97
-## [20]  87  94  96 112 113 106 107  98
+##  [1]  82  80  88 108 116 117 132  71  75  93  95  88 111  63  77  86  83  93
+## [19]  97  87  94  96 112 113 106 107  98
 ```
 
 --
@@ -1339,786 +1336,6 @@ Complicated, but conceptually we're trying to sample the joint posterior distrib
 
 * It's complicated, and not required at all, but it's there for you if you want more info
 
----
-class: inverse-blue middle
-
-# Implementation with {brms}
-
-Luckily, we don't have to program the MCMC algorithm ourselves
-
-.center[
-![](https://github.com/paul-buerkner/brms/raw/master/man/figures/brms.png)
-]
-
----
-# What is it?
-* **b**ayesian **r**egression **m**odeling with **s**tan
-
-* Uses [stan](https://mc-stan.org/) as the model backend - basically writes the model code for you then sends it to stan
-
-* Allows model syntax similar to **lme4** 
-
-* Simple specification of priors - defaults are flat
-
-* Provides many methods for post-model fitting inference
-
----
-# Fit a basic model
-Let's start with the default (uninformative) priors, and fit a standard, simple-linear regression model
-
-
-```r
-library(brms)
-sleep_m0 &lt;- brm(Reaction ~ Days, data = lme4::sleepstudy)
-```
-
-```
-## 
-## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 1).
-## Chain 1: 
-## Chain 1: Gradient evaluation took 2.4e-05 seconds
-## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
-## Chain 1: Adjust your expectations accordingly!
-## Chain 1: 
-## Chain 1: 
-## Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
-## Chain 1: 
-## Chain 1:  Elapsed Time: 0.040584 seconds (Warm-up)
-## Chain 1:                0.022619 seconds (Sampling)
-## Chain 1:                0.063203 seconds (Total)
-## Chain 1: 
-## 
-## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 2).
-## Chain 2: 
-## Chain 2: Gradient evaluation took 7e-06 seconds
-## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
-## Chain 2: Adjust your expectations accordingly!
-## Chain 2: 
-## Chain 2: 
-## Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
-## Chain 2: 
-## Chain 2:  Elapsed Time: 0.053449 seconds (Warm-up)
-## Chain 2:                0.019516 seconds (Sampling)
-## Chain 2:                0.072965 seconds (Total)
-## Chain 2: 
-## 
-## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 3).
-## Chain 3: 
-## Chain 3: Gradient evaluation took 9e-06 seconds
-## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
-## Chain 3: Adjust your expectations accordingly!
-## Chain 3: 
-## Chain 3: 
-## Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
-## Chain 3: 
-## Chain 3:  Elapsed Time: 0.040523 seconds (Warm-up)
-## Chain 3:                0.02011 seconds (Sampling)
-## Chain 3:                0.060633 seconds (Total)
-## Chain 3: 
-## 
-## SAMPLING FOR MODEL 'a3c55247ada09ee979052a314fc29ad7' NOW (CHAIN 4).
-## Chain 4: 
-## Chain 4: Gradient evaluation took 1e-05 seconds
-## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
-## Chain 4: Adjust your expectations accordingly!
-## Chain 4: 
-## Chain 4: 
-## Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
-## Chain 4: 
-## Chain 4:  Elapsed Time: 0.045852 seconds (Warm-up)
-## Chain 4:                0.020401 seconds (Sampling)
-## Chain 4:                0.066253 seconds (Total)
-## Chain 4:
-```
-
----
-# Model summary
-
-
-```r
-summary(sleep_m0)
-```
-
-```
-##  Family: gaussian 
-##   Links: mu = identity; sigma = identity 
-## Formula: Reaction ~ Days 
-##    Data: lme4::sleepstudy (Number of observations: 180) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Population-Level Effects: 
-##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept   251.44      6.77   238.30   264.73 1.00     3780     2523
-## Days         10.44      1.28     7.98    12.95 1.00     3647     2711
-## 
-## Family Specific Parameters: 
-##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sigma    47.98      2.57    43.28    53.38 1.00     4075     2891
-## 
-## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
-```
-
----
-# View fixed effect
-Let's look at our estimated relation between `Days` and `Reaction`
-
---
-
-```r
-conditional_effects(sleep_m0)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
-
----
-# Wrong model
-Of course, this is the wrong model, we have a multilevel structure
-
-![](w7p1_files/figure-html/unnamed-chunk-61-1.png)&lt;!-- --&gt;
-
----
-# Multilevel model
-Notice the syntax is essentially equivalent to **lme4**
-
-
-```r
-sleep_m1 &lt;- brm(Reaction ~ Days + (Days | Subject), data = lme4::sleepstudy)
-summary(sleep_m1)
-```
-
-
-
-
-```
-##  Family: gaussian 
-##   Links: mu = identity; sigma = identity 
-## Formula: Reaction ~ Days + (Days | Subject) 
-##    Data: lme4::sleepstudy (Number of observations: 180) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Group-Level Effects: 
-## ~Subject (Number of levels: 18) 
-##                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sd(Intercept)          26.95      6.72    15.89    41.92 1.00     1800     2367
-## sd(Days)                6.52      1.51     4.25     9.98 1.00     1483     2148
-## cor(Intercept,Days)     0.08      0.30    -0.48     0.65 1.00     1084     1649
-## 
-## Population-Level Effects: 
-##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept   250.92      7.13   236.76   265.12 1.00     1667     2328
-## Days         10.42      1.69     7.01    13.78 1.00     1477     1919
-## 
-## Family Specific Parameters: 
-##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sigma    25.91      1.52    23.20    29.11 1.00     3373     2652
-## 
-## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
-```
-
----
-# Fixed effect
-The uncertainty has increased
-
-
-```r
-conditional_effects(sleep_m1)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-65-1.png)&lt;!-- --&gt;
-
----
-# Checking your model
-
-
-```r
-pp_check(sleep_m1)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
-
----
-# More checks
-
-
-```r
-plot(sleep_m1)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-67-1.png)&lt;!-- --&gt;![](w7p1_files/figure-html/unnamed-chunk-67-2.png)&lt;!-- --&gt;
-
----
-# Even more
-
-
-```r
-launch_shinystan(sleep_m1)
-```
-
----
-# Model comparison
-
-.footnote[See [here](https://arxiv.org/abs/1507.04544) for probably the best paper on this topic to date (imo)]
-
-* Two primary (modern) methods
-
-  + Leave-one-out Cross-Validation (LOO)
-  
-  + Widely Applicable Information Criterion (WAIC)
-
---
-Both provide estimates of the *out-of-sample* predictive accuracy of the model. LOO is similar to K-fold CV, while WAIC is similarl to AIC/BIC (but an improved version for Bayes models)
-
---
-Both can be computed using **brms**. LOO is approximated (not actually refit each time). 
-
-
----
-# LOO
-
-
-```r
-loo(sleep_m0)
-```
-
-```
-## 
-## Computed from 4000 by 180 log-likelihood matrix
-## 
-##          Estimate   SE
-## elpd_loo   -953.3 10.5
-## p_loo         3.2  0.5
-## looic      1906.7 21.0
-## ------
-## Monte Carlo SE of elpd_loo is 0.0.
-## 
-## All Pareto k estimates are good (k &lt; 0.5).
-## See help('pareto-k-diagnostic') for details.
-```
-
-```r
-loo(sleep_m1)
-```
-
-```
-## Warning: Found 4 observations with a pareto_k &gt; 0.7 in model 'sleep_m1'. It is
-## recommended to set 'moment_match = TRUE' in order to perform moment matching for
-## problematic observations.
-```
-
-```
-## 
-## Computed from 4000 by 180 log-likelihood matrix
-## 
-##          Estimate   SE
-## elpd_loo   -861.8 22.7
-## p_loo        34.8  8.8
-## looic      1723.6 45.4
-## ------
-## Monte Carlo SE of elpd_loo is NA.
-## 
-## Pareto k diagnostic values:
-##                          Count Pct.    Min. n_eff
-## (-Inf, 0.5]   (good)     173   96.1%   1012      
-##  (0.5, 0.7]   (ok)         3    1.7%   661       
-##    (0.7, 1]   (bad)        2    1.1%   33        
-##    (1, Inf)   (very bad)   2    1.1%   8         
-## See help('pareto-k-diagnostic') for details.
-```
-
----
-# Plot
-
-Large values here (anything above 0.7) is an indication of model misspecification
-
-Smaller values do not guarantee a well-specified model, however
-
-
-```r
-plot(loo(sleep_m1), label_points = TRUE)
-```
-
-```
-## Warning: Found 4 observations with a pareto_k &gt; 0.7 in model 'sleep_m1'. It is
-## recommended to set 'moment_match = TRUE' in order to perform moment matching for
-## problematic observations.
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-70-1.png)&lt;!-- --&gt;
-
----
-# LOO Compare
-
-.footnote[This is a fairly complicated topic, and we won't spend a lot of time on it. See [here](https://mc-stan.org/loo/articles/loo2-example.html) for a bit more information specifically on the functions]
-
-The best fitting model will be on top. Use the se within your interpretation
-
-
-```r
-loo_compare(loo(sleep_m0), loo(sleep_m1))
-```
-
-```
-## Warning: Found 4 observations with a pareto_k &gt; 0.7 in model 'sleep_m1'. It is
-## recommended to set 'moment_match = TRUE' in order to perform moment matching for
-## problematic observations.
-```
-
-```
-##          elpd_diff se_diff
-## sleep_m1   0.0       0.0  
-## sleep_m0 -91.5      21.3
-```
-
-
----
-# WAIC
-Perhaps a bit more familiar. Just like other information criteria.
-
-
-```r
-waic(sleep_m0)
-```
-
-```
-## 
-## Computed from 4000 by 180 log-likelihood matrix
-## 
-##           Estimate   SE
-## elpd_waic   -953.3 10.5
-## p_waic         3.2  0.5
-## waic        1906.6 21.0
-```
-
-```r
-waic(sleep_m1)
-```
-
-```
-## Warning: 
-## 14 (7.8%) p_waic estimates greater than 0.4. We recommend trying loo instead.
-```
-
-```
-## 
-## Computed from 4000 by 180 log-likelihood matrix
-## 
-##           Estimate   SE
-## elpd_waic   -860.1 22.3
-## p_waic        33.1  8.3
-## waic        1720.3 44.5
-## 
-## 14 (7.8%) p_waic estimates greater than 0.4. We recommend trying loo instead.
-```
-
----
-# Compare
-
-You can use `waic` within `loo_compare()`
-
-
-```r
-loo_compare(waic(sleep_m0), waic(sleep_m1))
-```
-
-```
-## Warning: 
-## 14 (7.8%) p_waic estimates greater than 0.4. We recommend trying loo instead.
-```
-
-```
-##          elpd_diff se_diff
-## sleep_m1   0.0       0.0  
-## sleep_m0 -93.2      20.9
-```
-
----
-# Another model
-
-
-```r
-kidney_m0 &lt;- brm(time ~ age + sex, data = kidney)
-pp_check(kidney_m0, type = "ecdf_overlay")
-```
-
-
-
-![](w7p1_files/figure-html/unnamed-chunk-76-1.png)&lt;!-- --&gt;
-
----
-# Fixing this
-We need to change the assumptions of our model - specifically that the outcome is not normally distributed
-
---
-Maybe Poisson?
-
-
-```r
-kidney_m1 &lt;- brm(time ~ age + sex, data = kidney, family = poisson())
-```
-
-
-
----
-# Nope
-
-
-```r
-pp_check(kidney_m1, type = "ecdf_overlay")
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-79-1.png)&lt;!-- --&gt;
-
-
----
-# Gamma w/log link
-
-```r
-kidney_m2 &lt;- brm(time ~ age + sex, data = kidney, family = Gamma("log"))
-pp_check(kidney_m2, type = "ecdf_overlay")
-```
-
-
-
-![](w7p1_files/figure-html/unnamed-chunk-82-1.png)&lt;!-- --&gt;
-
-
----
-# Specifying priors
-Let's sample from *only* our priors to see what kind of predictions we get.
-
-Here, we're specifying that our beta coefficient prior is `\(\beta \sim N(0, 0.5)\)` 
-  
-
-```r
-kidney_m3 &lt;- brm(
-  time ~ age + sex, 
-  data = kidney,
-  family = Gamma("log"),
-  prior = prior(normal(0, 0.5), class = "b"),
-  sample_prior = "only"
-)
-```
-
-
-
----
-
-```r
-kidney_m3
-```
-
-```
-## Warning: There were 1950 divergent transitions after warmup.
-## Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/
-## warnings.html#divergent-transitions-after-warmup
-```
-
-```
-##  Family: gamma 
-##   Links: mu = log; shape = identity 
-## Formula: time ~ age + sex 
-##    Data: kidney (Number of observations: 76) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Population-Level Effects: 
-##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept     3.57     21.85   -38.23    47.99 1.00      661      745
-## age           0.00      0.49    -1.00     0.96 1.00      637      818
-## sexfemale    -0.02      0.51    -1.00     0.93 1.00      817     1090
-## 
-## Family Specific Parameters: 
-##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## shape     0.72      6.19     0.00     3.97 1.00      477      750
-## 
-## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
-```
-
----
-# Prior predictions
-Random sample of 100 points
-
-![](w7p1_files/figure-html/unnamed-chunk-86-1.png)&lt;!-- --&gt;
-
----
-# Why?
-It seemed like our prior was fairly tight
-
-
---
-The exploding prior happens because of the log transformation
-
-* Age is coded in years
-
-* Imagine a coef of 1 (2 standard deviations above our prior)
-
-* Prediction for a 25 year old would be exp(25) = 7.2004899\times 10^{10}
-
----
-# A note on prior specifications
-* It's hard
-
-* I don't have a ton of good advice
-
-* Be particularly careful when you're using distributions that have anything other than an identity link (e.g., log link, as we are here)
-
----
-# One more model
-Let's fit a model we've fit previously
-
-
---
-In Week 4, we fit this model
-
-
-```r
-library(lme4)
-popular &lt;- read_csv(here::here("data", "popularity.csv"))
-m_lmer &lt;- lmer(popular ~ extrav + (extrav|class), popular,
-               control = lmerControl(optimizer = "bobyqa"))
-```
-
---
-Try fitting the same model with **{brms}** with the default, diffuse priors
-
-<div class="countdown" id="timer_609dd50f" style="right:0;bottom:0;" data-warnwhen="0">
-<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
-</div>
-
----
-# Bayesian verision
-
-
-
-
-```r
-m_brms &lt;- brm(popular ~ extrav + (extrav|class), popular)
-```
-
----
-# lme4 model
-
-```r
-arm::display(m_lmer)
-```
-
-```
-## lmer(formula = popular ~ extrav + (extrav | class), data = popular, 
-##     control = lmerControl(optimizer = "bobyqa"))
-##             coef.est coef.se
-## (Intercept) 2.46     0.20   
-## extrav      0.49     0.03   
-## 
-## Error terms:
-##  Groups   Name        Std.Dev. Corr  
-##  class    (Intercept) 1.73           
-##           extrav      0.16     -0.97 
-##  Residual             0.95           
-## ---
-## number of obs: 2000, groups: class, 100
-## AIC = 5791.4, DIC = 5762
-## deviance = 5770.7
-```
-
-
----
-# brms model
-
-
-```r
-m_brms
-```
-
-```
-##  Family: gaussian 
-##   Links: mu = identity; sigma = identity 
-## Formula: popular ~ extrav + (extrav | class) 
-##    Data: popular (Number of observations: 2000) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Group-Level Effects: 
-## ~class (Number of levels: 100) 
-##                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-## sd(Intercept)             1.73      0.17     1.41     2.08 1.01     1206
-## sd(extrav)                0.16      0.03     0.11     0.22 1.01      586
-## cor(Intercept,extrav)    -0.95      0.03    -1.00    -0.89 1.01      322
-##                       Tail_ESS
-## sd(Intercept)             1852
-## sd(extrav)                1457
-## cor(Intercept,extrav)      451
-## 
-## Population-Level Effects: 
-##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept     2.48      0.21     2.08     2.88 1.01     1021     1673
-## extrav        0.49      0.03     0.44     0.54 1.00     1782     2403
-## 
-## Family Specific Parameters: 
-##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sigma     0.95      0.02     0.92     0.98 1.00     4186     2569
-## 
-## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
-```
-
----
-# Plotting the Bayes fit
-
-
-```r
-tibble(extrav = 1:10, class = 0) %&gt;% 
-  tidybayes::add_fitted_draws(m_brms, 
-                              allow_new_levels = TRUE, 
-                              n = 100) %&gt;% 
-  ggplot(aes(extrav, .value)) +
-  geom_line(aes(group = .draw), size = 0.1)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-92-1.png)&lt;!-- --&gt;
-
----
-# Add in raw data
-
-```r
-library(tidybayes)
-tibble(extrav = 1:10, class = 0) %&gt;% 
-  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %&gt;% 
-  ggplot(aes(extrav, .value)) +
-  geom_point(aes(extrav, popular), data = popular,
-*            color = "gray70") +
-  geom_line(aes(group = .draw), size = 0.1)
-```
-
-![](w7p1_files/figure-html/unnamed-chunk-93-1.png)&lt;!-- --&gt;
-
----
-# Speed
-We'll never reach the `lme4::lmer()` speeds, but we can make it faster.
-
-* Parallelize (not always as effective as you might hope)
-
-* Use the cmdstanr backend
-  + This requires a little bit of additional work, but is probably worth it if you're
-  fitting bigger models.
-
-
-```r
-install.packages(
-  "cmdstanr",
-  repos = c("https://mc-stan.org/r-packages/", getOption("repos"))
-)
-```
-
-```
-## 
-## The downloaded binary packages are in
-## 	/var/folders/jj/5wz_sh8s5q9fgpxrrf9q86vr0000gn/T//Rtmp6KtXLK/downloaded_packages
-```
-
----
-# Timings
-I'm not evaluating the below, but the timings were 114.368 seconds and 87.383 seconds, respectively.
-
-
-```r
-library(tictoc)
-
-tic()
-m_brms &lt;- brm(popular ~ extrav + (extrav|class), popular)
-toc()
-
-tic()
-m_brms2 &lt;- brm(popular ~ extrav + (extrav|class), popular,
-*              backend = "cmdstanr")
-toc()
-```
-
----
-class: inverse-red middle
-# Wrapping up
-
-
----
-# Advantages to Bayes
-* Opportunity to incorporate prior knowledge into the modeling process (you don't really *have* to - could just set wide priors)
-
-* Natural interpretation of uncertainty
-
-* Can often allow you to estimate models that are difficult if not impossible with frequentist methods
-
-
---
-
-## Disadvatages
-
-* Generally going to be slower in implementation
-
-* You may run into pushback from others - particularly with respect to prior
-
----
-# Notes on the posterioir
-* The posterior is the distribution of the parameters, given the data
-
-* You can think of it as the distribution of what we don't know, but are interested in (the model parameters), given what we know or have observed (the data), and our prior beliefs
-
-* Gives a complete picture of parameter uncertainty
-
-* We can do lots of things with the posterior that is hard to get otherwise
-
-* Next time, we'll discuss how missing values can be treated as unknown variables (parameters) in the model, and imputed from the posterior
 
 ---
 class: inverse-green middle

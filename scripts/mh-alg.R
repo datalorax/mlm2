@@ -32,7 +32,7 @@ likelihood <- function(param, x_data = x, y_data = y){
 }
 
 slope_likelihoods <- vapply(seq(3, 7, by=.05), function(.x) {
-    likelihood(c(true_a, .x, true_sigma))
+    likelihood(param = c(true_a, .x, true_sigma))
   },
   FUN.VALUE = double(1)
 )
@@ -88,10 +88,10 @@ run_mh_mcmc <- function(start_vals, iter){
     prob <- exp(posterior(proposal) - posterior(chain[i, ]))
     
     # The random part of the walk, but using probabilities
-    if (runif(1) < prob) {
-      chain[i + 1, ] <- proposal
+    if (prob > runif(1)) {
+      chain[i + 1, ] <- proposal # accept
     } else {
-      chain[i + 1, ] <- chain[i, ]
+      chain[i + 1, ] <- chain[i, ] # reject
     }
   }
   chain
@@ -142,7 +142,8 @@ chain_plots <- ggplot(chains, aes(as.numeric(iter), value)) +
   scale_color_brewer(palette = "Pastel1")
 
 # Actually remove burn-in
-chains <- map(chains, ~.x[-seq_len(burn_in), ])
+chains <- chains %>% 
+  filter(iter > burn_in)
 
 posterior_medians <- chains %>% 
   group_by(parameter) %>% 

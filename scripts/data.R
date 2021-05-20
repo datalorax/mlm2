@@ -6,6 +6,20 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 
+three_lev_link <- "https://stats.idre.ucla.edu/wp-content/uploads/2016/02/eg_hlm.sav"
+three_lev <- haven::read_sav(three_lev_link) %>% 
+  haven::as_factor() %>% 
+  mutate(school = as.numeric(as.character(school)),
+         cid = as.numeric(as.character(cid))) %>% 
+  select(schid = school,
+         sid = cid,
+         size:mobility,
+         female:hispanic, retained,
+         grade, year,
+         math)
+
+write_csv(three_lev, here::here("data", "three-lev.csv"))
+
 thai_edu <- haven::read_sav("https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%206/Thaieduc/thaieduc.sav")
 
 thai_edu %>% 

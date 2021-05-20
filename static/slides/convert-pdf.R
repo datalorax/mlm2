@@ -20,7 +20,7 @@ pdfs <- dir_ls(here::here("static", "slides"),
   file_info() %>% 
   mutate(week = gsub(".+slides/(.+)\\..+", "\\1", path),
          modification_time = lubridate::round_date(modification_time, 
-                                                   unit = "minute")) %>% 
+                                                   unit = "10minutes")) %>% 
   select(path, week, modification_time)
 
 no_pdfs <- anti_join(rmds, pdfs, by = "week")

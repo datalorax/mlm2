@@ -1,0 +1,577 @@
+---
+title: "More Bayes"
+subtitle: "And multilevel binomial logistic regression"
+author: "Daniel Anderson "
+date: "Week 8"
+output:
+  xaringan::moon_reader:
+    css: ["default", "new.css"]
+    lib_dir: libs
+    nature:
+      navigation:
+        scroll: false
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "https://platform.twitter.com/widgets.js"
+    includes:
+      in_header: "load-feather.html"
+---
+
+```{r include = FALSE}
+source(here::here("static", "slides", "slide-setup.R"))
+xaringanExtra::use_clipboard()
+library(tidyverse)
+theme_set(theme_minimal(25))
+knitr::opts_chunk$set(fig.width = 13, message = FALSE)
+update_geom_defaults('path', list(size = 2))
+update_geom_defaults('smooth', list(size = 2))
+update_geom_defaults('point', list(size = 5))
+update_geom_defaults('text', list(size = 9))
+```
+
+`r setup("w9p1")`
+
+---
+# Agenda
+* Missing values can be treated as unknown variables (parameters) in the model, and imputed from the posterior
+
+* Fitting multilevel logistic regression models with **brms**
+
+* Plotting **brms** fits
+
+
+---
+# Popular data
+
+```{r }
+popular <- read_csv(here::here("data", "popularity.csv"))
+popular
+```
+
+---
+```{r include = FALSE}
+library(brms)
+m_brms <- brm(popular ~ extrav + (extrav|class), popular)
+m_brms
+```
+
+```{r eval = FALSE}
+m_brms <- brm(popular ~ extrav + (extrav|class), popular)
+```
+
+```{r echo = FALSE}
+m_brms
+```
+
+
+---
+# Plotting the Bayes fit
+
+```{r fig.height = 5}
+tibble(extrav = 1:10, class = 0) %>% 
+  tidybayes::add_fitted_draws(m_brms, 
+                              allow_new_levels = TRUE, 
+                              n = 100) %>% 
+  ggplot(aes(extrav, .value)) +
+  geom_line(aes(group = .draw), size = 0.1)
+```
+
+---
+# Add in raw data
+```{r fig.height = 5}
+library(tidybayes)
+tibble(extrav = 1:10, class = 0) %>% 
+  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %>% 
+  ggplot(aes(extrav, .value)) +
+  geom_point(aes(extrav, popular), data = popular,
+             color = "gray70") + #<<
+  geom_line(aes(group = .draw), size = 0.1)
+```
+
+
+---
+# New data
+Lung cancer data: Patients nested in doctors
+
+```{r }
+hdp <- read_csv("https://stats.idre.ucla.edu/stat/data/hdp.csv") %>% 
+  janitor::clean_names() %>% 
+  select(did, tumorsize, pain, lungcapacity, age, remission)
+hdp
+```
+
+---
+# Predict remission
+Build a model where age, lung capacity, and tumor size predict whether or not the patient was in remission. Allow the intercept to vary by the doctor ID. Fit the model using **brms**
+
+`r countdown::countdown(3)`
+
+--
+```{r }
+lc <- brm(remission ~ age*tumorsize + lungcapacity + (1|did),
+          data = hdp,
+          family = bernoulli(link = "logit"),
+          cores = 4,
+          backend = "cmdstan")
+```
+
+
+---
+# Model summary
+```{r }
+summary(lc)
+```
+
+---
+# Posterior predictive check
+```{r }
+pp_check(lc, type = "bars")
+```
+
+---
+# Chains
+```{r fig.height = 9}
+plot(lc)
+```
+
+
+---
+# Marginal predictions: Age
+```{r }
+conditional_effects(lc, "age")
+```
+
+---
+# Marginal predictions: tumor size
+```{r }
+conditional_effects(lc, "tumorsize")
+```
+
+---
+# Marginal predictions: lung capacity
+```{r }
+conditional_effects(lc, "lungcapacity")
+```
+
+---
+# Interaction
+
+```{r }
+conditional_effects(lc, "age:tumorsize")
+```
+
+---
+# Make predictions
+
+Check the relation for tumor size
+
+```{r }
+library(tidybayes)
+pred_tumor <- expand.grid(
+    age = 20:80,
+    lungcapacity = mean(hdp$lungcapacity),
+    tumorsize = 30:120,
+    did = -999
+  ) %>% 
+  add_fitted_draws(model = lc, n = 100,
+                   allow_new_levels = TRUE)
+pred_tumor
+```
+
+---
+# Plot
+```{r }
+ggplot(pred_tumor, aes(age, .value)) +
+  stat_lineribbon()
+```
+
+---
+# Different plot
+
+```{r fig.height = 5}
+pred_tumor %>% 
+  filter(tumorsize %in% c(30, 60, 90, 120)) %>% 
+ggplot(aes(age, .value)) +
+  geom_line(aes(group = .draw), alpha = 0.2) +
+  facet_wrap(~tumorsize) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+---
+# Variance by Doctor
+Let's look at the relation between age and proability of remission for each of the first nine doctors.
+
+--
+
+```{r}
+pred_age_doctor <- expand.grid(
+    did = unique(hdp$did)[1:9],
+    age = 20:80,
+    tumorsize = mean(hdp$tumorsize),
+    lungcapacity = mean(hdp$lungcapacity)
+  ) %>% 
+  add_fitted_draws(model = lc, n = 100)
+```
+
+---
+```{r }
+pred_age_doctor
+```
+
+---
+```{r fig.height = 9}
+ggplot(pred_age_doctor, aes(age, .value)) +
+  geom_line(aes(group = .draw), alpha = 0.2) +
+  facet_wrap(~did)
+```
+
+---
+# Going further
+* We can pull lots of different things from our model
+
+--
+* Let's start by looking at what's actually in the model
+
+
+--
+In this case `r_*` implies "random". These are the deviations from the average.
+
+```{r }
+get_variables(lc)
+```
+
+---
+# Get all draws
+Let's look at the intercept
+
+```{r }
+int <- lc %>% 
+  spread_draws(b_Intercept)
+int
+```
+
+---
+# Plot the distribution
+
+```{r }
+ggplot(int, aes(b_Intercept)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(xintercept = median(int$b_Intercept),
+             color = "magenta",
+             size = 2)
+```
+
+---
+# Grab random effects
+
+* The random effect name is `r_did`
+
+* We use brackets to assign new names
+
+```{r }
+spread_draws(lc, r_did[did, term])
+```
+
+---
+# Look at did distributions
+First 80 doctors
+```{r eval = FALSE}
+dids <- spread_draws(lc, r_did[did, ]) # all terms, which is just one
+dids %>% 
+  filter(did %in% 1:80) %>% 
+  ggplot(aes(x = r_did, y = factor(did))) +
+  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_blank())
+```
+
+
+---
+```{r echo = FALSE, fig.height=11}
+dids <- spread_draws(lc, r_did[did, ]) # all terms, which is just one
+dids %>% 
+  filter(did %in% 1:80) %>% 
+  ggplot(aes(x = r_did, y = factor(did))) +
+  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_blank())
+```
+
+---
+# Long format
+
+Use `gather_draws()` to return a long format, suitable for plotting (and many other things)
+
+```{r }
+fixed_l <- lc %>% 
+  gather_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
+               `b_age:tumorsize`)
+fixed_l
+```
+
+---
+# Plot the densities
+
+```{r }
+ggplot(fixed_l, aes(.value)) +
+  geom_density(fill = "#61adff", alpha = 0.7, color = NA) + 
+  facet_wrap(~.variable, scales = "free")
+```
+
+
+
+---
+# Multiple comparisons
+One of the nicest things about Bayes is that any comparison you want to make can be made without jumping through a lot of additional hoops (e.g., adjusting $\alpha$).
+
+
+--
+### Scenario
+Imagine a **35** year old has a tumor measuring **58 millimeters** and a lung capacity rating of **0.81**.
+
+
+--
+What would we estimate as the odds of remission if this patient had `did == 1` versus `did == 2`?
+
+
+---
+# Fixed effects
+
+Not really "fixed", but rather just average relation
+
+```{r }
+fe <- lc %>% 
+  spread_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
+               `b_age:tumorsize`)
+fe
+```
+
+---
+# Data
+```{r }
+age <- 35
+tumor_size <- 58
+lung_cap <- 0.81
+```
+
+--
+population-level predictions
+
+```{r }
+pop_level <- 
+  fe$b_Intercept +
+  (fe$b_age * age) +
+  (fe$b_tumorsize * tumor_size) +
+  (fe$b_lungcapacity * lung_cap) +
+  (fe$`b_age:tumorsize` * (age * tumor_size))
+pop_level
+```
+
+---
+# Plot
+
+```{r fig.height = 6}
+pd <- tibble(population_level = pop_level) 
+
+ggplot(pd, aes(population_level)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(xintercept = median(pd$population_level),
+             color = "magenta",
+             size = 2)
+```
+
+---
+# Add in did estimates
+
+```{r }
+did1 <- filter(dids, did == 1)
+did2 <- filter(dids, did == 2)
+
+pred_did1 <- pop_level + did1$r_did
+pred_did2 <- pop_level + did2$r_did
+```
+
+---
+# Distributions
+
+```{r }
+did12 <- tibble(did = rep(1:2, each = length(pred_did1)),
+                pred = c(pred_did1, pred_did2))
+
+did12_medians <- did12 %>% 
+  group_by(did) %>% 
+  summarize(did_median = median(pred))
+
+did12_medians
+```
+
+---
+# Plot
+```{r fig.height = 6}
+ggplot(did12, aes(pred)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = did_median), data = did12_medians,
+             color = "magenta",
+             size = 2) +
+  facet_wrap(~did, ncol = 1)
+```
+
+---
+# Transform
+Let's look at this again on the probability scale. Note I'm using `brms::inv_logit_scaled()` to make the transformation.
+
+--
+```{r eval = FALSE}
+ggplot(did12, aes(inv_logit_scaled(pred))) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
+             data = did12_medians,
+             color = "magenta",
+             size = 2) +
+  facet_wrap(~did, ncol = 1)
+```
+
+---
+```{r echo = FALSE}
+ggplot(did12, aes(inv_logit_scaled(pred))) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
+             data = did12_medians,
+             color = "magenta",
+             size = 2) +
+  facet_wrap(~did, ncol = 1)
+```
+
+---
+# Difference
+* The difference in the probability of remission for our theoretical patient is large between the two doctors.
+
+* The median difference in log-odds is
+
+```{r }
+diff(did12_medians$did_median)
+```
+
+so the patient is about 3.5 times **more likely** to have their cancer go into remission if they had did 2, instead of 1.
+
+--
+## How confident are we in this difference?
+
+---
+# Everything is a distribution
+Just compute the difference in these distributions, and we get a new distribution, which we can use to summarize our uncertainty
+
+--
+```{r }
+did12_wider <- did12 %>% 
+  mutate(.chain = rep(rep(1:4, each = 1000), 2),
+         .draw = rep(1:1000, 8)) %>% 
+  pivot_wider(names_from = "did", values_from = "pred")
+
+did12_wider
+```
+
+---
+# Compute difference
+```{r }
+did12_wider <- did12_wider %>% 
+  mutate(diff = `2` - `1`)
+
+did12_wider
+```
+
+---
+# Summarize
+
+```{r }
+quantile(did12_wider$diff, 
+         probs = c(0.025, 0.5, 0.975))
+```
+
+
+---
+# Plot distribution
+
+```{r }
+ggplot(did12_wider, aes(diff)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  geom_vline(aes(xintercept = median(diff)), 
+             color = "magenta",
+             size = 2)
+```
+
+---
+# Directionality
+Let's say we want to simplify the question to directionality.
+
+
+--
+Is there a greater chance of remission for `did` 2 than 1?
+
+--
+```{r }
+table(did12_wider$diff > 0) / 4000
+```
+
+
+--
+The distributions are not overlapping at all - therefore, we are as certain as we can be that the odds of remission are higher with `did` 2 than 1.
+
+
+---
+# One more quick example
+Let's do the same thing, but comparing `did` 2 and 3.
+
+```{r }
+did3 <- filter(dids, did == 3)
+pred_did3 <- pop_level + did3$r_did
+
+did23 <- did12_wider %>% 
+  select(-`1`, -diff) %>% 
+  mutate(`3` = pred_did3,
+         diff = `3` - `2`)
+did23
+```
+
+---
+# Directionality
+
+```{r }
+table(did23$diff > 0) / 4000
+```
+
+So there's roughly an 87% chance that the odds of remission are higher with with `did` 3 than 2.
+
+---
+# Plot data
+
+```{r }
+pd23 <- did23 %>% 
+  pivot_longer(`2`:diff, 
+               names_to = "Distribution",
+               values_to = "Log-Odds")
+pd23
+```
+
+---
+```{r }
+ggplot(pd23, aes(`Log-Odds`)) +
+  geom_histogram(fill = "#61adff",
+                 color = "white") +
+  facet_wrap(~Distribution, ncol = 1)
+```
+
+---
+class: inverse-green middle
+# Next time
+## Growth Modeling 2
+We'll continue to discuss and use Bayes

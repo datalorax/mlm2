@@ -1,6 +1,6 @@
 ---
-title: "Multilevel logistic regression"
-subtitle: "And  more Bayesian estimation"
+title: "More Bayes"
+subtitle: "And multilevel binomial logistic regression"
 author: "Daniel Anderson "
 date: "Week 8"
 output:
@@ -33,16 +33,916 @@ update_geom_defaults('text', list(size = 9))
 
 ---
 # Agenda
+* More equation practice
+
+* Finishing up our intro to Bayes
+  + Specific focus on MCMC
+
+* Implementation with **{brms}**
+
 * Logistic regression review
 
-* Extending to multilevel logistic regression models with **lme4**
-
-* Fitting multilevel logistic regression models with **brms**
-
-* Plotting **brms** fits
+* Extending to multilevel logistic regression models with **lme4** 
 
 ---
 class: inverse-blue middle
+# Equation practice
+
+---
+# The data
+Read in the following data
+
+```{r message = FALSE}
+library(tidyverse)
+library(lme4)
+d <- read_csv(here::here("data", "three-lev.csv"))
+d
+```
+
+---
+# Model 1
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE}
+library(equatiomatic)
+m1 <- lmer(math ~ mobility + (1|schid), data = d)
+extract_eq(m1)
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ mobility + (1|schid), data = d)
+```
+
+
+---
+# Model 2
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE}
+m2 <- lmer(math ~ year + female + mobility + 
+             (year|sid) +  (1|schid), 
+           data = d)
+extract_eq(m2)
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year + female + mobility + 
+             (year|sid) +  (1|schid), 
+     data = d)
+```
+
+---
+# Model 3
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE}
+m3 <- lmer(math ~ year * black + year * hispanic + female + mobility + 
+             (year|sid) +  (1|schid), 
+           data = d)
+extract_eq(m3, font_size = "small")
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year * black + year * hispanic + female + mobility + 
+             (year|sid) +  (1|schid), 
+     data = d)
+```
+
+---
+# Model 4
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE}
+m4 <- lmer(math ~ year * female + year * mobility + lowinc +
+             (year|sid) +  (year + female|schid), 
+           data = d)
+extract_eq(m4, font_size = "small")
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year * female + year * mobility + lowinc +
+             (year|sid) +  (year + female|schid), 
+     data = d)
+```
+
+---
+# Model 5
+
+Fit the following model
+
+Don't worry if you run into convergene warnings
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE, warning = FALSE}
+m5 <- lmer(math ~ year * female + mobility + lowinc +
+             (year|sid) +  (year * female||schid), 
+           data = d)
+extract_eq(m5, font_size = "scriptsize")
+```
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year * female + mobility + lowinc +
+       (year|sid) +  (year * female||schid), 
+     data = d)
+```
+
+---
+# Model 6
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE, warning = FALSE}
+m6 <- lmer(math ~ year + female + mobility * size +
+             (year|sid) +  (0 + mobility|schid), 
+           data = d)
+extract_eq(m6)
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year + female + mobility * size +
+             (year|sid) +  (0 + mobility|schid), 
+     data = d)
+```
+
+---
+# Model 7
+
+Fit the following model
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE, warning = FALSE}
+m7 <- lmer(math ~ year + female + mobility + size +
+             (year|sid), 
+           data = d)
+extract_eq(m7, font_size = "scriptsize")
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year + female + mobility + size +
+       (year|sid), 
+     data = d)
+```
+
+
+---
+# Model 8
+
+Last one
+
+`r countdown::countdown(1, 30)`
+
+```{r echo = FALSE, warning = FALSE}
+m8 <- lmer(math ~ year * lowinc + female + 
+             (year|sid) + (year |schid), 
+           data = d)
+extract_eq(m8, font_size = "scriptsize")
+```
+
+
+--
+
+```{r eval = FALSE}
+lmer(math ~ year * lowinc + female + 
+       (year|sid) + (year |schid), 
+     data = d)
+```
+
+---
+class: inverse-blue middle
+# Finishing up w/Bayes intro
+
+---
+# Updated beliefs
+* Remember our posterior is defined by
+
+
+$$
+\text{posterior} = \frac{ \text{likelihood} \times \text{prior}}{\text{average likelihood}}
+$$
+
+--
+When we just had a single parameter to estimate, $\mu$, this was tractable with grid search.
+
+
+--
+With even simple linear regression, however, we have three parameters: $\alpha$, $\beta$, and $\sigma$
+
+
+--
+Our Bayesian model then becomes considerably more complicated:
+
+$$
+P(\alpha, \beta, \sigma \mid x) = \frac{ P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma)}{\iiint \, P(x \mid \alpha, \beta, \sigma) \, P(\alpha, \beta, \sigma) \,d\alpha \,d\beta \,d\sigma}
+$$
+
+
+---
+# Estimation
+Rather than trying to compute the integrals, we draw *samples* from the joint posterior distribution.
+
+
+--
+This sounds a bit like magic - how do we do this?
+
+
+--
+Multiple different algorithms, but all use some form of Markov-Chain Monte-Carlo sampling
+
+---
+# Conceptually
+
+* Imagine the posterior as a hill
+
+* We start with the parameters set to random numbers
+
+  + Estimate the posterior with this values (our spot on the hill)
+
+* Try to "walk" around in a way that we get a complete "picture" of the hill from the samples
+
+* Use these samples as your posterior distribution
+
+---
+# An example
+
+.footnote[Example from [Ravenzwaaij et al.](https://link.springer.com/article/10.3758/s13423-016-1015-8)]
+
+Let's go back to an example where we're trying to estimate the mean with a know standard deviation.
+
+--
+$$
+N(\mu, 15)
+$$
+
+--
+Start with an initial guess, say 110
+
+
+---
+# MCMC
+One algorithm:
+
+* Generate a *proposal* by taking a sample from your best guess according to some distribution, e.g., $\text{proposal} \sim N(110, 10)$. Suppose we get a value of 108
+
+
+--
+* Observe the actual data. Let's say we have only one point: 100
+
+
+--
+
+* Compare the "height" of the proposal distribution to height of the current distribution, relative to observed data: $N(100|110, 15)$, $N(100|108, 15)$
+
+
+---
+# In code
+
+```{r }
+dnorm(110, 100, 15)
+dnorm(108, 100, 15)
+```
+
+---
+* If probability of target distribution is higher, accept
+
+* If probability  is lower, randomly select between the two with probability equal to the "heights" (probability of the two distributions)
+
+--
+
+* If proposal is accepted - it's the next sample in the chain
+
+* Otherwise, the next sample is a copy of current sample
+
+
+--
+## This completes one iteration
+
+Next iteration starts by generating a new proposal distribution
+
+
+--
+Stop when you have enough samples to have an adequate "picture"
+
+---
+# Example in code
+Let's take 5000 samples
+
+```{r}
+set.seed(42) # for reproducibility
+
+samples <- c(
+  110, # initial guess
+  rep(NA, 4999) # space for subsequent samples to fill in
+)
+```
+
+---
+# Loop
+
+```{r}
+for(i in 2:5000) {
+  # generate proposal distribution
+  proposal <- rnorm(1, mean = samples[i - 1], sd = 10)
+  
+  # calculate current/proposal distribution likelihoood
+  prob_current <- dnorm(samples[i - 1], 100, 15)
+  prob_proposal <- dnorm(proposal, 100, 15)
+  
+  # compute the probability ratio
+  prob_ratio <- prob_proposal / prob_current
+  
+  # Determine which to select
+  if(prob_ratio > runif(1)) {
+    samples[i] <- proposal # accept
+  } else {
+    samples[i] <- samples[i - 1] # reject
+  }
+}
+```
+
+---
+# Plot
+Iteration history
+```{r fig.height = 5}
+tibble(iteration = 1:5000,
+       value = samples) %>% 
+  ggplot(aes(iteration, value)) +
+  geom_line() +
+  geom_hline(yintercept = 100, 
+             color = "magenta",
+             size = 3)
+```
+
+---
+# Plot
+Density
+
+```{r fig.height = 5}
+tibble(iteration = 1:5000,
+       value = samples) %>% 
+  ggplot(aes(value)) +
+  geom_density(fill = "#00b4f5",
+               alpha = 0.7) +
+  geom_vline(xintercept = 100, 
+             color = "magenta",
+             size = 3)
+```
+
+---
+class: inverse-red middle
+# Bayes Update Script
+Last week I promised a script to let you play around with priors. I'll show that now ("bayes-update-plotting.R")
+
+There's also a MH script I'll quickly show.
+
+### [demo]
+
+
+---
+class: inverse-blue middle
+
+# Implementation with {brms}
+
+Luckily, we don't have to program the MCMC algorithm ourselves
+
+.center[
+![](https://github.com/paul-buerkner/brms/raw/master/man/figures/brms.png)
+]
+
+---
+# What is it?
+* **b**ayesian **r**egression **m**odeling with **s**tan
+
+* Uses [stan](https://mc-stan.org/) as the model backend - basically writes the model code for you then sends it to stan
+
+* Allows model syntax similar to **lme4** 
+
+* Simple specification of priors - defaults are flat
+
+* Provides many methods for post-model fitting inference
+
+---
+# Fit a basic model
+Let's start with the default (uninformative) priors, and fit a standard, simple-linear regression model
+
+```{r }
+library(brms)
+sleep_m0 <- brm(Reaction ~ Days, data = lme4::sleepstudy)
+```
+
+---
+# Model summary
+
+```{r }
+summary(sleep_m0)
+```
+
+---
+# View "fixed" effect
+Let's look at our estimated relation between `Days` and `Reaction`
+
+--
+```{r }
+conditional_effects(sleep_m0)
+```
+
+---
+# Wrong model
+Of course, this is the wrong model, we have a multilevel structure
+
+```{r echo = FALSE, message = FALSE}
+ggplot(lme4::sleepstudy, aes(Days, Reaction)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~Subject) +
+  theme_minimal(15)
+```
+
+---
+# Multilevel model
+Notice the syntax is essentially equivalent to **lme4**
+
+```{r eval = FALSE}
+sleep_m1 <- brm(Reaction ~ Days + (Days | Subject), data = lme4::sleepstudy)
+summary(sleep_m1)
+```
+
+```{r include = FALSE}
+sleep_m1 <- brm(Reaction ~ Days + (Days | Subject), data = lme4::sleepstudy)
+```
+
+```{r echo = FALSE}
+summary(sleep_m1)
+```
+
+---
+# Fixed effect
+The uncertainty has increased
+
+```{r }
+conditional_effects(sleep_m1)
+```
+
+---
+# Checking your model
+
+```{r }
+pp_check(sleep_m1)
+```
+
+---
+# More checks
+
+```{r fig.height = 7}
+plot(sleep_m1)
+```
+
+---
+# Even more
+
+```{r eval = FALSE}
+launch_shinystan(sleep_m1)
+```
+
+---
+# Model comparison
+
+.footnote[See [here](https://arxiv.org/abs/1507.04544) for probably the best paper on this topic to date (imo)]
+
+* Two primary (modern) methods
+
+  + Leave-one-out Cross-Validation (LOO)
+  
+  + Widely Applicable Information Criterion (WAIC)
+
+
+--
+Both provide estimates of the *out-of-sample* predictive accuracy of the model. LOO is similar to K-fold CV, while WAIC is similar to AIC/BIC (but an improved version for Bayes models)
+
+
+--
+Both can be computed using **brms**. LOO is approximated (not actually refit each time). 
+
+
+---
+# LOO: M0
+
+```{r }
+loo(sleep_m0)
+```
+
+---
+# LOO: M1
+
+```{r }
+loo(sleep_m1)
+```
+
+---
+# Plot
+
+```{r }
+plot(loo(sleep_m1), label_points = TRUE)
+```
+
+---
+# Interpretation
+
+Large values here (anything above 0.7) is an indication of model misspecification
+
+Smaller values do not guarantee a well-specified model, however
+
+
+---
+# LOO Compare
+
+.footnote[This is a fairly complicated topic, and we won't spend a lot of time on it. See [here](https://mc-stan.org/loo/articles/loo2-example.html) for a bit more information specifically on the functions]
+
+The best fitting model will be on top. Use the standard error within your interpretation
+
+```{r }
+loo_compare(loo(sleep_m0), loo(sleep_m1))
+```
+
+
+---
+# WAIC
+Similar to other information criteria.
+
+```{r }
+waic(sleep_m0)
+waic(sleep_m1)
+```
+
+---
+# Compare
+
+You can use `waic` within `loo_compare()`
+
+```{r }
+loo_compare(waic(sleep_m0), waic(sleep_m1))
+```
+
+---
+# Another model
+
+```{r eval = FALSE}
+kidney_m0 <- brm(time ~ age + sex, data = kidney)
+pp_check(kidney_m0, type = "ecdf_overlay")
+```
+
+```{r include = FALSE}
+kidney_m0 <- brm(time ~ age + sex, data = kidney)
+```
+
+```{r echo = FALSE}
+pp_check(kidney_m0, type = "ecdf_overlay")
+```
+
+---
+# Fixing this
+We need to change the assumptions of our model - specifically that the outcome is not normally distributed
+
+--
+### Plot the raw data
+
+```{r fig.height = 5.5}
+ggplot(kidney, aes(time)) +
+  geom_histogram(alpha = 0.7)
+```
+
+
+---
+# Maybe Poisson?
+
+(I realize we haven't talked about these types of models yet)
+
+```{r eval = FALSE}
+kidney_m1 <- brm(time ~ age + sex, 
+                 data = kidney, 
+                 family = poisson())
+```
+
+```{r include = FALSE}
+kidney_m1 <- brm(time ~ age + sex, data = kidney, family = poisson())
+```
+
+---
+# Nope
+
+```{r }
+pp_check(kidney_m1, type = "ecdf_overlay")
+```
+
+
+---
+# Gamma w/log link
+```{r eval = FALSE}
+kidney_m2 <- brm(time ~ age + sex, 
+                 data = kidney, 
+                 family = Gamma("log"))
+pp_check(kidney_m2, type = "ecdf_overlay")
+```
+
+```{r include = FALSE}
+kidney_m2 <- brm(time ~ age + sex, data = kidney, family = Gamma("log"))
+```
+
+```{r echo = FALSE, fig.height = 6}
+pp_check(kidney_m2, type = "ecdf_overlay")
+```
+
+
+---
+# Specifying priors
+Let's sample from *only* our priors to see what kind of predictions we get.
+
+Here, we're specifying that our beta coefficient prior is $\beta \sim N(0, 0.5)$ 
+  
+```{r eval = FALSE}
+kidney_m3 <- brm(
+  time ~ age + sex, 
+  data = kidney,
+  family = Gamma("log"),
+  prior = prior(normal(0, 0.5), class = "b"),
+  sample_prior = "only"
+)
+```
+
+```{r include = FALSE}
+kidney_m3 <- brm(
+  time ~ age + sex, 
+  data = kidney,
+  family = Gamma("log"),
+  prior = prior(normal(0, 0.5), class = "b"),
+  sample_prior = "only"
+)
+```
+
+---
+```{r }
+kidney_m3
+```
+
+---
+# Prior predictions
+Random sample of 100 points
+
+```{r echo = FALSE}
+kidney %>% 
+  tidybayes::add_fitted_draws(kidney_m3) %>% 
+  ungroup() %>% 
+  sample_n(100) %>% 
+  ggplot(aes(time, .value)) +
+  geom_point() +
+  facet_wrap(~sex) +
+  scale_y_log10(labels = scales::comma)
+```
+
+---
+# Why?
+It seemed like our prior was fairly tight
+
+
+--
+The exploding prior happens because of the log transformation
+
+* Age is coded in years
+
+* Imagine a coef of 1 (2 standard deviations above our prior)
+
+* Prediction for a 25 year old would be $\exp(25)$ = `r exp(25)`
+
+---
+# A note on prior specifications
+* It's hard
+
+* I don't have a ton of good advice
+
+* Be particularly careful when you're using distributions that have anything other than an identity link (e.g., log link, as we are here)
+
+---
+# One more model
+Let's fit a model we've fit previously
+
+
+--
+In Week 4, we fit this model
+
+```{r }
+library(lme4)
+popular <- read_csv(here::here("data", "popularity.csv"))
+m_lmer <- lmer(popular ~ extrav + (extrav|class), popular,
+               control = lmerControl(optimizer = "bobyqa"))
+```
+
+--
+Try fitting the same model with **{brms}** with the default, diffuse priors
+
+`r countdown::countdown(2)`
+
+---
+# Bayesian verision
+
+```{r include = FALSE}
+m_brms <- brm(popular ~ extrav + (extrav|class), popular)
+m_brms
+```
+
+```{r eval = FALSE}
+m_brms <- brm(popular ~ extrav + (extrav|class), popular)
+```
+
+```{r echo = FALSE}
+m_brms
+```
+
+
+---
+# lme4 model
+```{r }
+arm::display(m_lmer)
+```
+
+---
+# Add priors
+
+* Multiple ways to do this
+
+* Generally, I allow the intercept to just be what it is
+
+* For "fixed" effects, you might consider [regularizing](https://vasishth.github.io/bayescogsci/book/sec-sensitivity.html#regularizing-priors) priors.
+
+* You can also set priors for individual parameters
+
+* In my experience, you  will mostly want to set priors for  different "class"es of parameters, e.g.: `Intercept`, `b`, `sd`, `sigma`, `cor`
+
+---
+# Half-Cauchy distribution
+This is the distribution most often used for standard deviation priors
+```{r echo = FALSE}
+library(extraDistr)
+ggplot(data.frame(x = c(-1:10)), aes(x)) +
+  stat_function(fun = ~dhcauchy(., 1),
+                aes(color = "1")) +
+  stat_function(fun = ~dhcauchy(., 2),
+                aes(color = "2")) +
+  stat_function(fun = ~dhcauchy(., 3),
+                aes(color = "3"))  +
+  scale_color_brewer("Sigma", palette = "Accent") +
+  theme(legend.position = "bottom")
+```
+
+---
+# Specify some new priors
+Let's specify some regularizing priors for the fixed effects and standard deviations
+
+--
+```{r include = FALSE}
+priors <- c(
+  prior(normal(0, 0.5), class = b),
+  prior(cauchy(0, 1), class = sd)
+)
+
+m_brms2 <- brm(popular ~ extrav + (extrav|class), 
+               data = popular,
+               prior = priors)
+```
+
+```{r eval = FALSE}
+priors <- c(
+  prior(normal(0, 0.5), class = b),
+  prior(cauchy(0, 1), class = sd)
+)
+
+m_brms2 <- brm(popular ~ extrav + (extrav|class), 
+               data = popular,
+               prior = priors)
+```
+
+---
+Almost no difference in this case
+
+```{r }
+m_brms2
+```
+
+---
+# Speed
+We'll never reach the `lme4::lmer()` speeds, but we can make it faster.
+
+* Parallelize (not always as effective as you might hope)
+
+* Use the cmdstanr backend
+  + This requires a little bit of additional work, but is probably worth it if you're
+  fitting bigger models.
+
+```{r eval = FALSE}
+install.packages(
+  "cmdstanr",
+  repos = c(
+    "https://mc-stan.org/r-packages/", 
+    getOption("repos")
+  )
+)
+```
+
+---
+# Timings
+I'm not evaluating the below, but the timings were 114.368 seconds and 87.383 seconds, respectively.
+
+```{r eval = FALSE}
+library(tictoc)
+
+tic()
+m_brms <- brm(popular ~ extrav + (extrav|class), 
+              data = popular)
+toc()
+
+tic()
+m_brms2 <- brm(popular ~ extrav + (extrav|class), 
+               data = popular,
+               backend = "cmdstanr") #<<
+toc()
+```
+
+---
+class: inverse-red middle
+# Wrapping up our Bayes intro
+
+
+---
+# Advantages to Bayes
+* Opportunity to incorporate prior knowledge into the modeling process (you don't really *have* to - could just set wide priors)
+
+* Natural interpretation of uncertainty
+
+* Can often allow you to estimate models that are difficult if not impossible with frequentist methods
+
+
+--
+
+## Disadvatages
+
+* Generally going to be slower in implementation
+
+* You may run into pushback from others - particularly with respect to priors
+
+---
+# Notes on the posterior
+* The posterior is the distribution of the parameters, given the data
+
+* Think of it as the distribution of what we don't know, but are interested in (model parameters), given what we know or have observed (the data), and our prior beliefs
+
+* Gives a complete picture of parameter uncertainty
+
+* We can do lots of things with the posterior that is hard to get otherwise
+
+---
+class: inverse-green middle
+# Break
+
+.center[
+`r countdown::countdown(5)`
+]
+
+---
+class: inverse-red middle
 # Review of logistic regression
 
 ---
@@ -59,6 +959,8 @@ $$
   \widehat{y} &= \alpha + \beta_{1}(\operatorname{exper})
 \end{aligned}
 $$
+
+where we're embedding a linear model into the mean
 
 --
 In code
@@ -645,13 +1547,20 @@ Let's add some predictors
 
 
 --
+* We should center age so the intercept represents the sample average age.
+
+
+--
 You try first
 
-`r countdown::countdown(1)`
+`r countdown::countdown(3)`
 
 ---
 ```{r }
-m1 <- glmer(bush ~ age + female + black + (1|state),
+polls <- polls %>% 
+  mutate(age_c = age - mean(age, na.rm = TRUE))
+
+m1 <- glmer(bush ~ age_c + female + black + (1|state),
             data = polls,
             family = binomial(link = "logit"))
 arm::display(m1)
@@ -659,33 +1568,33 @@ arm::display(m1)
 
 ---
 # Varying slopes
-The average probability of a respondent who was coded `black == 1` supporting Bush was
+The average probability of a respondent who was coded `black == 1` who was the average age and non-female supporting Bush was
 
 $$
 \small
 \begin{equation}
-(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.63 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}{1 + \exp(0.63 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.43 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}{1 + \exp(0.43 + (-0.08 \times 0) + (-0.11 \times 0) + (-1.84 \times 1))}
 \end{equation}
 $$
 
 --
 $$
-(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.63 -1.84))}{1 + \exp(0.63  -1.84)}
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(0.43 -1.84))}{1 + \exp(0.43  -1.84)}
 $$
 
 --
 $$
-(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(-1.21))}{1 + \exp(-1.21)}
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{\exp(-1.41))}{1 + \exp(-1.41)}
 $$
 
 --
 $$
-(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{0.29}{1.29}
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = \frac{0.24}{1.24}
 $$
 
 --
 $$
-(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = 0.22
+(p_i|\text{age} = 0, \text{female} = 0, \text{black} = 1) = 0.19
 $$
 
 ---
@@ -697,7 +1606,7 @@ You try first - try to fit a model that estimates between-state variability in t
 --
 
 ```{r }
-m2 <- glmer(bush ~ age + female + black + (black|state),
+m2 <- glmer(bush ~ age_c + female + black + (black|state),
             data = polls,
             family = binomial(link = "logit"))
 arm::display(m2)
@@ -707,17 +1616,40 @@ arm::display(m2)
 # Look at random effects
 
 ```{r }
-tidy(m2, effects = "ran_vals", conf.int = TRUE) %>% 
+ranef_m2 <- tidy(m2, effects = "ran_vals", conf.int = TRUE) %>% 
   arrange(level)
+ranef_m2
+```
+
+---
+# Include fixed effects
+
+```{r }
+fe <- data.frame(
+  fixed = fixef(m2),
+  term = names(fixef(m2))
+)
+fe
+
+ranef_m2 <- left_join(ranef_m2, fe)
+ranef_m2 %>% 
+  select(level, term, estimate, fixed)
+```
+
+---
+# Add in fixed effects
+```{r }
+ranef_m2 <- ranef_m2 %>% 
+  mutate(estimate = estimate + fixed)
+ranef_m2
 ```
 
 ---
 # Compute log-odds
-First - compute means for each group - i.e., add the coefficients
+Compute means for each group - i.e., add the coefficients
 
 ```{r}
-to_plot <- tidy(m2, effects = "ran_vals", conf.int = TRUE) %>% 
-  arrange(level, term) %>% 
+to_plot <- ranef_m2 %>% 
   group_by(level) %>% 
   mutate(estimate = cumsum(estimate)) %>% 
   ungroup()
@@ -740,15 +1672,19 @@ to_plot <- to_plot %>%
 ---
 # Plot
 ```{r eval = FALSE}
+# data transform
 to_plot %>% 
-  mutate(
-    group = ifelse(term == "(Intercept)", "Non-Black", "Black")
-  ) %>%
-  ggplot(aes(estimate, level)) +
-  geom_line(aes(group = level), color = "gray60") +
+  mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black")) %>%
+  
+  # plot
+  ggplot(aes(prob, level)) +
+  geom_line(aes(group = level), color = "gray60", size = 1.2) +
   geom_point(aes(color = group)) +
-  geom_vline(xintercept = 0, color = "gray40", size = 3) +
-  labs(x = "Log-Odds Estimate", y = "") +
+  geom_vline(xintercept = 0.5, color = "gray40", size = 3) +
+  
+  # themeing stuff
+  labs(x = "Probability Estimate", y = "") +
+  xlim(0, 1) +
   scale_color_brewer(palette = "Set2") +
   theme(panel.grid.major.y = element_blank(),
         axis.text.y = element_blank())
@@ -756,7 +1692,7 @@ to_plot %>%
 
 ---
 # Plot
-```{r echo = FALSE, fig.height = 8}
+```{r echo = FALSE, fig.height = 9}
 to_plot %>% 
   mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black")) %>%
   ggplot(aes(estimate, level)) +
@@ -773,14 +1709,21 @@ to_plot %>%
 ---
 # Probability scale
 
-```{r eval = FALSE, fig.height = 8}
+```{r eval = FALSE, fig.height = 9}
+# data transform
 to_plot %>% 
-  mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black"),
-         prob = exp(estimate)/(1 + exp(estimate))) %>%
+  mutate(
+    group = ifelse(term == "(Intercept)", "Non-Black", "Black"),
+    prob = exp(estimate)/(1 + exp(estimate)) #<<
+  ) %>%
+  
+  # plot
   ggplot(aes(prob, level)) +
   geom_line(aes(group = level), color = "gray60", size = 1.2) +
   geom_point(aes(color = group)) +
   geom_vline(xintercept = 0.5, color = "gray40", size = 3) +
+  
+  # themeing stuff
   labs(x = "Probability Estimate", y = "") +
   xlim(0, 1) +
   scale_color_brewer(palette = "Set2") +
@@ -791,10 +1734,12 @@ to_plot %>%
 ---
 # Probability scale
 
-```{r echo = FALSE, fig.height = 8}
+```{r echo = FALSE, fig.height = 9}
 to_plot %>% 
-  mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black"),
-         prob = exp(estimate)/(1 + exp(estimate))) %>%
+  mutate(
+    group = ifelse(term == "(Intercept)", "Non-Black", "Black"),
+    prob = exp(estimate)/(1 + exp(estimate)) #<<
+  ) %>%
   ggplot(aes(prob, level)) +
   geom_line(aes(group = level), color = "gray60", size = 1.2) +
   geom_point(aes(color = group)) +
@@ -817,6 +1762,8 @@ class: inverse-blue middle
 Can you fit the same model we just fit, but with **{brms}**?
 
 You try first
+
+Feel free to just use flat priors
 
 `r countdown::countdown(2)`
 
@@ -854,488 +1801,11 @@ pp_check(m2_brms, type = "stat")
 ```
 
 ---
-# New data
-Lung cancer data: Patients nested in doctors
-
-```{r }
-hdp <- read_csv("https://stats.idre.ucla.edu/stat/data/hdp.csv") %>% 
-  janitor::clean_names() %>% 
-  select(did, tumorsize, pain, lungcapacity, age, remission)
-hdp
-```
-
----
-# Predict remission
-Build a model where age, lung capacity, and tumor size predict whether or not the patient was in remission. Allow the intercept to vary by the doctor ID. Fit the model using **brms**
-
-`r countdown::countdown(3)`
-
---
-```{r }
-lc <- brm(remission ~ age*tumorsize + lungcapacity + (1|did),
-          data = hdp,
-          family = bernoulli(link = "logit"),
-          cores = 4,
-          backend = "cmdstan")
-```
-
-
----
-# Model summary
-```{r }
-summary(lc)
-```
-
----
-# Posterior predictive check
-```{r }
-pp_check(lc, type = "bars")
-```
-
----
-# Chains
-```{r fig.height = 9}
-plot(lc)
-```
-
-
----
-# Marginal predictions: Age
-```{r }
-conditional_effects(lc, "age")
-```
-
----
-# Marginal predictions: tumor size
-```{r }
-conditional_effects(lc, "tumorsize")
-```
-
----
-# Marginal predictions: lung capacity
-```{r }
-conditional_effects(lc, "lungcapacity")
-```
-
----
-# Interaction
-
-```{r }
-conditional_effects(lc, "age:tumorsize")
-```
-
----
-# Make predictions
-
-Check the relation for tumor size
-
-```{r }
-library(tidybayes)
-pred_tumor <- expand.grid(
-    age = 20:80,
-    lungcapacity = mean(hdp$lungcapacity),
-    tumorsize = 30:120,
-    did = -999
-  ) %>% 
-  add_fitted_draws(model = lc, n = 100,
-                   allow_new_levels = TRUE)
-pred_tumor
-```
-
----
-# Plot
-```{r }
-ggplot(pred_tumor, aes(age, .value)) +
-  stat_lineribbon()
-```
-
----
-# Different plot
-
-```{r fig.height = 5}
-pred_tumor %>% 
-  filter(tumorsize %in% c(30, 60, 90, 120)) %>% 
-ggplot(aes(age, .value)) +
-  geom_line(aes(group = .draw), alpha = 0.2) +
-  facet_wrap(~tumorsize) +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-
----
-# Variance by Doctor
-Let's look at the relation between age and proability of remission for each of the first nine doctors.
-
---
-
-```{r}
-pred_age_doctor <- expand.grid(
-    did = unique(hdp$did)[1:9],
-    age = 20:80,
-    tumorsize = mean(hdp$tumorsize),
-    lungcapacity = mean(hdp$lungcapacity)
-  ) %>% 
-  add_fitted_draws(model = lc, n = 100)
-```
-
----
-```{r }
-pred_age_doctor
-```
-
----
-```{r fig.height = 9}
-ggplot(pred_age_doctor, aes(age, .value)) +
-  geom_line(aes(group = .draw), alpha = 0.2) +
-  facet_wrap(~did)
-```
-
----
-# Going further
-* We can pull lots of different things from our model
-
---
-* Let's start by looking at what's actually in the model
-
-
---
-In this case `r_*` implies "random". These are the deviations from the average.
-
-```{r }
-get_variables(lc)
-```
-
----
-# Get all draws
-Let's look at the intercept
-
-```{r }
-int <- lc %>% 
-  spread_draws(b_Intercept)
-int
-```
-
----
-# Plot the distribution
-
-```{r }
-ggplot(int, aes(b_Intercept)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(xintercept = median(int$b_Intercept),
-             color = "magenta",
-             size = 2)
-```
-
----
-# Grab random effects
-
-* The random effect name is `r_did`
-
-* We use brackets to assign new names
-
-```{r }
-spread_draws(lc, r_did[did, term])
-```
-
----
-# Look at did distributions
-First 80 doctors
-```{r eval = FALSE}
-dids <- spread_draws(lc, r_did[did, ]) # all terms, which is just one
-dids %>% 
-  filter(did %in% 1:80) %>% 
-  ggplot(aes(x = r_did, y = factor(did))) +
-  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.y = element_blank())
-```
-
-
----
-```{r echo = FALSE, fig.height=11}
-dids <- spread_draws(lc, r_did[did, ]) # all terms, which is just one
-dids %>% 
-  filter(did %in% 1:80) %>% 
-  ggplot(aes(x = r_did, y = factor(did))) +
-  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.y = element_blank())
-```
-
----
-# Long format
-
-Use `gather_draws()` to return a long format, suitable for plotting (and many other things)
-
-```{r }
-fixed_l <- lc %>% 
-  gather_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
-               `b_age:tumorsize`)
-fixed_l
-```
-
----
-# Plot the densities
-
-```{r }
-ggplot(fixed_l, aes(.value)) +
-  geom_density(fill = "#61adff", alpha = 0.7, color = NA) + 
-  facet_wrap(~.variable, scales = "free")
-```
-
-
-
----
-# Multiple comparisons
-One of the nicest things about Bayes is that any comparison you want to make can be made without jumping through a lot of additional hoops (e.g., adjusting $\alpha$).
-
-
---
-### Scenario
-Imagine a **35** year old has a tumor measuring **58 millimeters** and a lung capacity rating of **0.81**.
-
-
---
-What would we estimate as the odds of remission if this patient had `did == 1` versus `did == 2`?
-
-
----
-# Fixed effects
-
-Not really "fixed", but rather just average relation
-
-```{r }
-fe <- lc %>% 
-  spread_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
-               `b_age:tumorsize`)
-fe
-```
-
----
-# Data
-```{r }
-age <- 35
-tumor_size <- 58
-lung_cap <- 0.81
-```
-
---
-population-level predictions
-
-```{r }
-pop_level <- 
-  fe$b_Intercept +
-  (fe$b_age * age) +
-  (fe$b_tumorsize * tumor_size) +
-  (fe$b_lungcapacity * lung_cap) +
-  (fe$`b_age:tumorsize` * (age * tumor_size))
-pop_level
-```
-
----
-# Plot
-
-```{r fig.height = 6}
-pd <- tibble(population_level = pop_level) 
-
-ggplot(pd, aes(population_level)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(xintercept = median(pd$population_level),
-             color = "magenta",
-             size = 2)
-```
-
----
-# Add in did estimates
-
-```{r }
-did1 <- filter(dids, did == 1)
-did2 <- filter(dids, did == 2)
-
-pred_did1 <- pop_level + did1$r_did
-pred_did2 <- pop_level + did2$r_did
-```
-
----
-# Distributions
-
-```{r }
-did12 <- tibble(did = rep(1:2, each = length(pred_did1)),
-                pred = c(pred_did1, pred_did2))
-
-did12_medians <- did12 %>% 
-  group_by(did) %>% 
-  summarize(did_median = median(pred))
-
-did12_medians
-```
-
----
-# Plot
-```{r fig.height = 6}
-ggplot(did12, aes(pred)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = did_median), data = did12_medians,
-             color = "magenta",
-             size = 2) +
-  facet_wrap(~did, ncol = 1)
-```
-
----
-# Transform
-Let's look at this again on the probability scale. Note I'm using `brms::inv_logit_scaled()` to make the transformation.
-
---
-```{r eval = FALSE}
-ggplot(did12, aes(inv_logit_scaled(pred))) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
-             data = did12_medians,
-             color = "magenta",
-             size = 2) +
-  facet_wrap(~did, ncol = 1)
-```
-
----
-```{r echo = FALSE}
-ggplot(did12, aes(inv_logit_scaled(pred))) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
-             data = did12_medians,
-             color = "magenta",
-             size = 2) +
-  facet_wrap(~did, ncol = 1)
-```
-
----
-# Difference
-* The difference in the probability of remission for our theoretical patient is large between the two doctors.
-
-* The median difference in log-odds is
-
-```{r }
-diff(did12_medians$did_median)
-```
-
-so the patient is about 3.5 times **more likely** to have their cancer go into remission if they had did 2, instead of 1.
-
---
-## How confident are we in this difference?
-
----
-# Everything is a distribution
-Just compute the difference in these distributions, and we get a new distribution, which we can use to summarize our uncertainty
-
---
-```{r }
-did12_wider <- did12 %>% 
-  mutate(.chain = rep(rep(1:4, each = 1000), 2),
-         .draw = rep(1:1000, 8)) %>% 
-  pivot_wider(names_from = "did", values_from = "pred")
-
-did12_wider
-```
-
----
-# Compute difference
-```{r }
-did12_wider <- did12_wider %>% 
-  mutate(diff = `2` - `1`)
-
-did12_wider
-```
-
----
-# Summarize
-
-```{r }
-quantile(did12_wider$diff, 
-         probs = c(0.025, 0.5, 0.975))
-```
-
-
----
-# Plot distribution
-
-```{r }
-ggplot(did12_wider, aes(diff)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = median(diff)), 
-             color = "magenta",
-             size = 2)
-```
-
----
-# Directionality
-Let's say we want to simplify the question to directionality.
-
-
---
-Is there a greater chance of remission for `did` 2 than 1?
-
---
-```{r }
-table(did12_wider$diff > 0) / 4000
-```
-
-
---
-The distributions are not overlapping at all - therefore, we are as certain as we can be that the odds of remission are higher with `did` 2 than 1.
-
-
----
-# One more quick example
-Let's do the same thing, but comparing `did` 2 and 3.
-
-```{r }
-did3 <- filter(dids, did == 3)
-pred_did3 <- pop_level + did3$r_did
-
-did23 <- did12_wider %>% 
-  select(-`1`, -diff) %>% 
-  mutate(`3` = pred_did3,
-         diff = `3` - `2`)
-did23
-```
-
----
-# Directionality
-
-```{r }
-table(did23$diff > 0) / 4000
-```
-
-So there's roughly an 87% chance that the odds of remission are higher with with `did` 3 than 2.
-
----
-# Plot data
-
-```{r }
-pd23 <- did23 %>% 
-  pivot_longer(`2`:diff, 
-               names_to = "Distribution",
-               values_to = "Log-Odds")
-pd23
-```
-
----
-```{r }
-ggplot(pd23, aes(`Log-Odds`)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  facet_wrap(~Distribution, ncol = 1)
-```
-
----
 class: inverse-green middle
 # Next time
-## Growth Modeling 2
-We'll continue to discuss and use Bayes
+* More Bayes for binomial logistic regression
+* Plotting Bayes models
+* Missing data 
+* Piece-wise growth models
+
+
