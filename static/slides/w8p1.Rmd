@@ -868,9 +868,14 @@ We'll never reach the `lme4::lmer()` speeds, but we can make it faster.
 
 * Parallelize (not always as effective as you might hope)
 
-* Use the cmdstanr backend
+* Use the cmdstan backend
   + This requires a little bit of additional work, but is probably worth it if you're
   fitting bigger models.
+
+---
+# Installing cmdstan
+
+First, install the [**{cmdstanr}**](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) package
 
 ```{r eval = FALSE}
 install.packages(
@@ -882,9 +887,17 @@ install.packages(
 )
 ```
 
+
+--
+Then, install **cmdstan**
+
+```{r eval = FALSE}
+cmdstanr::install_cmdstan()
+```
+
 ---
 # Timings
-I'm not evaluating the below, but the timings were 114.368 seconds and 87.383 seconds, respectively.
+I'm not evaluating the below, but the timings were 112.646, 84.561, and 42.934 seconds, respectively.
 
 ```{r eval = FALSE}
 library(tictoc)
@@ -894,10 +907,19 @@ m_brms <- brm(popular ~ extrav + (extrav|class),
               data = popular)
 toc()
 
+# cmdstan
 tic()
 m_brms2 <- brm(popular ~ extrav + (extrav|class), 
                data = popular,
                backend = "cmdstanr") #<<
+toc()
+
+# cmdstan w/parallelization
+tic()
+m_brms3 <- brm(popular ~ extrav + (extrav|class), 
+               data = popular,
+               backend = "cmdstanr",
+               cores = 4) #<<
 toc()
 ```
 
@@ -1677,7 +1699,7 @@ to_plot %>%
   mutate(group = ifelse(term == "(Intercept)", "Non-Black", "Black")) %>%
   
   # plot
-  ggplot(aes(prob, level)) +
+  ggplot(aes(estimate, level)) +
   geom_line(aes(group = level), color = "gray60", size = 1.2) +
   geom_point(aes(color = group)) +
   geom_vline(xintercept = 0.5, color = "gray40", size = 3) +
