@@ -202,7 +202,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "gh" "https://canvas.uoregon.edu/files/10667780/download?download_frd=1" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/ScT7eD2Mp4k" >}}
 {{< /wrap >}}
 {{< /week >}}
 
