@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>More Bayes</title>
+    <title>Loose ends</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
     <script src="libs/header-attrs-2.7/header-attrs.js"></script>
@@ -19,8 +19,8 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# More Bayes
-## And multilevel binomial logistic regression
+# Loose ends
+## Plus missing data and piece-wise models
 ### Daniel Anderson
 ### Week 8
 
@@ -60,1651 +60,623 @@ layout: true
 
 ---
 # Agenda
-* Missing values can be treated as unknown variables (parameters) in the model, and imputed from the posterior
+* Equation practice
 
 * Fitting multilevel logistic regression models with **brms**
 
 * Plotting **brms** fits
 
+* Missing values 
+
+* Piecewise models
 
 ---
-# Popular data
+class: inverse-blue middle
+# Equation practice
+
+---
+# Data
+
+Read in the `nurses.csv` data. Note - each row represents data for one nurse. 
+
+<div class="countdown" id="timer_60aed27e" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 
 ```r
-popular &lt;- read_csv(here::here("data", "popularity.csv"))
-popular
-```
-
-```
-## # A tibble: 2,000 x 7
-##    pupil class extrav sex    texp popular popteach
-##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-##  1     1     1      5 girl     24     6.3        6
-##  2     2     1      7 boy      24     4.9        5
-##  3     3     1      4 girl     24     5.3        6
-##  4     4     1      3 girl     24     4.7        5
-##  5     5     1      5 girl     24     6          6
-##  6     6     1      4 boy      24     4.7        5
-##  7     7     1      5 boy      24     5.9        5
-##  8     8     1      4 boy      24     4.2        5
-##  9     9     1      5 boy      24     5.2        5
-## 10    10     1      5 boy      24     3.9        3
-## # … with 1,990 more rows
+library(tidyverse)
+nurses &lt;- read_csv(here::here("data", "nurses.csv"))
 ```
 
 ---
-
+# Data
 
 
 ```r
-m_brms &lt;- brm(popular ~ extrav + (extrav|class), popular)
+nurses
 ```
 
-
 ```
-##  Family: gaussian 
-##   Links: mu = identity; sigma = identity 
-## Formula: popular ~ extrav + (extrav | class) 
-##    Data: popular (Number of observations: 2000) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Group-Level Effects: 
-## ~class (Number of levels: 100) 
-##                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-## sd(Intercept)             1.72      0.17     1.42     2.08 1.00     1462
-## sd(extrav)                0.16      0.03     0.11     0.22 1.00     1030
-## cor(Intercept,extrav)    -0.95      0.03    -1.00    -0.89 1.01      610
-##                       Tail_ESS
-## sd(Intercept)             2382
-## sd(extrav)                2233
-## cor(Intercept,extrav)      885
-## 
-## Population-Level Effects: 
-##           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept     2.47      0.20     2.07     2.87 1.00      783     1620
-## extrav        0.49      0.03     0.44     0.54 1.00     1390     2126
-## 
-## Family Specific Parameters: 
-##       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sigma     0.95      0.02     0.92     0.98 1.00     5563     2674
-## 
-## Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
+## # A tibble: 1,000 x 11
+##    hospital  ward wardid nurse   age gender experien stress wardtype    
+##       &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;       
+##  1        1     1     11     1    36 Male         11      7 general care
+##  2        1     1     11     2    45 Male         20      7 general care
+##  3        1     1     11     3    32 Male          7      7 general care
+##  4        1     1     11     4    57 Female       25      6 general care
+##  5        1     1     11     5    46 Female       22      6 general care
+##  6        1     1     11     6    60 Female       22      6 general care
+##  7        1     1     11     7    23 Female       13      6 general care
+##  8        1     1     11     8    32 Female       13      7 general care
+##  9        1     1     11     9    60 Male         17      7 general care
+## 10        1     2     12    10    45 Male         21      6 special care
+## # … with 990 more rows, and 2 more variables: hospsize &lt;chr&gt;, expcon &lt;chr&gt;
 ```
 
 
 ---
-# Plotting the Bayes fit
+# Model 1
+Fit the following model
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{stress}_{i}  &amp;\sim N \left(\alpha_{j[i]} + \beta_{1j[i]}(\operatorname{experien}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{wardtype}_{\operatorname{special\ care}})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed248" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
 
 
 ```r
-tibble(extrav = 1:10, class = 0) %&gt;% 
-  tidybayes::add_fitted_draws(m_brms, 
-                              allow_new_levels = TRUE, 
-                              n = 100) %&gt;% 
-  ggplot(aes(extrav, .value)) +
-  geom_line(aes(group = .draw), size = 0.1)
+lmer(stress ~ experien * wardtype + (experien|wardid),
+     data = nurses)
+
+# or
+lmer(stress ~ experien + wardtype + experien:wardtype + 
+       (experien|wardid),
+     data = nurses)
 ```
 
-![](w9p1_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
-
 ---
-# Add in raw data
+# Model 2
+
+Fit the following model
+
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{stress}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{experien}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{wardtype}_{\operatorname{special\ care}})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma_{2}^{\alpha}(\operatorname{hospsize}_{\operatorname{small}}) \\
+      &amp;\mu_{\beta_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed253" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
+
 
 ```r
-library(tidybayes)
-tibble(extrav = 1:10, class = 0) %&gt;% 
-  add_fitted_draws(m_brms, allow_new_levels = TRUE, n = 100) %&gt;% 
-  ggplot(aes(extrav, .value)) +
-  geom_point(aes(extrav, popular), data = popular,
-*            color = "gray70") +
-  geom_line(aes(group = .draw), size = 0.1)
+lmer(stress ~ experien * wardtype + hospsize +
+       (experien|wardid) + (experien|hospital),
+     data = nurses)
 ```
 
-![](w9p1_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
-
-
 ---
-# New data
-Lung cancer data: Patients nested in doctors
+# Model 3
+
+Fit the following model
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{stress}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{experien}) + \beta_{2}(\operatorname{age}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{expcon}_{\operatorname{experiment}}) \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; 0 \\ 
+     0 &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{k}} \\
+      &amp;\mu_{\beta_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; 0 \\ 
+     0 &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed231" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+--
 
 
 ```r
-hdp &lt;- read_csv("https://stats.idre.ucla.edu/stat/data/hdp.csv") %&gt;% 
-  janitor::clean_names() %&gt;% 
-  select(did, tumorsize, pain, lungcapacity, age, remission)
-hdp
+lmer(stress ~ experien + age + expcon +
+       (experien||wardid) + (experien||hospital),
+     data = nurses)
+
+# or
+
+lmer(stress ~ experien + age + expcon +
+       (1|wardid) + (0 + experien|wardid) + 
+       (1|hospital) + (0 + experien|hospital),
+     data = nurses)
 ```
 
-```
-## # A tibble: 8,525 x 6
-##      did tumorsize  pain lungcapacity      age remission
-##    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-##  1     1  67.98120     4    0.8010882 64.96824         0
-##  2     1  64.70246     2    0.3264440 53.91714         0
-##  3     1  51.56700     6    0.5650309 53.34730         0
-##  4     1  86.43799     3    0.8484109 41.36804         0
-##  5     1  53.40018     3    0.8864910 46.80042         0
-##  6     1  51.65727     4    0.7010307 51.92936         0
-##  7     1  78.91707     3    0.8908539 53.82926         0
-##  8     1  69.83325     3    0.6608795 46.56223         0
-##  9     1  62.85259     4    0.9088714 54.38936         0
-## 10     1  71.77790     5    0.9593268 50.54465         0
-## # … with 8,515 more rows
+
+---
+# Model 4
+
+Fit the following model
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{stress}_{i}  &amp;\sim N \left(\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{experien}) + \beta_{2}(\operatorname{age}), \sigma^2 \right) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{expcon}_{\operatorname{experiment}}) + \gamma_{2}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma_{2}^{\alpha}(\operatorname{hospsize}_{\operatorname{small}}) \\
+      &amp;\gamma^{\beta_{1}}_{0} + \gamma^{\beta_{1}}_{1}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma^{\beta_{1}}_{2}(\operatorname{hospsize}_{\operatorname{small}})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed3d1" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
+
+
+--
+
+
+```r
+lmer(stress ~ experien * hospsize + age + expcon + wardtype + 
+       (experien|wardid) + (experien|hospital),
+     data = nurses)
 ```
 
 ---
-# Predict remission
-Build a model where age, lung capacity, and tumor size predict whether or not the patient was in remission. Allow the intercept to vary by the doctor ID. Fit the model using **brms**
+# Model 5
 
-<div class="countdown" id="timer_60a6d31d" style="right:0;bottom:0;" data-warnwhen="0">
+Fit the following model
+
+$$
+\small
+`\begin{aligned}
+  \operatorname{expcon}_{i}  &amp;\sim \operatorname{Binomial}(n = 1, \operatorname{prob}_{\operatorname{expcon} = \operatorname{experiment}} = \widehat{P}) \\
+    \log\left[\frac{\hat{P}}{1 - \hat{P}} \right] &amp;=\alpha_{j[i],k[i]} + \beta_{1j[i]}(\operatorname{age}) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\mu_{\alpha_{j}} \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    \alpha_{k}  &amp;\sim N \left(\mu_{\alpha_{k}}, \sigma^2_{\alpha_{k}} \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed17c" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
 --
 
 ```r
-lc &lt;- brm(remission ~ age*tumorsize + lungcapacity + (1|did),
-          data = hdp,
-          family = bernoulli(link = "logit"),
-          cores = 4,
-          backend = "cmdstan")
-```
-
-```
-## 
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
-/
-
--
-
-\
-
-|
-
- 
-Running MCMC with 4 parallel chains...
-## 
-## Chain 1 Iteration:    1 / 2000 [  0%]  (Warmup) 
-## Chain 2 Iteration:    1 / 2000 [  0%]  (Warmup) 
-## Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup) 
-## Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) 
-## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 327.2 seconds.
-## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 3 finished in 330.4 seconds.
-## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 1 finished in 345.4 seconds.
-## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 finished in 362.8 seconds.
-## 
-## All 4 chains finished successfully.
-## Mean chain execution time: 341.5 seconds.
-## Total execution time: 363.2 seconds.
-```
-
-
----
-# Model summary
-
-```r
-summary(lc)
-```
-
-```
-##  Family: bernoulli 
-##   Links: mu = logit 
-## Formula: remission ~ age * tumorsize + lungcapacity + (1 | did) 
-##    Data: hdp (Number of observations: 8525) 
-## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-##          total post-warmup samples = 4000
-## 
-## Group-Level Effects: 
-## ~did (Number of levels: 407) 
-##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sd(Intercept)     2.02      0.10     1.82     2.23 1.00      668     1512
-## 
-## Population-Level Effects: 
-##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## Intercept         1.69      1.52    -1.37     4.63 1.00     1654     2732
-## age              -0.05      0.03    -0.10     0.01 1.00     1710     2675
-## tumorsize        -0.01      0.02    -0.05     0.04 1.00     1678     2641
-## lungcapacity      0.07      0.19    -0.30     0.43 1.00     3560     2752
-## age:tumorsize    -0.00      0.00    -0.00     0.00 1.00     1689     2641
-## 
-## Samples were drawn using sample(hmc). For each parameter, Bulk_ESS
-## and Tail_ESS are effective sample size measures, and Rhat is the potential
-## scale reduction factor on split chains (at convergence, Rhat = 1).
+nurses &lt;- nurses %&gt;% 
+  mutate(expcon = factor(expcon))
+
+glmer(expcon ~ age + 
+        (age|wardid) + (1|hospital),
+      data = nurses,
+      family = binomial(link = "logit"),
+      data = nurses)
 ```
 
 ---
-# Posterior predictive check
-
-```r
-pp_check(lc, type = "bars")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
-
----
-# Chains
-
-```r
-plot(lc)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;![](w9p1_files/figure-html/unnamed-chunk-12-2.png)&lt;!-- --&gt;
-
-
----
-# Marginal predictions: Age
-
-```r
-conditional_effects(lc, "age")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
-
----
-# Marginal predictions: tumor size
-
-```r
-conditional_effects(lc, "tumorsize")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
-
----
-# Marginal predictions: lung capacity
-
-```r
-conditional_effects(lc, "lungcapacity")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
-
----
-# Interaction
-
-
-```r
-conditional_effects(lc, "age:tumorsize")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
-
----
-# Make predictions
-
-Check the relation for tumor size
-
-
-```r
-library(tidybayes)
-pred_tumor &lt;- expand.grid(
-    age = 20:80,
-    lungcapacity = mean(hdp$lungcapacity),
-    tumorsize = 30:120,
-    did = -999
-  ) %&gt;% 
-  add_fitted_draws(model = lc, n = 100,
-                   allow_new_levels = TRUE)
-pred_tumor
-```
-
-```
-## # A tibble: 555,100 x 9
-## # Groups:   age, lungcapacity, tumorsize, did, .row [5,551]
-##      age lungcapacity tumorsize   did  .row .chain .iteration .draw    .value
-##    &lt;int&gt;        &lt;dbl&gt;     &lt;int&gt; &lt;dbl&gt; &lt;int&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;
-##  1    20    0.7740865        30  -999     1     NA         NA   295 0.6824989
-##  2    20    0.7740865        30  -999     1     NA         NA   298 0.6587606
-##  3    20    0.7740865        30  -999     1     NA         NA   370 0.9846339
-##  4    20    0.7740865        30  -999     1     NA         NA   435 0.5601509
-##  5    20    0.7740865        30  -999     1     NA         NA   472 0.7661789
-##  6    20    0.7740865        30  -999     1     NA         NA   481 0.5415221
-##  7    20    0.7740865        30  -999     1     NA         NA   558 0.7101885
-##  8    20    0.7740865        30  -999     1     NA         NA   574 0.2391725
-##  9    20    0.7740865        30  -999     1     NA         NA   578 0.2360355
-## 10    20    0.7740865        30  -999     1     NA         NA   591 0.9559996
-## # … with 555,090 more rows
-```
-
----
-# Plot
-
-```r
-ggplot(pred_tumor, aes(age, .value)) +
-  stat_lineribbon()
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
-
----
-# Different plot
-
-
-```r
-pred_tumor %&gt;% 
-  filter(tumorsize %in% c(30, 60, 90, 120)) %&gt;% 
-ggplot(aes(age, .value)) +
-  geom_line(aes(group = .draw), alpha = 0.2) +
-  facet_wrap(~tumorsize) +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-19-1.png)&lt;!-- --&gt;
-
----
-# Variance by Doctor
-Let's look at the relation between age and proability of remission for each of the first nine doctors.
-
---
-
-
-```r
-pred_age_doctor &lt;- expand.grid(
-    did = unique(hdp$did)[1:9],
-    age = 20:80,
-    tumorsize = mean(hdp$tumorsize),
-    lungcapacity = mean(hdp$lungcapacity)
-  ) %&gt;% 
-  add_fitted_draws(model = lc, n = 100)
-```
-
----
-
-```r
-pred_age_doctor
-```
-
-```
-## # A tibble: 54,900 x 9
-## # Groups:   did, age, tumorsize, lungcapacity, .row [549]
-##      did   age tumorsize lungcapacity  .row .chain .iteration .draw
-##    &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt; &lt;int&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;
-##  1     1    20  70.88067    0.7740865     1     NA         NA    31
-##  2     1    20  70.88067    0.7740865     1     NA         NA    39
-##  3     1    20  70.88067    0.7740865     1     NA         NA    48
-##  4     1    20  70.88067    0.7740865     1     NA         NA    96
-##  5     1    20  70.88067    0.7740865     1     NA         NA   100
-##  6     1    20  70.88067    0.7740865     1     NA         NA   113
-##  7     1    20  70.88067    0.7740865     1     NA         NA   117
-##  8     1    20  70.88067    0.7740865     1     NA         NA   158
-##  9     1    20  70.88067    0.7740865     1     NA         NA   214
-## 10     1    20  70.88067    0.7740865     1     NA         NA   311
-## # … with 54,890 more rows, and 1 more variable: .value &lt;dbl&gt;
-```
-
----
-
-```r
-ggplot(pred_age_doctor, aes(age, .value)) +
-  geom_line(aes(group = .draw), alpha = 0.2) +
-  facet_wrap(~did)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
-
----
-# Going further
-* We can pull lots of different things from our model
-
---
-* Let's start by looking at what's actually in the model
-
-
---
-In this case `r_*` implies "random". These are the deviations from the average.
-
-
-```r
-get_variables(lc)
-```
-
-```
-##   [1] "b_Intercept"          "b_age"                "b_tumorsize"         
-##   [4] "b_lungcapacity"       "b_age:tumorsize"      "sd_did__Intercept"   
-##   [7] "Intercept"            "r_did[1,Intercept]"   "r_did[2,Intercept]"  
-##  [10] "r_did[3,Intercept]"   "r_did[4,Intercept]"   "r_did[5,Intercept]"  
-##  [13] "r_did[6,Intercept]"   "r_did[7,Intercept]"   "r_did[8,Intercept]"  
-##  [16] "r_did[9,Intercept]"   "r_did[10,Intercept]"  "r_did[11,Intercept]" 
-##  [19] "r_did[12,Intercept]"  "r_did[13,Intercept]"  "r_did[14,Intercept]" 
-##  [22] "r_did[15,Intercept]"  "r_did[16,Intercept]"  "r_did[17,Intercept]" 
-##  [25] "r_did[18,Intercept]"  "r_did[19,Intercept]"  "r_did[20,Intercept]" 
-##  [28] "r_did[21,Intercept]"  "r_did[22,Intercept]"  "r_did[23,Intercept]" 
-##  [31] "r_did[24,Intercept]"  "r_did[25,Intercept]"  "r_did[26,Intercept]" 
-##  [34] "r_did[27,Intercept]"  "r_did[28,Intercept]"  "r_did[29,Intercept]" 
-##  [37] "r_did[30,Intercept]"  "r_did[31,Intercept]"  "r_did[32,Intercept]" 
-##  [40] "r_did[33,Intercept]"  "r_did[34,Intercept]"  "r_did[35,Intercept]" 
-##  [43] "r_did[36,Intercept]"  "r_did[37,Intercept]"  "r_did[38,Intercept]" 
-##  [46] "r_did[39,Intercept]"  "r_did[40,Intercept]"  "r_did[41,Intercept]" 
-##  [49] "r_did[42,Intercept]"  "r_did[43,Intercept]"  "r_did[44,Intercept]" 
-##  [52] "r_did[45,Intercept]"  "r_did[46,Intercept]"  "r_did[47,Intercept]" 
-##  [55] "r_did[48,Intercept]"  "r_did[49,Intercept]"  "r_did[50,Intercept]" 
-##  [58] "r_did[51,Intercept]"  "r_did[52,Intercept]"  "r_did[53,Intercept]" 
-##  [61] "r_did[54,Intercept]"  "r_did[55,Intercept]"  "r_did[56,Intercept]" 
-##  [64] "r_did[57,Intercept]"  "r_did[58,Intercept]"  "r_did[59,Intercept]" 
-##  [67] "r_did[60,Intercept]"  "r_did[61,Intercept]"  "r_did[62,Intercept]" 
-##  [70] "r_did[63,Intercept]"  "r_did[64,Intercept]"  "r_did[65,Intercept]" 
-##  [73] "r_did[66,Intercept]"  "r_did[67,Intercept]"  "r_did[68,Intercept]" 
-##  [76] "r_did[69,Intercept]"  "r_did[70,Intercept]"  "r_did[71,Intercept]" 
-##  [79] "r_did[72,Intercept]"  "r_did[73,Intercept]"  "r_did[74,Intercept]" 
-##  [82] "r_did[75,Intercept]"  "r_did[76,Intercept]"  "r_did[77,Intercept]" 
-##  [85] "r_did[78,Intercept]"  "r_did[79,Intercept]"  "r_did[80,Intercept]" 
-##  [88] "r_did[81,Intercept]"  "r_did[82,Intercept]"  "r_did[83,Intercept]" 
-##  [91] "r_did[84,Intercept]"  "r_did[85,Intercept]"  "r_did[86,Intercept]" 
-##  [94] "r_did[87,Intercept]"  "r_did[88,Intercept]"  "r_did[89,Intercept]" 
-##  [97] "r_did[90,Intercept]"  "r_did[91,Intercept]"  "r_did[92,Intercept]" 
-## [100] "r_did[93,Intercept]"  "r_did[94,Intercept]"  "r_did[95,Intercept]" 
-## [103] "r_did[96,Intercept]"  "r_did[97,Intercept]"  "r_did[98,Intercept]" 
-## [106] "r_did[99,Intercept]"  "r_did[100,Intercept]" "r_did[101,Intercept]"
-## [109] "r_did[102,Intercept]" "r_did[103,Intercept]" "r_did[104,Intercept]"
-## [112] "r_did[105,Intercept]" "r_did[106,Intercept]" "r_did[107,Intercept]"
-## [115] "r_did[108,Intercept]" "r_did[109,Intercept]" "r_did[110,Intercept]"
-## [118] "r_did[111,Intercept]" "r_did[112,Intercept]" "r_did[113,Intercept]"
-## [121] "r_did[114,Intercept]" "r_did[115,Intercept]" "r_did[116,Intercept]"
-## [124] "r_did[117,Intercept]" "r_did[118,Intercept]" "r_did[119,Intercept]"
-## [127] "r_did[120,Intercept]" "r_did[121,Intercept]" "r_did[122,Intercept]"
-## [130] "r_did[123,Intercept]" "r_did[124,Intercept]" "r_did[125,Intercept]"
-## [133] "r_did[126,Intercept]" "r_did[127,Intercept]" "r_did[128,Intercept]"
-## [136] "r_did[129,Intercept]" "r_did[130,Intercept]" "r_did[131,Intercept]"
-## [139] "r_did[132,Intercept]" "r_did[133,Intercept]" "r_did[134,Intercept]"
-## [142] "r_did[135,Intercept]" "r_did[136,Intercept]" "r_did[137,Intercept]"
-## [145] "r_did[138,Intercept]" "r_did[139,Intercept]" "r_did[140,Intercept]"
-## [148] "r_did[141,Intercept]" "r_did[142,Intercept]" "r_did[143,Intercept]"
-## [151] "r_did[144,Intercept]" "r_did[145,Intercept]" "r_did[146,Intercept]"
-## [154] "r_did[147,Intercept]" "r_did[148,Intercept]" "r_did[149,Intercept]"
-## [157] "r_did[150,Intercept]" "r_did[151,Intercept]" "r_did[152,Intercept]"
-## [160] "r_did[153,Intercept]" "r_did[154,Intercept]" "r_did[155,Intercept]"
-## [163] "r_did[156,Intercept]" "r_did[157,Intercept]" "r_did[158,Intercept]"
-## [166] "r_did[159,Intercept]" "r_did[160,Intercept]" "r_did[161,Intercept]"
-## [169] "r_did[162,Intercept]" "r_did[163,Intercept]" "r_did[164,Intercept]"
-## [172] "r_did[165,Intercept]" "r_did[166,Intercept]" "r_did[167,Intercept]"
-## [175] "r_did[168,Intercept]" "r_did[169,Intercept]" "r_did[170,Intercept]"
-## [178] "r_did[171,Intercept]" "r_did[172,Intercept]" "r_did[173,Intercept]"
-## [181] "r_did[174,Intercept]" "r_did[175,Intercept]" "r_did[176,Intercept]"
-## [184] "r_did[177,Intercept]" "r_did[178,Intercept]" "r_did[179,Intercept]"
-## [187] "r_did[180,Intercept]" "r_did[181,Intercept]" "r_did[182,Intercept]"
-## [190] "r_did[183,Intercept]" "r_did[184,Intercept]" "r_did[185,Intercept]"
-## [193] "r_did[186,Intercept]" "r_did[187,Intercept]" "r_did[188,Intercept]"
-## [196] "r_did[189,Intercept]" "r_did[190,Intercept]" "r_did[191,Intercept]"
-## [199] "r_did[192,Intercept]" "r_did[193,Intercept]" "r_did[194,Intercept]"
-## [202] "r_did[195,Intercept]" "r_did[196,Intercept]" "r_did[197,Intercept]"
-## [205] "r_did[198,Intercept]" "r_did[199,Intercept]" "r_did[200,Intercept]"
-## [208] "r_did[201,Intercept]" "r_did[202,Intercept]" "r_did[203,Intercept]"
-## [211] "r_did[204,Intercept]" "r_did[205,Intercept]" "r_did[206,Intercept]"
-## [214] "r_did[207,Intercept]" "r_did[208,Intercept]" "r_did[209,Intercept]"
-## [217] "r_did[210,Intercept]" "r_did[211,Intercept]" "r_did[212,Intercept]"
-## [220] "r_did[213,Intercept]" "r_did[214,Intercept]" "r_did[215,Intercept]"
-## [223] "r_did[216,Intercept]" "r_did[217,Intercept]" "r_did[218,Intercept]"
-## [226] "r_did[219,Intercept]" "r_did[220,Intercept]" "r_did[221,Intercept]"
-## [229] "r_did[222,Intercept]" "r_did[223,Intercept]" "r_did[224,Intercept]"
-## [232] "r_did[225,Intercept]" "r_did[226,Intercept]" "r_did[227,Intercept]"
-## [235] "r_did[228,Intercept]" "r_did[229,Intercept]" "r_did[230,Intercept]"
-## [238] "r_did[231,Intercept]" "r_did[232,Intercept]" "r_did[233,Intercept]"
-## [241] "r_did[234,Intercept]" "r_did[235,Intercept]" "r_did[236,Intercept]"
-## [244] "r_did[237,Intercept]" "r_did[238,Intercept]" "r_did[239,Intercept]"
-## [247] "r_did[240,Intercept]" "r_did[241,Intercept]" "r_did[242,Intercept]"
-## [250] "r_did[243,Intercept]" "r_did[244,Intercept]" "r_did[245,Intercept]"
-## [253] "r_did[246,Intercept]" "r_did[247,Intercept]" "r_did[248,Intercept]"
-## [256] "r_did[249,Intercept]" "r_did[250,Intercept]" "r_did[251,Intercept]"
-## [259] "r_did[252,Intercept]" "r_did[253,Intercept]" "r_did[254,Intercept]"
-## [262] "r_did[255,Intercept]" "r_did[256,Intercept]" "r_did[257,Intercept]"
-## [265] "r_did[258,Intercept]" "r_did[259,Intercept]" "r_did[260,Intercept]"
-## [268] "r_did[261,Intercept]" "r_did[262,Intercept]" "r_did[263,Intercept]"
-## [271] "r_did[264,Intercept]" "r_did[265,Intercept]" "r_did[266,Intercept]"
-## [274] "r_did[267,Intercept]" "r_did[268,Intercept]" "r_did[269,Intercept]"
-## [277] "r_did[270,Intercept]" "r_did[271,Intercept]" "r_did[272,Intercept]"
-## [280] "r_did[273,Intercept]" "r_did[274,Intercept]" "r_did[275,Intercept]"
-## [283] "r_did[276,Intercept]" "r_did[277,Intercept]" "r_did[278,Intercept]"
-## [286] "r_did[279,Intercept]" "r_did[280,Intercept]" "r_did[281,Intercept]"
-## [289] "r_did[282,Intercept]" "r_did[283,Intercept]" "r_did[284,Intercept]"
-## [292] "r_did[285,Intercept]" "r_did[286,Intercept]" "r_did[287,Intercept]"
-## [295] "r_did[288,Intercept]" "r_did[289,Intercept]" "r_did[290,Intercept]"
-## [298] "r_did[291,Intercept]" "r_did[292,Intercept]" "r_did[293,Intercept]"
-## [301] "r_did[294,Intercept]" "r_did[295,Intercept]" "r_did[296,Intercept]"
-## [304] "r_did[297,Intercept]" "r_did[298,Intercept]" "r_did[299,Intercept]"
-## [307] "r_did[300,Intercept]" "r_did[301,Intercept]" "r_did[302,Intercept]"
-## [310] "r_did[303,Intercept]" "r_did[304,Intercept]" "r_did[305,Intercept]"
-## [313] "r_did[306,Intercept]" "r_did[307,Intercept]" "r_did[308,Intercept]"
-## [316] "r_did[309,Intercept]" "r_did[310,Intercept]" "r_did[311,Intercept]"
-## [319] "r_did[312,Intercept]" "r_did[313,Intercept]" "r_did[314,Intercept]"
-## [322] "r_did[315,Intercept]" "r_did[316,Intercept]" "r_did[317,Intercept]"
-## [325] "r_did[318,Intercept]" "r_did[319,Intercept]" "r_did[320,Intercept]"
-## [328] "r_did[321,Intercept]" "r_did[322,Intercept]" "r_did[323,Intercept]"
-## [331] "r_did[324,Intercept]" "r_did[325,Intercept]" "r_did[326,Intercept]"
-## [334] "r_did[327,Intercept]" "r_did[328,Intercept]" "r_did[329,Intercept]"
-## [337] "r_did[330,Intercept]" "r_did[331,Intercept]" "r_did[332,Intercept]"
-## [340] "r_did[333,Intercept]" "r_did[334,Intercept]" "r_did[335,Intercept]"
-## [343] "r_did[336,Intercept]" "r_did[337,Intercept]" "r_did[338,Intercept]"
-## [346] "r_did[339,Intercept]" "r_did[340,Intercept]" "r_did[341,Intercept]"
-## [349] "r_did[342,Intercept]" "r_did[343,Intercept]" "r_did[344,Intercept]"
-## [352] "r_did[345,Intercept]" "r_did[346,Intercept]" "r_did[347,Intercept]"
-## [355] "r_did[348,Intercept]" "r_did[349,Intercept]" "r_did[350,Intercept]"
-## [358] "r_did[351,Intercept]" "r_did[352,Intercept]" "r_did[353,Intercept]"
-## [361] "r_did[354,Intercept]" "r_did[355,Intercept]" "r_did[356,Intercept]"
-## [364] "r_did[357,Intercept]" "r_did[358,Intercept]" "r_did[359,Intercept]"
-## [367] "r_did[360,Intercept]" "r_did[361,Intercept]" "r_did[362,Intercept]"
-## [370] "r_did[363,Intercept]" "r_did[364,Intercept]" "r_did[365,Intercept]"
-## [373] "r_did[366,Intercept]" "r_did[367,Intercept]" "r_did[368,Intercept]"
-## [376] "r_did[369,Intercept]" "r_did[370,Intercept]" "r_did[371,Intercept]"
-## [379] "r_did[372,Intercept]" "r_did[373,Intercept]" "r_did[374,Intercept]"
-## [382] "r_did[375,Intercept]" "r_did[376,Intercept]" "r_did[377,Intercept]"
-## [385] "r_did[378,Intercept]" "r_did[379,Intercept]" "r_did[380,Intercept]"
-## [388] "r_did[381,Intercept]" "r_did[382,Intercept]" "r_did[383,Intercept]"
-## [391] "r_did[384,Intercept]" "r_did[385,Intercept]" "r_did[386,Intercept]"
-## [394] "r_did[387,Intercept]" "r_did[388,Intercept]" "r_did[389,Intercept]"
-## [397] "r_did[390,Intercept]" "r_did[391,Intercept]" "r_did[392,Intercept]"
-## [400] "r_did[393,Intercept]" "r_did[394,Intercept]" "r_did[395,Intercept]"
-## [403] "r_did[396,Intercept]" "r_did[397,Intercept]" "r_did[398,Intercept]"
-## [406] "r_did[399,Intercept]" "r_did[400,Intercept]" "r_did[401,Intercept]"
-## [409] "r_did[402,Intercept]" "r_did[403,Intercept]" "r_did[404,Intercept]"
-## [412] "r_did[405,Intercept]" "r_did[406,Intercept]" "r_did[407,Intercept]"
-## [415] "lp__"                 "z_1[1,1]"             "z_1[1,2]"            
-## [418] "z_1[1,3]"             "z_1[1,4]"             "z_1[1,5]"            
-## [421] "z_1[1,6]"             "z_1[1,7]"             "z_1[1,8]"            
-## [424] "z_1[1,9]"             "z_1[1,10]"            "z_1[1,11]"           
-## [427] "z_1[1,12]"            "z_1[1,13]"            "z_1[1,14]"           
-## [430] "z_1[1,15]"            "z_1[1,16]"            "z_1[1,17]"           
-## [433] "z_1[1,18]"            "z_1[1,19]"            "z_1[1,20]"           
-## [436] "z_1[1,21]"            "z_1[1,22]"            "z_1[1,23]"           
-## [439] "z_1[1,24]"            "z_1[1,25]"            "z_1[1,26]"           
-## [442] "z_1[1,27]"            "z_1[1,28]"            "z_1[1,29]"           
-## [445] "z_1[1,30]"            "z_1[1,31]"            "z_1[1,32]"           
-## [448] "z_1[1,33]"            "z_1[1,34]"            "z_1[1,35]"           
-## [451] "z_1[1,36]"            "z_1[1,37]"            "z_1[1,38]"           
-## [454] "z_1[1,39]"            "z_1[1,40]"            "z_1[1,41]"           
-## [457] "z_1[1,42]"            "z_1[1,43]"            "z_1[1,44]"           
-## [460] "z_1[1,45]"            "z_1[1,46]"            "z_1[1,47]"           
-## [463] "z_1[1,48]"            "z_1[1,49]"            "z_1[1,50]"           
-## [466] "z_1[1,51]"            "z_1[1,52]"            "z_1[1,53]"           
-## [469] "z_1[1,54]"            "z_1[1,55]"            "z_1[1,56]"           
-## [472] "z_1[1,57]"            "z_1[1,58]"            "z_1[1,59]"           
-## [475] "z_1[1,60]"            "z_1[1,61]"            "z_1[1,62]"           
-## [478] "z_1[1,63]"            "z_1[1,64]"            "z_1[1,65]"           
-## [481] "z_1[1,66]"            "z_1[1,67]"            "z_1[1,68]"           
-## [484] "z_1[1,69]"            "z_1[1,70]"            "z_1[1,71]"           
-## [487] "z_1[1,72]"            "z_1[1,73]"            "z_1[1,74]"           
-## [490] "z_1[1,75]"            "z_1[1,76]"            "z_1[1,77]"           
-## [493] "z_1[1,78]"            "z_1[1,79]"            "z_1[1,80]"           
-## [496] "z_1[1,81]"            "z_1[1,82]"            "z_1[1,83]"           
-## [499] "z_1[1,84]"            "z_1[1,85]"            "z_1[1,86]"           
-## [502] "z_1[1,87]"            "z_1[1,88]"            "z_1[1,89]"           
-## [505] "z_1[1,90]"            "z_1[1,91]"            "z_1[1,92]"           
-## [508] "z_1[1,93]"            "z_1[1,94]"            "z_1[1,95]"           
-## [511] "z_1[1,96]"            "z_1[1,97]"            "z_1[1,98]"           
-## [514] "z_1[1,99]"            "z_1[1,100]"           "z_1[1,101]"          
-## [517] "z_1[1,102]"           "z_1[1,103]"           "z_1[1,104]"          
-## [520] "z_1[1,105]"           "z_1[1,106]"           "z_1[1,107]"          
-## [523] "z_1[1,108]"           "z_1[1,109]"           "z_1[1,110]"          
-## [526] "z_1[1,111]"           "z_1[1,112]"           "z_1[1,113]"          
-## [529] "z_1[1,114]"           "z_1[1,115]"           "z_1[1,116]"          
-## [532] "z_1[1,117]"           "z_1[1,118]"           "z_1[1,119]"          
-## [535] "z_1[1,120]"           "z_1[1,121]"           "z_1[1,122]"          
-## [538] "z_1[1,123]"           "z_1[1,124]"           "z_1[1,125]"          
-## [541] "z_1[1,126]"           "z_1[1,127]"           "z_1[1,128]"          
-## [544] "z_1[1,129]"           "z_1[1,130]"           "z_1[1,131]"          
-## [547] "z_1[1,132]"           "z_1[1,133]"           "z_1[1,134]"          
-## [550] "z_1[1,135]"           "z_1[1,136]"           "z_1[1,137]"          
-## [553] "z_1[1,138]"           "z_1[1,139]"           "z_1[1,140]"          
-## [556] "z_1[1,141]"           "z_1[1,142]"           "z_1[1,143]"          
-## [559] "z_1[1,144]"           "z_1[1,145]"           "z_1[1,146]"          
-## [562] "z_1[1,147]"           "z_1[1,148]"           "z_1[1,149]"          
-## [565] "z_1[1,150]"           "z_1[1,151]"           "z_1[1,152]"          
-## [568] "z_1[1,153]"           "z_1[1,154]"           "z_1[1,155]"          
-## [571] "z_1[1,156]"           "z_1[1,157]"           "z_1[1,158]"          
-## [574] "z_1[1,159]"           "z_1[1,160]"           "z_1[1,161]"          
-## [577] "z_1[1,162]"           "z_1[1,163]"           "z_1[1,164]"          
-## [580] "z_1[1,165]"           "z_1[1,166]"           "z_1[1,167]"          
-## [583] "z_1[1,168]"           "z_1[1,169]"           "z_1[1,170]"          
-## [586] "z_1[1,171]"           "z_1[1,172]"           "z_1[1,173]"          
-## [589] "z_1[1,174]"           "z_1[1,175]"           "z_1[1,176]"          
-## [592] "z_1[1,177]"           "z_1[1,178]"           "z_1[1,179]"          
-## [595] "z_1[1,180]"           "z_1[1,181]"           "z_1[1,182]"          
-## [598] "z_1[1,183]"           "z_1[1,184]"           "z_1[1,185]"          
-## [601] "z_1[1,186]"           "z_1[1,187]"           "z_1[1,188]"          
-## [604] "z_1[1,189]"           "z_1[1,190]"           "z_1[1,191]"          
-## [607] "z_1[1,192]"           "z_1[1,193]"           "z_1[1,194]"          
-## [610] "z_1[1,195]"           "z_1[1,196]"           "z_1[1,197]"          
-## [613] "z_1[1,198]"           "z_1[1,199]"           "z_1[1,200]"          
-## [616] "z_1[1,201]"           "z_1[1,202]"           "z_1[1,203]"          
-## [619] "z_1[1,204]"           "z_1[1,205]"           "z_1[1,206]"          
-## [622] "z_1[1,207]"           "z_1[1,208]"           "z_1[1,209]"          
-## [625] "z_1[1,210]"           "z_1[1,211]"           "z_1[1,212]"          
-## [628] "z_1[1,213]"           "z_1[1,214]"           "z_1[1,215]"          
-## [631] "z_1[1,216]"           "z_1[1,217]"           "z_1[1,218]"          
-## [634] "z_1[1,219]"           "z_1[1,220]"           "z_1[1,221]"          
-## [637] "z_1[1,222]"           "z_1[1,223]"           "z_1[1,224]"          
-## [640] "z_1[1,225]"           "z_1[1,226]"           "z_1[1,227]"          
-## [643] "z_1[1,228]"           "z_1[1,229]"           "z_1[1,230]"          
-## [646] "z_1[1,231]"           "z_1[1,232]"           "z_1[1,233]"          
-## [649] "z_1[1,234]"           "z_1[1,235]"           "z_1[1,236]"          
-## [652] "z_1[1,237]"           "z_1[1,238]"           "z_1[1,239]"          
-## [655] "z_1[1,240]"           "z_1[1,241]"           "z_1[1,242]"          
-## [658] "z_1[1,243]"           "z_1[1,244]"           "z_1[1,245]"          
-## [661] "z_1[1,246]"           "z_1[1,247]"           "z_1[1,248]"          
-## [664] "z_1[1,249]"           "z_1[1,250]"           "z_1[1,251]"          
-## [667] "z_1[1,252]"           "z_1[1,253]"           "z_1[1,254]"          
-## [670] "z_1[1,255]"           "z_1[1,256]"           "z_1[1,257]"          
-## [673] "z_1[1,258]"           "z_1[1,259]"           "z_1[1,260]"          
-## [676] "z_1[1,261]"           "z_1[1,262]"           "z_1[1,263]"          
-## [679] "z_1[1,264]"           "z_1[1,265]"           "z_1[1,266]"          
-## [682] "z_1[1,267]"           "z_1[1,268]"           "z_1[1,269]"          
-## [685] "z_1[1,270]"           "z_1[1,271]"           "z_1[1,272]"          
-## [688] "z_1[1,273]"           "z_1[1,274]"           "z_1[1,275]"          
-## [691] "z_1[1,276]"           "z_1[1,277]"           "z_1[1,278]"          
-## [694] "z_1[1,279]"           "z_1[1,280]"           "z_1[1,281]"          
-## [697] "z_1[1,282]"           "z_1[1,283]"           "z_1[1,284]"          
-## [700] "z_1[1,285]"           "z_1[1,286]"           "z_1[1,287]"          
-## [703] "z_1[1,288]"           "z_1[1,289]"           "z_1[1,290]"          
-## [706] "z_1[1,291]"           "z_1[1,292]"           "z_1[1,293]"          
-## [709] "z_1[1,294]"           "z_1[1,295]"           "z_1[1,296]"          
-## [712] "z_1[1,297]"           "z_1[1,298]"           "z_1[1,299]"          
-## [715] "z_1[1,300]"           "z_1[1,301]"           "z_1[1,302]"          
-## [718] "z_1[1,303]"           "z_1[1,304]"           "z_1[1,305]"          
-## [721] "z_1[1,306]"           "z_1[1,307]"           "z_1[1,308]"          
-## [724] "z_1[1,309]"           "z_1[1,310]"           "z_1[1,311]"          
-## [727] "z_1[1,312]"           "z_1[1,313]"           "z_1[1,314]"          
-## [730] "z_1[1,315]"           "z_1[1,316]"           "z_1[1,317]"          
-## [733] "z_1[1,318]"           "z_1[1,319]"           "z_1[1,320]"          
-## [736] "z_1[1,321]"           "z_1[1,322]"           "z_1[1,323]"          
-## [739] "z_1[1,324]"           "z_1[1,325]"           "z_1[1,326]"          
-## [742] "z_1[1,327]"           "z_1[1,328]"           "z_1[1,329]"          
-## [745] "z_1[1,330]"           "z_1[1,331]"           "z_1[1,332]"          
-## [748] "z_1[1,333]"           "z_1[1,334]"           "z_1[1,335]"          
-## [751] "z_1[1,336]"           "z_1[1,337]"           "z_1[1,338]"          
-## [754] "z_1[1,339]"           "z_1[1,340]"           "z_1[1,341]"          
-## [757] "z_1[1,342]"           "z_1[1,343]"           "z_1[1,344]"          
-## [760] "z_1[1,345]"           "z_1[1,346]"           "z_1[1,347]"          
-## [763] "z_1[1,348]"           "z_1[1,349]"           "z_1[1,350]"          
-## [766] "z_1[1,351]"           "z_1[1,352]"           "z_1[1,353]"          
-## [769] "z_1[1,354]"           "z_1[1,355]"           "z_1[1,356]"          
-## [772] "z_1[1,357]"           "z_1[1,358]"           "z_1[1,359]"          
-## [775] "z_1[1,360]"           "z_1[1,361]"           "z_1[1,362]"          
-## [778] "z_1[1,363]"           "z_1[1,364]"           "z_1[1,365]"          
-## [781] "z_1[1,366]"           "z_1[1,367]"           "z_1[1,368]"          
-## [784] "z_1[1,369]"           "z_1[1,370]"           "z_1[1,371]"          
-## [787] "z_1[1,372]"           "z_1[1,373]"           "z_1[1,374]"          
-## [790] "z_1[1,375]"           "z_1[1,376]"           "z_1[1,377]"          
-## [793] "z_1[1,378]"           "z_1[1,379]"           "z_1[1,380]"          
-## [796] "z_1[1,381]"           "z_1[1,382]"           "z_1[1,383]"          
-## [799] "z_1[1,384]"           "z_1[1,385]"           "z_1[1,386]"          
-## [802] "z_1[1,387]"           "z_1[1,388]"           "z_1[1,389]"          
-## [805] "z_1[1,390]"           "z_1[1,391]"           "z_1[1,392]"          
-## [808] "z_1[1,393]"           "z_1[1,394]"           "z_1[1,395]"          
-## [811] "z_1[1,396]"           "z_1[1,397]"           "z_1[1,398]"          
-## [814] "z_1[1,399]"           "z_1[1,400]"           "z_1[1,401]"          
-## [817] "z_1[1,402]"           "z_1[1,403]"           "z_1[1,404]"          
-## [820] "z_1[1,405]"           "z_1[1,406]"           "z_1[1,407]"          
-## [823] "accept_stat__"        "treedepth__"          "stepsize__"          
-## [826] "divergent__"          "n_leapfrog__"         "energy__"
-```
-
----
-# Get all draws
-Let's look at the intercept
-
-
-```r
-int &lt;- lc %&gt;% 
-  spread_draws(b_Intercept)
-int
-```
-
-```
-## # A tibble: 4,000 x 4
-##    .chain .iteration .draw b_Intercept
-##     &lt;int&gt;      &lt;int&gt; &lt;int&gt;       &lt;dbl&gt;
-##  1      1          1     1    2.71656 
-##  2      1          2     2    4.20511 
-##  3      1          3     3    2.29535 
-##  4      1          4     4    3.07332 
-##  5      1          5     5    4.28472 
-##  6      1          6     6    2.24793 
-##  7      1          7     7    4.5452  
-##  8      1          8     8    0.796449
-##  9      1          9     9    1.10624 
-## 10      1         10    10    1.89963 
-## # … with 3,990 more rows
-```
-
----
-# Plot the distribution
-
-
-```r
-ggplot(int, aes(b_Intercept)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(xintercept = median(int$b_Intercept),
-             color = "magenta",
-             size = 2)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
-
----
-# Grab random effects
-
-* The random effect name is `r_did`
-
-* We use brackets to assign new names
-
-
-```r
-spread_draws(lc, r_did[did, term])
-```
-
-```
-## # A tibble: 1,628,000 x 6
-## # Groups:   did, term [407]
-##      did term          r_did .chain .iteration .draw
-##    &lt;int&gt; &lt;chr&gt;         &lt;dbl&gt;  &lt;int&gt;      &lt;int&gt; &lt;int&gt;
-##  1     1 Intercept -3.0229        1          1     1
-##  2     1 Intercept -1.74345       1          2     2
-##  3     1 Intercept -5.47016       1          3     3
-##  4     1 Intercept -0.561637      1          4     4
-##  5     1 Intercept -4.68276       1          5     5
-##  6     1 Intercept -1.02352       1          6     6
-##  7     1 Intercept -3.5834        1          7     7
-##  8     1 Intercept -2.75596       1          8     8
-##  9     1 Intercept -2.28068       1          9     9
-## 10     1 Intercept -2.12253       1         10    10
-## # … with 1,627,990 more rows
-```
-
----
-# Look at did distributions
-First 80 doctors
-
-```r
-dids &lt;- spread_draws(lc, r_did[did, ]) # all terms, which is just one
-dids %&gt;% 
-  filter(did %in% 1:80) %&gt;% 
-  ggplot(aes(x = r_did, y = factor(did))) +
-  ggridges::geom_density_ridges(color = NA, fill = "#61adff") +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.y = element_blank())
-```
-
-
----
-![](w9p1_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
-
----
-# Long format
-
-Use `gather_draws()` to return a long format, suitable for plotting (and many other things)
-
-
-```r
-fixed_l &lt;- lc %&gt;% 
-  gather_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
-               `b_age:tumorsize`)
-fixed_l
-```
-
-```
-## # A tibble: 20,000 x 5
-## # Groups:   .variable [5]
-##    .chain .iteration .draw .variable     .value
-##     &lt;int&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;          &lt;dbl&gt;
-##  1      1          1     1 b_Intercept 2.71656 
-##  2      1          2     2 b_Intercept 4.20511 
-##  3      1          3     3 b_Intercept 2.29535 
-##  4      1          4     4 b_Intercept 3.07332 
-##  5      1          5     5 b_Intercept 4.28472 
-##  6      1          6     6 b_Intercept 2.24793 
-##  7      1          7     7 b_Intercept 4.5452  
-##  8      1          8     8 b_Intercept 0.796449
-##  9      1          9     9 b_Intercept 1.10624 
-## 10      1         10    10 b_Intercept 1.89963 
-## # … with 19,990 more rows
-```
-
----
-# Plot the densities
-
-
-```r
-ggplot(fixed_l, aes(.value)) +
-  geom_density(fill = "#61adff", alpha = 0.7, color = NA) + 
-  facet_wrap(~.variable, scales = "free")
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
-
-
-
----
-# Multiple comparisons
-One of the nicest things about Bayes is that any comparison you want to make can be made without jumping through a lot of additional hoops (e.g., adjusting `\(\alpha\)`).
-
-
---
-### Scenario
-Imagine a **35** year old has a tumor measuring **58 millimeters** and a lung capacity rating of **0.81**.
-
-
---
-What would we estimate as the odds of remission if this patient had `did == 1` versus `did == 2`?
-
-
----
-# Fixed effects
-
-Not really "fixed", but rather just average relation
-
-
-```r
-fe &lt;- lc %&gt;% 
-  spread_draws(b_Intercept, b_age, b_tumorsize, b_lungcapacity, 
-               `b_age:tumorsize`)
-fe
-```
-
-```
-## # A tibble: 4,000 x 8
-##    .chain .iteration .draw b_Intercept      b_age  b_tumorsize b_lungcapacity
-##     &lt;int&gt;      &lt;int&gt; &lt;int&gt;       &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;          &lt;dbl&gt;
-##  1      1          1     1    2.71656  -0.0705399  -2.03108e-2      0.265419 
-##  2      1          2     2    4.20511  -0.099448   -4.21165e-2      0.0832043
-##  3      1          3     3    2.29535  -0.0546174  -1.32831e-2      0.270012 
-##  4      1          4     4    3.07332  -0.0844623  -3.4302 e-2      0.328449 
-##  5      1          5     5    4.28472  -0.0996404  -4.20281e-2      0.202761 
-##  6      1          6     6    2.24793  -0.0580755  -1.31931e-2      0.174989 
-##  7      1          7     7    4.5452   -0.103602   -4.22678e-2     -0.0984124
-##  8      1          8     8    0.796449 -0.026492    1.25579e-2     -0.253396 
-##  9      1          9     9    1.10624  -0.0412785  -3.64035e-3      0.257915 
-## 10      1         10    10    1.89963  -0.0491901  -2.99624e-5      0.0917631
-## # … with 3,990 more rows, and 1 more variable: b_age:tumorsize &lt;dbl&gt;
-```
-
----
-# Data
-
-```r
-age &lt;- 35
-tumor_size &lt;- 58
-lung_cap &lt;- 0.81
-```
-
---
-population-level predictions
-
-
-```r
-pop_level &lt;- 
-  fe$b_Intercept +
-  (fe$b_age * age) +
-  (fe$b_tumorsize * tumor_size) +
-  (fe$b_lungcapacity * lung_cap) +
-  (fe$`b_age:tumorsize` * (age * tumor_size))
-pop_level
-```
-
-```
-##    [1] -0.28595340 -0.32296642 -0.30876278 -0.51610507 -0.27539923
-##    [6] -0.37883284 -0.26486025 -0.48828568 -0.52913791 -0.22763422
-##   [11] -0.28639752 -0.34646963 -0.42096777 -0.20235639 -0.39264974
-##   [16] -0.40923439 -0.66818081 -0.26361550 -0.38686267 -0.41100890
-##   [21] -0.81131743 -0.39119771 -0.71284405 -0.65015638 -0.73476382
-##   [26] -0.43831524 -0.37782157 -0.43385727 -0.64368528 -0.64279999
-##   [31] -0.61004680 -0.54325605 -0.65055400 -0.46189436 -0.49659387
-##   [36] -0.70644828 -0.80191926 -0.81185245 -0.93141718 -0.67029875
-##   [41] -0.51795389 -0.52625086 -0.56468404 -0.64789700 -0.67466469
-##   [46] -0.77268506 -0.65562187 -0.45203336 -0.41939933 -0.49522263
-##   [51] -0.47537429 -0.42433521 -0.52711763 -0.44039781 -0.32977896
-##   [56] -0.54996790 -0.47271934 -0.53127003 -0.37719671 -0.63049623
-##   [61] -0.48920062 -0.58443824 -0.55721618 -0.52813478 -0.44271145
-##   [66] -0.57235309 -0.48167079 -0.55868311 -0.64094240 -0.19573704
-##   [71] -0.47731638 -0.54399909 -0.66317281 -0.78672992 -0.71997095
-##   [76] -0.38469411 -0.44153361 -0.38716511 -0.74326402 -0.01419865
-##   [81] -0.10305472 -0.10279678 -0.08515061 -0.31071263 -0.39636118
-##   [86] -0.37738362 -0.39057677 -0.27331222 -0.30425483 -0.38077561
-##   [91] -0.68739574 -0.73670393 -0.50419470 -0.51833930 -0.41333028
-##   [96] -0.57805752 -0.74957013 -0.64940025 -0.40457830 -0.44928020
-##  [101] -0.51611602 -0.83638213 -0.74624262 -0.43424348 -0.44641032
-##  [106] -0.41468949 -0.16063677 -0.27810524 -0.60872165 -0.54609324
-##  [111] -0.47388331 -0.27081864 -0.50490902 -0.57967741 -0.51023128
-##  [116] -0.76933044 -0.85213184 -0.87940190 -0.67821790 -0.67289623
-##  [121] -0.65011606 -0.61478736 -0.34900086 -0.62737454 -0.44511363
-##  [126] -0.56308500 -0.65996566 -0.74003534 -0.60651496 -0.67738457
-##  [131] -0.40651671 -0.60593610 -0.60790836 -0.73479815 -0.48252748
-##  [136] -0.65271323 -0.65315053 -0.53251893 -0.45242992 -0.42937543
-##  [141] -0.33697314 -0.54820036 -0.58266155 -0.54649623 -0.61051953
-##  [146] -0.29579387 -0.45021653 -0.67913793 -0.77571481 -0.40285757
-##  [151] -0.09651429 -0.20555446 -0.12400607 -0.50460291 -0.41218441
-##  [156] -0.48422829 -0.31521555 -0.39056889 -0.38562902 -0.57326921
-##  [161] -0.69520492 -0.40253423 -0.36329004 -0.35584779 -0.25393814
-##  [166] -0.35547720 -0.41489051 -0.54804067 -0.46262189 -0.37490409
-##  [171] -0.60824005 -0.59429686 -0.58882123 -0.62256629 -0.67929410
-##  [176] -0.47593215 -0.60235948 -0.39218110 -0.47053597 -0.31801857
-##  [181] -0.85450624 -0.49811732 -0.38537202 -0.53196165 -0.66096307
-##  [186] -0.47417844 -0.76203749 -0.46537139 -0.39495764 -0.45367626
-##  [191] -0.53746511 -0.38391133 -0.54269907 -0.65769343 -0.71449107
-##  [196] -0.55655865 -0.46859923 -0.53503678 -0.42923516 -0.33626778
-##  [201] -0.35454818 -0.35033387 -0.41618438 -0.30561102 -0.54795642
-##  [206] -0.03456156 -0.28890056 -0.29025710 -0.56597106 -0.54720516
-##  [211] -0.44546715 -0.32622368 -0.45783725 -0.31407662 -0.24064127
-##  [216] -0.05696980 -0.17110441 -0.38284312 -0.48855152 -0.21068566
-##  [221] -0.29604111 -0.30379748 -0.29971436 -0.18421456 -0.30113376
-##  [226] -0.45076581 -0.49343459 -0.22878947 -0.58099670 -0.73546380
-##  [231] -0.47224082 -0.54433948 -0.45397713 -0.51110630 -0.33639698
-##  [236] -0.59613515 -0.45727810 -0.52398383 -0.61509562 -0.52972521
-##  [241] -0.53318104 -0.39099043 -0.33914594 -0.62842121 -0.30315655
-##  [246] -0.15082279 -0.54058524 -0.39868187 -0.48886477 -0.50625003
-##  [251] -0.64910868 -0.40188592 -0.52620575 -0.37625239 -0.53092553
-##  [256] -0.31440517 -0.40801164 -0.64306367 -0.50166922 -0.69199831
-##  [261] -0.51498529 -0.38944150 -0.61904569 -0.52827271 -0.68141829
-##  [266] -0.41913573 -0.59515405 -0.63893707 -0.69114157 -0.42473082
-##  [271] -0.64356327 -0.69806122 -0.31460674 -0.41507931 -0.25562656
-##  [276] -0.22832762 -0.22442240 -0.33861974 -0.18463336 -0.27898508
-##  [281] -0.52479382 -0.27642075 -0.39249424 -0.29618002 -0.39502716
-##  [286] -0.27481853 -0.52795187 -0.45703512 -0.53905629 -0.48166780
-##  [291] -0.51239876 -0.40715442 -0.39259473 -0.53191878 -0.44409982
-##  [296] -0.36573601 -0.16516871 -0.42342566 -0.27485000 -0.33421593
-##  [301] -0.38542611 -0.44025906 -0.26611880 -0.51344356 -0.20761644
-##  [306] -0.61478478 -0.63772906 -0.80183588 -0.39351987 -0.61456725
-##  [311] -0.56117837 -0.68035407 -0.61274862 -0.46758529 -0.66273205
-##  [316] -0.66016867 -0.49154592 -0.40726230 -0.39851481 -0.32678856
-##  [321] -0.28917650 -0.36928436 -0.43377115 -0.72497026 -0.36407712
-##  [326] -0.27962027 -0.29642093 -0.25083231 -0.14075686 -0.42409677
-##  [331] -0.31550477 -0.13350530  0.06323831 -0.35641746 -0.26023442
-##  [336] -0.17944359 -0.27750838 -0.20401912 -0.19648481 -0.38191827
-##  [341] -0.29831782 -0.08876725 -0.38633724 -0.42646301 -0.14892814
-##  [346] -0.28206629 -0.04119430 -0.25165294 -0.08467207 -0.27860987
-##  [351] -0.37964576 -0.21864556 -0.37415634 -0.22708322 -0.21264379
-##  [356] -0.20042125 -0.25511000 -0.49879809 -0.44319680 -0.36567347
-##  [361] -0.32275521 -0.36037478 -0.25542548 -0.23840849 -0.29743508
-##  [366] -0.37925719 -0.49821865 -0.22785587 -0.32401969 -0.12192790
-##  [371] -0.36774092 -0.19499054 -0.37329502 -0.29528225 -0.34189378
-##  [376] -0.29762975 -0.35668727 -0.32532418 -0.45906321 -0.31483332
-##  [381] -0.26681177 -0.13386026 -0.19659906 -0.20778325 -0.06317752
-##  [386] -0.25444855 -0.42440083 -0.68770068 -0.61427988 -0.78260234
-##  [391] -0.61714453 -0.62339738 -0.39287317 -0.42641931 -0.61568387
-##  [396] -0.13733970 -0.31313371 -0.35253611 -0.35795777 -0.46329849
-##  [401] -0.44356632 -0.41767882 -0.20993931 -0.40419792 -0.44882981
-##  [406] -0.34655865 -0.50669172 -0.50909859 -0.55217868 -0.54135059
-##  [411] -0.40585672 -0.50479021 -0.49240477 -0.52089707 -0.39311140
-##  [416] -0.36952028 -0.47826500 -0.48410810 -0.53519549 -0.49921237
-##  [421] -0.57290619 -0.62437717 -0.50338201 -0.48963035 -0.64284480
-##  [426] -0.64343733 -0.53703970 -0.32963695 -0.49454806 -0.65963118
-##  [431] -0.46641171 -0.55557405 -0.45719807 -0.42350518 -0.34737915
-##  [436] -0.48466765 -0.49787927 -0.54228936 -0.61870033 -0.45349452
-##  [441] -0.64851232 -0.61730470 -0.43308991 -0.28629891 -0.30981640
-##  [446] -0.34091347 -0.32842323 -0.50635219 -0.74278802 -0.67152336
-##  [451] -0.69871569 -0.45864810 -0.71022217 -0.67065968 -0.68845255
-##  [456] -0.46445916 -0.77184441 -0.61373981 -0.95129431 -0.70244064
-##  [461] -0.29727932 -0.53345927 -0.55226745 -0.57262657 -0.55266381
-##  [466] -0.48336411 -0.52946954 -0.74202962 -0.56711084 -0.43032040
-##  [471] -0.35507182 -0.32518039 -0.15968523 -0.23922033 -0.41441786
-##  [476] -0.52827867 -0.40429535 -0.31326198 -0.18389728 -0.30823809
-##  [481] -0.43585114 -0.53598961 -0.52666557 -0.44202830 -0.31289708
-##  [486] -0.39340187 -0.46555991 -0.47793070 -0.36816706 -0.25940900
-##  [491] -0.30201035 -0.26679228 -0.45525873 -0.31982751 -0.19001522
-##  [496] -0.17160536 -0.39413044 -0.50449122 -0.34253442 -0.33437324
-##  [501] -0.45611413 -0.35958089 -0.35255180 -0.35917996 -0.28149949
-##  [506] -0.25972491 -0.48196222 -0.34471730 -0.39616275 -0.34112757
-##  [511] -0.44430587 -0.39385563 -0.39820683 -0.66757535 -0.35829769
-##  [516] -0.47154899 -0.43534320 -0.21388270 -0.45727292 -0.22695868
-##  [521] -0.25133066 -0.43822595 -0.33371871 -0.35637219 -0.29967502
-##  [526] -0.47582821 -0.60522097 -0.45317898 -0.57718451 -0.73617046
-##  [531] -0.41371224 -0.48298016 -0.76936186 -0.56542581 -0.66685993
-##  [536] -0.53451237 -0.38551641  0.01776740 -0.21622507 -0.25837754
-##  [541] -0.15044919 -0.41816478 -0.31995932 -0.40545037 -0.37038742
-##  [546] -0.29082360 -0.51635832 -0.38920650 -0.45338940 -0.42499120
-##  [551] -0.51067105 -0.48167216 -0.55706736 -0.48598240 -0.45781869
-##  [556] -0.42457172 -0.50789330 -0.38981899 -0.41763099 -0.60838408
-##  [561] -0.55400666 -0.39144860 -0.24026317 -0.36066573 -0.21724547
-##  [566] -0.53623530 -0.40010923 -0.37047083 -0.36204729 -0.50635410
-##  [571] -0.20728353 -0.24466957 -0.27764490 -0.36471825 -0.52238002
-##  [576] -0.50280895 -0.35054560 -0.39324494 -0.56202894 -0.53568215
-##  [581] -0.31288939 -0.48259769 -0.48234881 -0.44695374 -0.45648078
-##  [586] -0.37990864 -0.52150045 -0.46349753 -0.38527510 -0.38086963
-##  [591] -0.51914092 -0.46363523 -0.58761323 -0.42285405 -0.46203435
-##  [596] -0.29165029 -0.19726603 -0.16926541 -0.10907936 -0.30075612
-##  [601] -0.24378836 -0.17481053 -0.19102297 -0.43499146 -0.40933527
-##  [606] -0.20111684 -0.26090576 -0.10593826 -0.22407357 -0.13801437
-##  [611] -0.33679505 -0.10859768 -0.50035515 -0.33060811 -0.31293564
-##  [616] -0.26378533 -0.32765437 -0.36976728 -0.41585206 -0.21129917
-##  [621] -0.07708229 -0.33831536 -0.14620933 -0.51851793 -0.35278920
-##  [626] -0.36817732 -0.73566922 -0.39559738 -0.52958479 -0.32148594
-##  [631] -0.44220521 -0.70373107 -0.26484976 -0.55172589 -0.52890833
-##  [636] -0.19758506 -0.48934404 -0.48500043 -0.60590796 -0.36610598
-##  [641] -0.39196164 -0.37635454 -0.38360689 -0.70117622 -0.27584892
-##  [646] -0.38098843 -0.66905255 -0.52818893 -0.38804759 -0.57278467
-##  [651] -0.49165746 -0.58521265 -0.54771960 -0.63469342 -0.74685746
-##  [656] -0.43596472 -0.57638348 -0.60873244 -0.57839172 -0.57390245
-##  [661] -0.61789959 -0.71598768 -0.70924033 -0.50185877 -0.58214953
-##  [666] -0.86855612 -0.60500380 -0.43682952 -0.51303473 -0.37739136
-##  [671] -0.36557457 -0.67191394 -0.40515190 -0.65623286 -0.33249231
-##  [676] -0.41109108 -0.31195112 -0.43519295 -0.05964548 -0.25969832
-##  [681] -0.37534171 -0.32863821 -0.38441925 -0.28200986 -0.30769520
-##  [686] -0.23534999 -0.30183273 -0.42162185 -0.50454097 -0.53757309
-##  [691] -0.36112917 -0.41195415 -0.50697915 -0.52945734 -0.36894650
-##  [696] -0.41232736 -0.33889891 -0.53025611 -0.29049685 -0.60812640
-##  [701] -0.46613055 -0.46769143 -0.38495502 -0.41793407 -0.48068406
-##  [706] -0.44705202 -0.44396483 -0.51253083 -0.94324856 -0.69094542
-##  [711] -0.58631657 -0.66629808 -0.29066963 -0.49729623 -0.35203391
-##  [716] -0.52506888 -0.76539826 -0.43254611 -0.56305581 -0.63985355
-##  [721] -0.68312050 -0.73039845 -0.50043729 -0.72456111 -0.72624633
-##  [726] -0.74233863 -0.56937030 -0.66685041 -0.56565535 -0.62968421
-##  [731] -0.67756940 -0.77057918 -0.69949343 -0.67781476 -0.87059753
-##  [736] -0.86037544 -0.70879821 -0.80513667 -0.84497688 -0.73065527
-##  [741] -0.91680265 -0.77043682 -0.28183814 -0.44748363 -0.76595875
-##  [746] -0.75245201 -0.65692601 -0.54259107 -0.43413424 -0.53447242
-##  [751] -0.55170474 -0.51540201 -0.48221214 -0.48868345 -0.44000886
-##  [756] -0.55921117 -0.41586628 -0.19208403 -0.50419071 -0.21776570
-##  [761] -0.23643363 -0.31056457 -0.26553604 -0.10907711 -0.16396036
-##  [766] -0.32467445 -0.29595579 -0.06974962  0.05391251 -0.01709145
-##  [771] -0.05843485 -0.35587819 -0.24983362 -0.10519843 -0.13793662
-##  [776] -0.30558808 -0.15014614 -0.23778724 -0.27758061 -0.29621624
-##  [781] -0.29774793 -0.38648353 -0.26642166 -0.49140946 -0.04928258
-##  [786] -0.33565918 -0.31679329 -0.38755414 -0.57040142 -0.10977882
-##  [791] -0.11849945 -0.08745779 -0.13007751 -0.40798791 -0.31189627
-##  [796] -0.32412336 -0.45914425 -0.44709655 -0.01738552 -0.16059766
-##  [801] -0.25469328 -0.30252412 -0.23009783 -0.27550289  0.06901448
-##  [806] -0.52696081 -0.36551917 -0.20358355 -0.38023161 -0.29671564
-##  [811] -0.39719918 -0.37828693 -0.41118275 -0.37940385 -0.63661274
-##  [816] -0.78952692 -0.77684451 -0.70726388 -0.63110324 -0.44801072
-##  [821] -0.45719811 -0.40907259 -0.40504065 -0.62712131 -0.49436030
-##  [826] -0.58667006 -0.57009389 -0.51691383 -0.59399468 -0.63556928
-##  [831] -0.55308361 -0.66456771 -0.50977193 -0.45016439 -0.40467601
-##  [836] -0.52161447 -0.37255741 -0.26176103 -0.36918761 -0.67190842
-##  [841] -0.54556480 -0.48649429 -0.84446070 -0.71158461 -0.55244566
-##  [846] -0.66569580 -0.59002536 -0.48318904 -0.44166022 -0.84520930
-##  [851] -0.57924077 -0.64105694 -0.72330494 -0.39881060 -0.75154861
-##  [856] -0.86044424 -0.41401837 -0.60509173 -0.77106595 -0.56251083
-##  [861] -0.77276756 -0.47247506 -0.47513972 -0.87262852 -0.62952942
-##  [866] -0.90451528 -0.73624788 -0.73120592 -0.71775218 -0.54169469
-##  [871] -0.49482331 -0.47330647 -0.15509899 -0.17174930 -0.57244296
-##  [876] -0.39648964 -0.69394549 -0.24247925 -0.21160138 -0.44563362
-##  [881] -0.42143084 -0.58241949 -0.33239521 -0.15696613 -0.13808593
-##  [886] -0.51793471 -0.44730973 -0.42354161 -0.27652838 -0.38691117
-##  [891] -0.22544354 -0.43571017 -0.35844897 -0.54993421 -0.12364332
-##  [896] -0.29451548 -0.63601306 -0.30447879 -0.48593043 -0.41737756
-##  [901] -0.67706615 -0.55116357 -0.39476701 -0.35565469 -0.60059530
-##  [906] -0.62435843 -0.56531534 -0.56044972 -0.64056283 -0.81651578
-##  [911] -0.87692229 -0.92096753 -0.91926779 -0.86161329 -1.02648445
-##  [916] -0.57640376 -0.42854306 -0.46917293 -0.52978485 -0.67122589
-##  [921] -0.24522769 -0.42532106 -0.30793239 -0.49143525 -0.42339975
-##  [926] -0.20816748 -0.46129082 -0.88753971 -0.62554078 -0.41129298
-##  [931] -0.46888244 -0.62214075 -0.36692070 -0.40629006 -0.23122364
-##  [936] -0.28030153 -0.42593399 -0.27758178 -0.64075044 -0.46806911
-##  [941] -0.49203803 -0.50305266 -0.53714992 -0.55615685 -0.46267172
-##  [946] -0.45561145 -0.50763508 -0.40267887 -0.45123624 -0.54091514
-##  [951] -0.42817299 -0.15525439 -0.41426101 -0.41065918 -0.42628283
-##  [956] -0.28576942 -0.47704013 -0.42569127 -0.56247704 -0.27630759
-##  [961] -0.25733308 -0.20425659  0.02727520 -0.13494901 -0.24636632
-##  [966] -0.66264701 -0.73082789 -0.31852765 -0.51442974 -0.31654649
-##  [971] -0.45508585 -0.31084183 -0.31999586 -0.41466178 -0.16443118
-##  [976] -0.16937500 -0.47169463 -0.58832254 -0.67938398 -0.36029056
-##  [981] -0.32537119 -0.51259642 -0.56575982 -0.46085370 -0.45620621
-##  [986] -0.65675949 -0.77921802 -0.33767399 -0.47837688 -0.44430186
-##  [991] -0.34340613 -0.45338745 -0.30171969 -0.46829329 -0.60397520
-##  [996] -0.37570774 -0.34172581 -0.40236048 -0.45072041 -0.68733292
-##  [ reached getOption("max.print") -- omitted 3000 entries ]
-```
-
----
-# Plot
-
-
-```r
-pd &lt;- tibble(population_level = pop_level) 
-
-ggplot(pd, aes(population_level)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(xintercept = median(pd$population_level),
-             color = "magenta",
-             size = 2)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
-
----
-# Add in did estimates
-
-
-```r
-did1 &lt;- filter(dids, did == 1)
-did2 &lt;- filter(dids, did == 2)
-
-pred_did1 &lt;- pop_level + did1$r_did
-pred_did2 &lt;- pop_level + did2$r_did
-```
-
----
-# Distributions
-
-
-```r
-did12 &lt;- tibble(did = rep(1:2, each = length(pred_did1)),
-                pred = c(pred_did1, pred_did2))
-
-did12_medians &lt;- did12 %&gt;% 
-  group_by(did) %&gt;% 
-  summarize(did_median = median(pred))
-
-did12_medians
-```
-
-```
-## # A tibble: 2 x 2
-##     did did_median
-##   &lt;int&gt;      &lt;dbl&gt;
-## 1     1 -3.193489 
-## 2     2  0.3779643
-```
-
----
-# Plot
-
-```r
-ggplot(did12, aes(pred)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = did_median), data = did12_medians,
-             color = "magenta",
-             size = 2) +
-  facet_wrap(~did, ncol = 1)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
-
----
-# Transform
-Let's look at this again on the probability scale. Note I'm using `brms::inv_logit_scaled()` to make the transformation.
+# Model 6
+
+Fit the following model
+
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{expcon}_{i}  &amp;\sim \operatorname{Binomial}(n = 1, \operatorname{prob}_{\operatorname{expcon} = \operatorname{experiment}} = \widehat{P}) \\
+    \log\left[\frac{\hat{P}}{1 - \hat{P}} \right] &amp;=\alpha_{j[i],k[i]} + \beta_{1j[i]}(\operatorname{age}) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    \alpha_{k}  &amp;\sim N \left(\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma_{2}^{\alpha}(\operatorname{hospsize}_{\operatorname{small}}), \sigma^2_{\alpha_{k}} \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed395" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 --
 
 ```r
-ggplot(did12, aes(inv_logit_scaled(pred))) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = inv_logit_scaled(did_median)), 
-             data = did12_medians,
-             color = "magenta",
-             size = 2) +
-  facet_wrap(~did, ncol = 1)
-```
-
----
-![](w9p1_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
-
----
-# Difference
-* The difference in the probability of remission for our theoretical patient is large between the two doctors.
-
-* The median difference in log-odds is
-
-
-```r
-diff(did12_medians$did_median)
-```
-
-```
-## [1] 3.571454
-```
-
-so the patient is about 3.5 times **more likely** to have their cancer go into remission if they had did 2, instead of 1.
-
---
-## How confident are we in this difference?
-
----
-# Everything is a distribution
-Just compute the difference in these distributions, and we get a new distribution, which we can use to summarize our uncertainty
-
---
-
-```r
-did12_wider &lt;- did12 %&gt;% 
-  mutate(.chain = rep(rep(1:4, each = 1000), 2),
-         .draw = rep(1:1000, 8)) %&gt;% 
-  pivot_wider(names_from = "did", values_from = "pred")
-
-did12_wider
-```
-
-```
-## # A tibble: 4,000 x 4
-##    .chain .draw       `1`       `2`
-##     &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1      1     1 -3.308853 0.4307436
-##  2      1     2 -2.066416 1.014934 
-##  3      1     3 -5.778923 0.4383612
-##  4      1     4 -1.077742 0.2885519
-##  5      1     5 -4.958159 0.3001608
-##  6      1     6 -1.402353 0.3330352
-##  7      1     7 -3.848260 0.2469467
-##  8      1     8 -3.244246 0.8343543
-##  9      1     9 -2.809818 0.1763041
-## 10      1    10 -2.350164 0.8357758
-## # … with 3,990 more rows
-```
-
----
-# Compute difference
-
-```r
-did12_wider &lt;- did12_wider %&gt;% 
-  mutate(diff = `2` - `1`)
-
-did12_wider
-```
-
-```
-## # A tibble: 4,000 x 5
-##    .chain .draw       `1`       `2`     diff
-##     &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-##  1      1     1 -3.308853 0.4307436 3.739597
-##  2      1     2 -2.066416 1.014934  3.08135 
-##  3      1     3 -5.778923 0.4383612 6.217284
-##  4      1     4 -1.077742 0.2885519 1.366294
-##  5      1     5 -4.958159 0.3001608 5.25832 
-##  6      1     6 -1.402353 0.3330352 1.735388
-##  7      1     7 -3.848260 0.2469467 4.095207
-##  8      1     8 -3.244246 0.8343543 4.0786  
-##  9      1     9 -2.809818 0.1763041 2.986122
-## 10      1    10 -2.350164 0.8357758 3.18594 
-## # … with 3,990 more rows
-```
-
----
-# Summarize
-
-
-```r
-quantile(did12_wider$diff, 
-         probs = c(0.025, 0.5, 0.975))
-```
-
-```
-##     2.5%      50%    97.5% 
-## 1.677011 3.588097 6.357494
+glmer(expcon ~ hospsize + age + wardtype + 
+        (age|wardid) + (1|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
 ```
 
 
 ---
-# Plot distribution
+# Model 7
 
+Fit the following model
 
-```r
-ggplot(did12_wider, aes(diff)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  geom_vline(aes(xintercept = median(diff)), 
-             color = "magenta",
-             size = 2)
-```
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{expcon}_{i}  &amp;\sim \operatorname{Binomial}(n = 1, \operatorname{prob}_{\operatorname{expcon} = \operatorname{experiment}} = \widehat{P}) \\
+    \log\left[\frac{\hat{P}}{1 - \hat{P}} \right] &amp;=\alpha_{j[i],k[i]} + \beta_{1j[i],k[i]}(\operatorname{age}) + \beta_{2}(\operatorname{gender}_{\operatorname{Male}}) + \beta_{3}(\operatorname{age} \times \operatorname{gender}_{\operatorname{Male}}) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{1j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\mu_{\beta_{1j}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{1j}} \\ 
+     \rho_{\beta_{1j}\alpha_{j}} &amp; \sigma^2_{\beta_{1j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{1k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma_{2}^{\alpha}(\operatorname{hospsize}_{\operatorname{small}}) \\
+      &amp;\mu_{\beta_{1k}}
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{1k}} \\ 
+     \rho_{\beta_{1k}\alpha_{k}} &amp; \sigma^2_{\beta_{1k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
 
-![](w9p1_files/figure-html/unnamed-chunk-44-1.png)&lt;!-- --&gt;
-
----
-# Directionality
-Let's say we want to simplify the question to directionality.
-
-
---
-Is there a greater chance of remission for `did` 2 than 1?
+<div class="countdown" id="timer_60aed2b9" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 --
 
 ```r
-table(did12_wider$diff &gt; 0) / 4000
+glmer(expcon ~ age * gender + wardtype + hospsize +
+        (age|wardid) + (age|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
 ```
 
-```
-## 
-## TRUE 
-##    1
-```
 
+---
+# Model 8
+
+Fit the following model
+
+$$
+\scriptsize
+`\begin{aligned}
+  \operatorname{expcon}_{i}  &amp;\sim \operatorname{Binomial}(n = 1, \operatorname{prob}_{\operatorname{expcon} = \operatorname{experiment}} = \widehat{P}) \\
+    \log\left[\frac{\hat{P}}{1 - \hat{P}} \right] &amp;=\alpha_{j[i],k[i]} + \beta_{1}(\operatorname{age}) + \beta_{2}(\operatorname{gender}_{\operatorname{Male}}) + \beta_{3j[i],k[i]}(\operatorname{experien}) \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{j} \\
+      &amp;\beta_{3j}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{wardtype}_{\operatorname{special\ care}}) \\
+      &amp;\gamma^{\beta_{3}}_{0} + \gamma^{\beta_{3}}_{1}(\operatorname{wardtype}_{\operatorname{special\ care}})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{j}} &amp; \rho_{\alpha_{j}\beta_{3j}} \\ 
+     \rho_{\beta_{3j}\alpha_{j}} &amp; \sigma^2_{\beta_{3j}}
+  \end{array}
+\right)
+ \right)
+    \text{, for wardid j = 1,} \dots \text{,J} \\    
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\alpha_{k} \\
+      &amp;\beta_{3k}
+    \end{aligned}
+  \end{array}
+\right)
+  &amp;\sim N \left(
+\left(
+  \begin{array}{c} 
+    \begin{aligned}
+      &amp;\gamma_{0}^{\alpha} + \gamma_{1}^{\alpha}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma_{2}^{\alpha}(\operatorname{hospsize}_{\operatorname{small}}) \\
+      &amp;\gamma^{\beta_{3}}_{0} + \gamma^{\beta_{3}}_{1}(\operatorname{hospsize}_{\operatorname{medium}}) + \gamma^{\beta_{3}}_{2}(\operatorname{hospsize}_{\operatorname{small}})
+    \end{aligned}
+  \end{array}
+\right)
+, 
+\left(
+  \begin{array}{cc}
+     \sigma^2_{\alpha_{k}} &amp; \rho_{\alpha_{k}\beta_{3k}} \\ 
+     \rho_{\beta_{3k}\alpha_{k}} &amp; \sigma^2_{\beta_{3k}}
+  \end{array}
+\right)
+ \right)
+    \text{, for hospital k = 1,} \dots \text{,K}
+\end{aligned}`
+$$
+
+<div class="countdown" id="timer_60aed472" style="right:0;bottom:0;" data-warnwhen="0">
+<code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
+</div>
 
 --
-The distributions are not overlapping at all - therefore, we are as certain as we can be that the odds of remission are higher with `did` 2 than 1.
-
-
----
-# One more quick example
-Let's do the same thing, but comparing `did` 2 and 3.
-
 
 ```r
-did3 &lt;- filter(dids, did == 3)
-pred_did3 &lt;- pop_level + did3$r_did
-
-did23 &lt;- did12_wider %&gt;% 
-  select(-`1`, -diff) %&gt;% 
-  mutate(`3` = pred_did3,
-         diff = `3` - `2`)
-did23
+glmer(expcon ~ age + gender + 
+        experien * wardtype + experien * hospsize +
+        (experien|wardid) + (experien|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
 ```
-
-```
-## # A tibble: 4,000 x 5
-##    .chain .draw       `2`        `3`       diff
-##     &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
-##  1      1     1 0.4307436 2.475167    2.044423 
-##  2      1     2 1.014934  1.108304    0.093370 
-##  3      1     3 0.4383612 1.793237    1.354876 
-##  4      1     4 0.2885519 0.6536849   0.3651330
-##  5      1     5 0.3001608 2.383981    2.08382  
-##  6      1     6 0.3330352 1.562827    1.229792 
-##  7      1     7 0.2469467 0.6939357   0.446989 
-##  8      1     8 0.8343543 0.8729243   0.03857  
-##  9      1     9 0.1763041 0.06621309 -0.110091 
-## 10      1    10 0.8357758 0.7470808  -0.088695 
-## # … with 3,990 more rows
-```
-
----
-# Directionality
-
-
-```r
-table(did23$diff &gt; 0) / 4000
-```
-
-```
-## 
-## FALSE  TRUE 
-## 0.142 0.858
-```
-
-So there's roughly an 87% chance that the odds of remission are higher with with `did` 3 than 2.
-
----
-# Plot data
-
-
-```r
-pd23 &lt;- did23 %&gt;% 
-  pivot_longer(`2`:diff, 
-               names_to = "Distribution",
-               values_to = "Log-Odds")
-pd23
-```
-
-```
-## # A tibble: 12,000 x 4
-##    .chain .draw Distribution `Log-Odds`
-##     &lt;int&gt; &lt;int&gt; &lt;chr&gt;             &lt;dbl&gt;
-##  1      1     1 2             0.4307436
-##  2      1     1 3             2.475167 
-##  3      1     1 diff          2.044423 
-##  4      1     2 2             1.014934 
-##  5      1     2 3             1.108304 
-##  6      1     2 diff          0.093370 
-##  7      1     3 2             0.4383612
-##  8      1     3 3             1.793237 
-##  9      1     3 diff          1.354876 
-## 10      1     4 2             0.2885519
-## # … with 11,990 more rows
-```
-
----
-
-```r
-ggplot(pd23, aes(`Log-Odds`)) +
-  geom_histogram(fill = "#61adff",
-                 color = "white") +
-  facet_wrap(~Distribution, ncol = 1)
-```
-
-![](w9p1_files/figure-html/unnamed-chunk-49-1.png)&lt;!-- --&gt;
-
----
-class: inverse-green middle
-# Next time
-## Growth Modeling 2
-We'll continue to discuss and use Bayes
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

@@ -1,6 +1,6 @@
 ---
-title: "More Bayes"
-subtitle: "And multilevel binomial logistic regression"
+title: "Loose ends"
+subtitle: "Plus missing data and piece-wise models"
 author: "Daniel Anderson "
 date: "Week 8"
 output:
@@ -33,12 +33,254 @@ update_geom_defaults('text', list(size = 9))
 
 ---
 # Agenda
-* Missing values can be treated as unknown variables (parameters) in the model, and imputed from the posterior
+* Equation practice
 
 * Fitting multilevel logistic regression models with **brms**
 
 * Plotting **brms** fits
 
+* Missing values 
+
+* Piecewise models
+
+---
+class: inverse-blue middle
+# Equation practice
+
+---
+# Data
+
+Read in the `nurses.csv` data. Note - each row represents data for one nurse. 
+
+`r countdown::countdown(2)`
+
+```{r message = FALSE}
+library(tidyverse)
+nurses <- read_csv(here::here("data", "nurses.csv"))
+```
+
+---
+# Data
+
+```{r }
+nurses
+```
+
+
+---
+# Model 1
+Fit the following model
+
+```{r echo = FALSE, message = FALSE}
+library(equatiomatic)
+library(lme4)
+m1 <- lmer(stress ~ experien * wardtype + (experien|wardid),
+           data = nurses)
+extract_eq(m1, font_size = "small")
+```
+
+`r countdown::countdown(2)`
+
+--
+
+```{r eval = FALSE}
+lmer(stress ~ experien * wardtype + (experien|wardid),
+     data = nurses)
+
+# or
+lmer(stress ~ experien + wardtype + experien:wardtype + 
+       (experien|wardid),
+     data = nurses)
+```
+
+---
+# Model 2
+
+Fit the following model
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+m2 <- lmer(stress ~ experien * wardtype + hospsize +
+             (experien|wardid) + (experien|hospital),
+           data = nurses)
+extract_eq(m2, font_size = "scriptsize")
+```
+
+`r countdown::countdown(2)`
+
+--
+
+```{r eval = FALSE}
+lmer(stress ~ experien * wardtype + hospsize +
+       (experien|wardid) + (experien|hospital),
+     data = nurses)
+```
+
+---
+# Model 3
+
+Fit the following model
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+m3 <- lmer(stress ~ experien + age + expcon +
+             (experien||wardid) + (experien||hospital),
+           data = nurses)
+extract_eq(m3, font_size = "small")
+```
+
+`r countdown::countdown(2)`
+
+--
+
+```{r eval = FALSE}
+lmer(stress ~ experien + age + expcon +
+       (experien||wardid) + (experien||hospital),
+     data = nurses)
+
+# or
+
+lmer(stress ~ experien + age + expcon +
+       (1|wardid) + (0 + experien|wardid) + 
+       (1|hospital) + (0 + experien|hospital),
+     data = nurses)
+```
+
+
+---
+# Model 4
+
+Fit the following model
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+m4 <- lmer(stress ~ experien * hospsize + age + expcon + wardtype + 
+             (experien|wardid) + (experien|hospital),
+           data = nurses)
+extract_eq(m4, font_size = "small")
+```
+
+`r countdown::countdown(2)`
+
+
+--
+
+```{r eval = FALSE}
+lmer(stress ~ experien * hospsize + age + expcon + wardtype + 
+       (experien|wardid) + (experien|hospital),
+     data = nurses)
+```
+
+---
+# Model 5
+
+Fit the following model
+
+```{r echo = FALSE, message = FALSE, warning = FALSE, cache = TRUE}
+nurses <- nurses %>% 
+  mutate(expcon = factor(expcon))
+
+m5 <- glmer(expcon ~ age + 
+             (age|wardid) + (1|hospital),
+           data = nurses,
+           family = binomial(link = "logit"))
+
+extract_eq(m5, font_size = "small")
+```
+
+`r countdown::countdown(3)`
+
+--
+```{r eval = FALSE}
+nurses <- nurses %>% 
+  mutate(expcon = factor(expcon))
+
+glmer(expcon ~ age + 
+        (age|wardid) + (1|hospital),
+      data = nurses,
+      family = binomial(link = "logit"),
+      data = nurses)
+```
+
+---
+# Model 6
+
+Fit the following model
+
+```{r cache = TRUE, echo = FALSE, warning = FALSE}
+m6 <- glmer(expcon ~ hospsize + age + wardtype + 
+             (age|wardid) + (1|hospital),
+           data = nurses,
+           family = binomial(link = "logit"))
+extract_eq(m6, font_size = "scriptsize")
+```
+
+`r countdown::countdown(2)`
+
+--
+```{r eval = FALSE}
+glmer(expcon ~ hospsize + age + wardtype + 
+        (age|wardid) + (1|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
+```
+
+
+---
+# Model 7
+
+Fit the following model
+
+```{r cache = TRUE, echo = FALSE, warning = FALSE}
+m7 <- glmer(expcon ~ age * gender + wardtype + hospsize +
+             (age|wardid) + (age|hospital),
+           data = nurses,
+           family = binomial(link = "logit"))
+extract_eq(m7, font_size = "scriptsize")
+```
+
+`r countdown::countdown(2)`
+
+--
+```{r eval = FALSE}
+glmer(expcon ~ age * gender + wardtype + hospsize +
+        (age|wardid) + (age|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
+```
+
+
+---
+# Model 8
+
+Fit the following model
+
+```{r cache = TRUE, echo = FALSE, warning = FALSE}
+m8 <- glmer(expcon ~ age + gender + experien * wardtype + experien * hospsize +
+             (experien|wardid) + (experien|hospital),
+           data = nurses,
+           family = binomial(link = "logit"))
+extract_eq(m8, font_size = "scriptsize")
+```
+
+`r countdown::countdown(2)`
+
+--
+```{r eval = FALSE}
+glmer(expcon ~ age + gender + 
+        experien * wardtype + experien * hospsize +
+        (experien|wardid) + (experien|hospital),
+      data = nurses,
+      family = binomial(link = "logit"))
+```
+
+---
+class: inverse-blue middle
+# Fitting binomial MLMs w/Bayes
+
+---
+
+
+---
+class: inverse-blue middle
+# Plotting Bayes models
 
 ---
 # Popular data
@@ -573,5 +815,4 @@ ggplot(pd23, aes(`Log-Odds`)) +
 ---
 class: inverse-green middle
 # Next time
-## Growth Modeling 2
-We'll continue to discuss and use Bayes
+## Cross-classified and multiple membership models

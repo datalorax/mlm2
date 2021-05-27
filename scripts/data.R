@@ -2,9 +2,50 @@ library(tidyverse)
 library(recipes)
 library(lme4)
 library(MASS)
+library(rtweet)
+library(sentimentr)
 library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
+
+blm <- search_tweets("#blm", n = 18000, include_rts = FALSE)
+write_rds(blm, here::here("data", "full-blm-twitter.Rds"))
+
+blm <- read_rds(here::here("data", "full-blm-twitter.Rds")) 
+
+blm_sentences <- get_sentences(blm$text)
+blm_sentiment <- sentiment_by(blm_sentences, blm$status_id)
+
+blm_sentiment <- left_join(blm, blm_sentiment)
+
+blm_sentiment <- blm_sentiment %>% 
+  filter(ave_sentiment != 0) %>% 
+  mutate(is_reply = !is.na(reply_to_status_id) | 
+                    !is.na(reply_to_user_id) |
+                    !is.na(reply_to_screen_name),
+         has_url = !is.na(urls_url),
+         has_photo = map_lgl(media_type, ~!is.null(.x)),
+         n_mentions = map_int(mentions_user_id, length),
+         is_positive_sentiment = as.integer(ave_sentiment > 1),
+         user_id = as.numeric(factor(user_id)),
+         status_id = as.numeric(factor(status_id)),
+         trump_in_description = grepl("[Tt]rump", description),
+         account_created_at = lubridate::as_date(account_created_at)) %>% 
+  select(user_id:created_at, trump_in_description, followers_count:account_created_at,
+         verified, word_count, is_reply, is_quote, has_url, has_photo, 
+         n_mentions, hashtags, favorite_count, retweet_count, ave_sentiment) %>% 
+  rename(tweet_created_at = created_at) %>% 
+  select(user_id, status_id, trump_in_description:verified, tweet_created_at,
+         word_count:ave_sentiment)
+  
+write_rds(blm_sentiment, here::here("data", "blm_sentiment.Rds"))
+
+nurses_link <- "https://github.com/m-clark/mixed-models-with-R/raw/master/data/nurses.sav"
+nurses <- haven::read_sav(nurses_link) %>% 
+  haven::as_factor() %>% 
+  select(-Zage:-Chospsize) %>% 
+  mutate(gender = ifelse(gender > 0, "Female", "Male")) %>% 
+  write_csv(here::here("data", "nurses.csv"))
 
 three_lev_link <- "https://stats.idre.ucla.edu/wp-content/uploads/2016/02/eg_hlm.sav"
 three_lev <- haven::read_sav(three_lev_link) %>% 
