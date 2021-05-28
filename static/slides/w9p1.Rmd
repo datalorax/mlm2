@@ -1480,7 +1480,7 @@ Now just feed the **{mice}** object to `brms::brm_multiple()` as your data.
 
 Note - this is considerably easier than it is with **lme4**, but it is do-able
 
-```{r }
+```{r eval = FALSE}
 m_mice <- brm_multiple(bmi ~ age * chl, 
                        data = mi_nhanes)
 ```
@@ -1513,6 +1513,7 @@ The missing data in `chl` will be imputed via a model with `age` as its predicto
 
 We're basically fitting two models at once.
 
+
 ---
 # In code
 
@@ -1524,29 +1525,34 @@ bayes_impute_formula <- bf(bmi | mi() ~ age * mi(chl)) + # base model
   set_rescor(FALSE) # we don't estimate the residual correlation
 ```
 
+
 ---
 # Fit
 
-```{r }
+```{r eval = FALSE}
 m_onfly <- brm(bayes_impute_formula, data = nhanes)
 ```
+
 
 ---
 # Comparison
 Multiple imputation before modeling
 
-```{r }
+```{r eval = FALSE}
 conditional_effects(m_mice, "age:chl", resp = "bmi")
 ```
+
+![](img/mice_results.png)
 
 ---
 # Comparison
 imputation during modeling
 
-```{r }
+```{r eval = FALSE}
 conditional_effects(m_onfly, "age:chl", resp = "bmi")
 ```
 
+![](img/onfly_results.png)
 
 ---
 class: inverse-green middle
