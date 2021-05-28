@@ -213,7 +213,7 @@ Icons in the schedule link to specific chapters.
 {{< week "05-28" >}}
   {{< description "Modeling Growth 2" "Dealing with common complications in growth modeling: piecewise regression models, and evaluating differences in the slope pre/post" >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w9p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 

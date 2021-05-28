@@ -26,17 +26,18 @@ blm_sentiment <- blm_sentiment %>%
          has_url = !is.na(urls_url),
          has_photo = map_lgl(media_type, ~!is.null(.x)),
          n_mentions = map_int(mentions_user_id, length),
-         is_positive_sentiment = as.integer(ave_sentiment > 1),
+         is_positive_sentiment = as.integer(ave_sentiment > 0),
          user_id = as.numeric(factor(user_id)),
          status_id = as.numeric(factor(status_id)),
          trump_in_description = grepl("[Tt]rump", description),
          account_created_at = lubridate::as_date(account_created_at)) %>% 
   select(user_id:created_at, trump_in_description, followers_count:account_created_at,
          verified, word_count, is_reply, is_quote, has_url, has_photo, 
-         n_mentions, hashtags, favorite_count, retweet_count, ave_sentiment) %>% 
+         n_mentions, hashtags, favorite_count, retweet_count, 
+         is_positive_sentiment) %>% 
   rename(tweet_created_at = created_at) %>% 
   select(user_id, status_id, trump_in_description:verified, tweet_created_at,
-         word_count:ave_sentiment)
+         word_count:is_positive_sentiment)
   
 write_rds(blm_sentiment, here::here("data", "blm_sentiment.Rds"))
 
