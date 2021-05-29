@@ -226,7 +226,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "other" "https://www.sds.pub/nonlinearity.html" "6" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/YaLS2eqoUXs" >}}
 {{< /wrap >}}
 {{< /week >}}
 
