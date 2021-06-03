@@ -8,6 +8,16 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 
+pupils_link <- "https://github.com/m-clark/mixed-models-with-R/raw/master/data/pupils.RData"
+pupils <- rio::import(pupils_link) %>% 
+  write_csv(here::here("data", "pupils.csv"))
+
+mobility_link <- "https://github.com/drizopoulos/ltm/raw/master/data/Mobility.rda"
+mobility <- rio::import(mobility_link)
+mobility %>% 
+  rowid_to_column("id") %>% 
+  write_csv(here::here("data", "mobility.csv"))
+
 blm <- search_tweets("#blm", n = 18000, include_rts = FALSE)
 write_rds(blm, here::here("data", "full-blm-twitter.Rds"))
 

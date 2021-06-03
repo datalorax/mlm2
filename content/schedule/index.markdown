@@ -211,7 +211,7 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "05-28" >}}
-  {{< description "Modeling Growth 2" "Dealing with common complications in growth modeling: piecewise regression models, and evaluating differences in the slope pre/post" >}}
+  {{< description "Bayesian estimation 3: Extending models, getting samples from the posterior, and computing post-hoc comparisons" "We fit several multilevel binomial logistic regression models using Bayesian estimation. We walk through two full examples, including data exploration to analysis to interpretation. This includes post-hoc comparisons computed using samples from the posterior distribution." >}}
   {{< wrap >}}
 {{< slides "w9p1" >}}
 {{< /wrap >}}
@@ -235,9 +235,9 @@ Icons in the schedule link to specific chapters.
  {{< schedule >}}
 
 {{< week "06-04" >}}
-  {{< description "Non-nested models and other complexities" "Handling data when it is not purely nested. We will illustrate how the multilevel model can be used to estimate the Rasch model (a special-case IRT model where item discriminations are fixed at 1.0). Beyond non-nested models, we will also discuss splines as an alternative way to handle non-linearity." >}}
+  {{< description "Non-nested models and other complexities" "We'll discuss missing data and cross-classified and multiple membership models. If time allows, we will also discuss how the multilevel binomial logistic model can be used to fit a 1PL item response theory model." >}}
   {{< wrap >}}
-{{< slides "" >}}
+{{< slides "w10p1" >}}
 {{< /wrap >}}
   {{< wrap >}}
 
