@@ -85,7 +85,7 @@ class: inverse-red middle
 # The data
 From an example in the Mplus manual. I made up the column names. 
 
-<div class="countdown" id="timer_60a6cc26" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9036f" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -117,7 +117,7 @@ mplus_d
 # Model 1
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6ce2f" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b903c6" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -140,7 +140,7 @@ lmer(score ~ 1 + (1|distid), data = mplus_d)
 # Model 2
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6cd9f" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90621" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -166,7 +166,7 @@ lmer(score ~ baseline + (1|schid) + (1|distid),
 # Model 3
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6cd17" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90354" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -216,7 +216,7 @@ lmer(score ~ baseline * dist_ses +
 # Model 4
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6cd21" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b906f7" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -267,7 +267,7 @@ lmer(score ~ baseline + sch_treatment + dist_ses +
 # Model 5
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6ce85" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90682" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -343,7 +343,7 @@ lmer(score ~ baseline * sch_treatment + dist_ses +
 # Model 6
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6cc75" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9041d" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -427,7 +427,7 @@ lmer(score ~ baseline * sch_treatment + dist_ses +
 # Final one
 ### Fit the following model
 
-<div class="countdown" id="timer_60a6ccde" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b903fb" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">01</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">30</span></code>
 </div>
 
@@ -628,8 +628,7 @@ iqs
 ```
 
 ```
-##  [1]  82  80  88 108 116 117 132  71  75  93  95  88 111  63  77  86  83  93
-## [19]  97  87  94  96 112 113 106 107  98
+##  [1]  82  80  88 108 116 117 132  71  75  93  95  88 111  63  77  86  83  93  97  87  94  96 112 113 106 107  98
 ```
 
 --
@@ -671,10 +670,8 @@ dnorm(iqs, mean = 100, sd = 15, log = TRUE)
 ```
 
 ```
-##  [1] -4.346989 -4.515878 -3.946989 -3.769211 -4.195878 -4.269211 -5.902544
-##  [8] -5.495878 -5.015878 -3.735878 -3.682544 -3.946989 -3.895878 -6.669211
-## [15] -4.802544 -4.062544 -4.269211 -3.735878 -3.646989 -4.002544 -3.706989
-## [22] -3.662544 -3.946989 -4.002544 -3.706989 -3.735878 -3.635878
+##  [1] -4.346989 -4.515878 -3.946989 -3.769211 -4.195878 -4.269211 -5.902544 -5.495878 -5.015878 -3.735878 -3.682544 -3.946989 -3.895878 -6.669211 -4.802544
+## [16] -4.062544 -4.269211 -3.735878 -3.646989 -4.002544 -3.706989 -3.662544 -3.946989 -4.002544 -3.706989 -3.735878 -3.635878
 ```
 
 --

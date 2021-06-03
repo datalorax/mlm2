@@ -85,7 +85,7 @@ Let's read in the popularity data so we can fit some really basic models.
 
 You try first
 
-<div class="countdown" id="timer_608058c4" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b901d5" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -125,7 +125,7 @@ Fit each of the following models
 
 * `popular` as the outcome, with `sex` included as a fixed effect and a random intercept and slope for `class`
 
-<div class="countdown" id="timer_6080587d" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9047a" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -144,7 +144,7 @@ m2 &lt;- lmer(popular ~ sex + (sex|class), popular)
 # Compare performance
 Use whatever tests you'd like, and come up with the model you think fits the data best
 
-<div class="countdown" id="timer_60805943" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9051e" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -319,9 +319,10 @@ parameters(m0) %&gt;%
 
 ```
 ## # A tibble: 1 x 10
-##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error     p Effects
-##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;  
-## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997     0 fixed
+##   Parameter   Coefficient         SE    CI   CI_low  CI_high        t df_error
+##   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt;
+## 1 (Intercept)    5.077860 0.08739443  0.95 4.906570 5.249150 58.10278     1997
+## # … with 2 more variables: p &lt;dbl&gt;, Effects &lt;chr&gt;
 ```
 
 ```r
@@ -394,8 +395,8 @@ tidy(
 ## # A tibble: 2 x 6
 ##   effect   group    term             estimate  conf.low conf.high
 ##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7223927 0.9570069
-## 2 ran_pars Residual sd__Observation 1.105348  1.070679  1.137716
+## 1 ran_pars class    sd__(Intercept) 0.8379169 0.7145176 0.9652536
+## 2 ran_pars Residual sd__Observation 1.105348  1.071117  1.141232
 ```
 
 ---
@@ -418,18 +419,18 @@ tidy(
 
 ```
 ## 
-## 37 message(s): boundary (singular) fit: see ?isSingular
-## 10 warning(s): Model failed to converge with max|grad| = 0.00254628 (tol = 0.002, component 1) (and others)
+## 35 message(s): boundary (singular) fit: see ?isSingular
+## 16 warning(s): Model failed to converge with max|grad| = 0.00213278 (tol = 0.002, component 1) (and others)
 ```
 
 ```
 ## # A tibble: 4 x 6
-##   effect   group    term                       estimate    conf.low   conf.high
-##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;
-## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6309374   0.8454491 
-## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1.000000   -0.04726568
-## 3 ran_pars class    sd__sexgirl               0.2336921  0.04654788  0.3622473 
-## 4 ran_pars Residual sd__Observation           0.9049626  0.8767538   0.9344965
+##   effect   group    term                       estimate    conf.low  conf.high
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;                         &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;
+## 1 ran_pars class    sd__(Intercept)           0.7389520  0.6133643  0.8469480 
+## 2 ran_pars class    cor__(Intercept).sexgirl -0.4442543 -1          0.04996563
+## 3 ran_pars class    sd__sexgirl               0.2336921  0.04570838 0.3513648 
+## 4 ran_pars Residual sd__Observation           0.9049626  0.8744993  0.9341371
 ```
 
 
@@ -440,7 +441,7 @@ Can you make a dotplot with uncertainty for the variance components?
 
 What about a plot showing both fixed effects and variance components?
 
-<div class="countdown" id="timer_60805907" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b901ce" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -624,7 +625,7 @@ m0_ranvals %&gt;%
 ---
 class: inverse-green middle
 # Break
-<div class="countdown" id="timer_60805b86" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9027b" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -733,7 +734,7 @@ predict(m2)[1]
 
 Use the next few minutes to see if you can write code to replicate it "by hand" as we did with the standard regression model
 
-<div class="countdown" id="timer_608059d4" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9046b" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -820,7 +821,7 @@ predict(m2)[1]
 # Challenge
 * Without using the `predict()` function, calculate the predicted score for a boy in classroom `10` from `m2`
 
-<div class="countdown" id="timer_608058ed" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90440" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">05</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -851,20 +852,20 @@ test
 
 ```
 ## # A tibble: 12 x 8
-##    pupil class extrav sex    texp  popular popteach     pred
-##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-##  1     1    10      5 boy      21 5.4             5 4.675822
-##  2     3    10      5 boy      21 3.4             3 4.675822
-##  3     5    10      5 boy      21 5.100000        7 4.675822
-##  4     7    10      5 boy      21 5.4             4 4.675822
-##  5     8    10      5 boy      21 4.9             4 4.675822
-##  6    11    10      6 boy      21 4.4             6 4.675822
-##  7    12    10      6 boy      21 4.9             5 4.675822
-##  8    14    10      6 boy      21 4.8             3 4.675822
-##  9    15    10      3 boy      21 3.6             3 4.675822
-## 10    16    10      5 boy      21 5               6 4.675822
-## 11    17    10      3 boy      21 5.5             5 4.675822
-## 12    18    10      6 boy      21 5               4 4.675822
+##    pupil class extrav sex    texp popular popteach     pred
+##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+##  1     1    10      5 boy      21     5.4        5 4.675822
+##  2     3    10      5 boy      21     3.4        3 4.675822
+##  3     5    10      5 boy      21     5.1        7 4.675822
+##  4     7    10      5 boy      21     5.4        4 4.675822
+##  5     8    10      5 boy      21     4.9        4 4.675822
+##  6    11    10      6 boy      21     4.4        6 4.675822
+##  7    12    10      6 boy      21     4.9        5 4.675822
+##  8    14    10      6 boy      21     4.8        3 4.675822
+##  9    15    10      3 boy      21     3.6        3 4.675822
+## 10    16    10      5 boy      21     5          6 4.675822
+## 11    17    10      3 boy      21     5.5        5 4.675822
+## 12    18    10      6 boy      21     5          4 4.675822
 ```
 
 ---
@@ -901,7 +902,7 @@ head(sim_longitudinal)
 ### You try first
 * Fit a model with `wave` and `treatment` as predictors of students' `score`. Allow the intercept and the relation between `wave` and `score` to vary by student.
 
-<div class="countdown" id="timer_60805a96" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90473" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -926,7 +927,7 @@ first_three &lt;- sim_longitudinal %&gt;%
 --
 Now try creating a new column in the data with the model predictions for these students. Specify `newdata = first_three` to only make the predictions for those cases.
 
-<div class="countdown" id="timer_60805b4a" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9031c" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -958,7 +959,7 @@ first_three %&gt;%
 # Plot
 Try creating a plot with a different `facet` for each `sid` showing the observed trend (relation between `wave` and `score`) as compared to the model prediction. Color the line by whether or not the student was in the treatment group or not.
 
-<div class="countdown" id="timer_608059bb" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b903c3" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">03</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -985,7 +986,7 @@ Student 2 has a considerably lower intercept. What would we predict the trend wo
 --
 Try to make this prediction on your own for all time points
 
-<div class="countdown" id="timer_60805ab2" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90249" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -1002,8 +1003,10 @@ predict(m, newdata = stu2_trt)
 ```
 
 ```
-##        1        2        3        4        5        6        7        8        9       10 
-## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 82.30506 82.76607
+##        1        2        3        4        5        6        7        8 
+## 78.61702 79.07803 79.53903 80.00004 80.46104 80.92205 81.38305 81.84406 
+##        9       10 
+## 82.30506 82.76607
 ```
 
 ---
@@ -1670,18 +1673,18 @@ samp
 ```
 ## # A tibble: 28 x 3
 ## # Groups:   sid, school [28]
-##      sid school data                 
-##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;               
-##  1     1      1 &lt;tibble[,6] [10 × 6]&gt;
-##  2    33      3 &lt;tibble[,6] [10 × 6]&gt;
-##  3    34      4 &lt;tibble[,6] [10 × 6]&gt;
-##  4    46      1 &lt;tibble[,6] [10 × 6]&gt;
-##  5    61      1 &lt;tibble[,6] [10 × 6]&gt;
-##  6    77      2 &lt;tibble[,6] [10 × 6]&gt;
-##  7    78      3 &lt;tibble[,6] [10 × 6]&gt;
-##  8    91      1 &lt;tibble[,6] [10 × 6]&gt;
-##  9    93      3 &lt;tibble[,6] [10 × 6]&gt;
-## 10     2      2 &lt;tibble[,6] [10 × 6]&gt;
+##      sid school data             
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
+##  1     1      1 &lt;tibble [10 × 6]&gt;
+##  2    33      3 &lt;tibble [10 × 6]&gt;
+##  3    34      4 &lt;tibble [10 × 6]&gt;
+##  4    46      1 &lt;tibble [10 × 6]&gt;
+##  5    61      1 &lt;tibble [10 × 6]&gt;
+##  6    77      2 &lt;tibble [10 × 6]&gt;
+##  7    78      3 &lt;tibble [10 × 6]&gt;
+##  8    91      1 &lt;tibble [10 × 6]&gt;
+##  9    93      3 &lt;tibble [10 × 6]&gt;
+## 10     2      2 &lt;tibble [10 × 6]&gt;
 ## # … with 18 more rows
 ```
 
@@ -1699,28 +1702,28 @@ samp %&gt;%
 ```
 ## # A tibble: 20 x 3
 ## # Groups:   school [4]
-##      sid school data                 
-##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;               
-##  1     1      1 &lt;tibble[,6] [10 × 6]&gt;
-##  2    76      1 &lt;tibble[,6] [10 × 6]&gt;
-##  3    31      1 &lt;tibble[,6] [10 × 6]&gt;
-##  4    16      1 &lt;tibble[,6] [10 × 6]&gt;
-##  5    46      1 &lt;tibble[,6] [10 × 6]&gt;
-##  6    62      2 &lt;tibble[,6] [10 × 6]&gt;
-##  7     2      2 &lt;tibble[,6] [10 × 6]&gt;
-##  8    92      2 &lt;tibble[,6] [10 × 6]&gt;
-##  9    77      2 &lt;tibble[,6] [10 × 6]&gt;
-## 10    47      2 &lt;tibble[,6] [10 × 6]&gt;
-## 11    63      3 &lt;tibble[,6] [10 × 6]&gt;
-## 12    18      3 &lt;tibble[,6] [10 × 6]&gt;
-## 13    33      3 &lt;tibble[,6] [10 × 6]&gt;
-## 14    48      3 &lt;tibble[,6] [10 × 6]&gt;
-## 15    78      3 &lt;tibble[,6] [10 × 6]&gt;
-## 16    19      4 &lt;tibble[,6] [10 × 6]&gt;
-## 17    49      4 &lt;tibble[,6] [10 × 6]&gt;
-## 18     4      4 &lt;tibble[,6] [10 × 6]&gt;
-## 19    79      4 &lt;tibble[,6] [10 × 6]&gt;
-## 20    94      4 &lt;tibble[,6] [10 × 6]&gt;
+##      sid school data             
+##    &lt;int&gt;  &lt;int&gt; &lt;list&gt;           
+##  1     1      1 &lt;tibble [10 × 6]&gt;
+##  2    76      1 &lt;tibble [10 × 6]&gt;
+##  3    31      1 &lt;tibble [10 × 6]&gt;
+##  4    16      1 &lt;tibble [10 × 6]&gt;
+##  5    46      1 &lt;tibble [10 × 6]&gt;
+##  6    62      2 &lt;tibble [10 × 6]&gt;
+##  7     2      2 &lt;tibble [10 × 6]&gt;
+##  8    92      2 &lt;tibble [10 × 6]&gt;
+##  9    77      2 &lt;tibble [10 × 6]&gt;
+## 10    47      2 &lt;tibble [10 × 6]&gt;
+## 11    63      3 &lt;tibble [10 × 6]&gt;
+## 12    18      3 &lt;tibble [10 × 6]&gt;
+## 13    33      3 &lt;tibble [10 × 6]&gt;
+## 14    48      3 &lt;tibble [10 × 6]&gt;
+## 15    78      3 &lt;tibble [10 × 6]&gt;
+## 16    19      4 &lt;tibble [10 × 6]&gt;
+## 17    49      4 &lt;tibble [10 × 6]&gt;
+## 18     4      4 &lt;tibble [10 × 6]&gt;
+## 19    79      4 &lt;tibble [10 × 6]&gt;
+## 20    94      4 &lt;tibble [10 × 6]&gt;
 ```
 
 ---

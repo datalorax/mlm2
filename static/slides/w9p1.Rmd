@@ -1519,7 +1519,7 @@ We're basically fitting two models at once.
 
 The `| mi()` part says to include missing data, while `
 
-```{r }
+```{r eval = FALSE}
 bayes_impute_formula <- bf(bmi | mi() ~ age * mi(chl)) + # base model
   bf(chl | mi() ~ age) + # model for chl missingness
   set_rescor(FALSE) # we don't estimate the residual correlation
@@ -1533,9 +1533,9 @@ bayes_impute_formula <- bf(bmi | mi() ~ age * mi(chl)) + # base model
 m_onfly <- brm(bayes_impute_formula, data = nhanes)
 ```
 
-
 ---
 # Comparison
+
 Multiple imputation before modeling
 
 ```{r eval = FALSE}

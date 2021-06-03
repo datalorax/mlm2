@@ -4,7 +4,7 @@
     <title>Data structuring and basic models</title>
     <meta charset="utf-8" />
     <meta name="author" content="Daniel Anderson" />
-    <script src="libs/header-attrs-2.7.7/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
     <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
@@ -110,19 +110,20 @@ curran
 
 ```
 ## # A tibble: 405 x 15
-##       id anti1 anti2 anti3 anti4    read1 read2     read3     read4 kidgen momage kidage homecog homeemo  nmis
-##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;
-##  1    22     1     2    NA    NA 2.1        3.9 NA        NA             0     28   6.08      13      10     4
-##  2    34     3     6     4     5 2.1        2.9  4.5       4.5           1     28   6.83       9       9     0
-##  3    58     0     2     0     1 2.300000   4.5  4.2       4.600000      0     28   6.5        9       6     0
-##  4   122     0     3     1     1 3.7        8   NA        NA             1     28   7.83      13      10     2
-##  5   125     1     1     2     1 2.300000   3.8  4.3       6.2           0     29   7.42      10       8     0
-##  6   133     3     4     3     5 1.8        2.6  4.100000  4             1     28   6.75       8       9     0
-##  7   163     5     4     5     5 3.5        4.8  5.8       7.5           1     28   7.17      10      10     0
-##  8   190     0    NA    NA     0 2.9        6.1 NA        NA             0     28   6.67       9       8     4
-##  9   227     0     0     2     1 1.8        3.8  4        NA             0     29   6.25      12      10     1
-## 10   248     1     2     2     0 3.5        5.7  7         6.9           0     28   7.5        9       9     0
-## # … with 395 more rows
+##       id anti1 anti2 anti3 anti4 read1 read2 read3 read4 kidgen momage kidage
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1    22     1     2    NA    NA   2.1   3.9  NA    NA        0     28   6.08
+##  2    34     3     6     4     5   2.1   2.9   4.5   4.5      1     28   6.83
+##  3    58     0     2     0     1   2.3   4.5   4.2   4.6      0     28   6.5 
+##  4   122     0     3     1     1   3.7   8    NA    NA        1     28   7.83
+##  5   125     1     1     2     1   2.3   3.8   4.3   6.2      0     29   7.42
+##  6   133     3     4     3     5   1.8   2.6   4.1   4        1     28   6.75
+##  7   163     5     4     5     5   3.5   4.8   5.8   7.5      1     28   7.17
+##  8   190     0    NA    NA     0   2.9   6.1  NA    NA        0     28   6.67
+##  9   227     0     0     2     1   1.8   3.8   4    NA        0     29   6.25
+## 10   248     1     2     2     0   3.5   5.7   7     6.9      0     28   7.5 
+## # … with 395 more rows, and 3 more variables: homecog &lt;dbl&gt;, homeemo &lt;dbl&gt;,
+## #   nmis &lt;dbl&gt;
 ```
 
 ---
@@ -164,18 +165,18 @@ read
 
 ```
 ## # A tibble: 405 x 5
-##       id    read1 read2     read3     read4
-##    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22 2.1        3.9 NA        NA       
-##  2    34 2.1        2.9  4.5       4.5     
-##  3    58 2.300000   4.5  4.2       4.600000
-##  4   122 3.7        8   NA        NA       
-##  5   125 2.300000   3.8  4.3       6.2     
-##  6   133 1.8        2.6  4.100000  4       
-##  7   163 3.5        4.8  5.8       7.5     
-##  8   190 2.9        6.1 NA        NA       
-##  9   227 1.8        3.8  4        NA       
-## 10   248 3.5        5.7  7         6.9     
+##       id read1 read2 read3 read4
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1    22   2.1   3.9  NA    NA  
+##  2    34   2.1   2.9   4.5   4.5
+##  3    58   2.3   4.5   4.2   4.6
+##  4   122   3.7   8    NA    NA  
+##  5   125   2.3   3.8   4.3   6.2
+##  6   133   1.8   2.6   4.1   4  
+##  7   163   3.5   4.8   5.8   7.5
+##  8   190   2.9   6.1  NA    NA  
+##  9   227   1.8   3.8   4    NA  
+## 10   248   3.5   5.7   7     6.9
 ## # … with 395 more rows
 ```
 
@@ -188,50 +189,16 @@ read
 * We'll talk about it as a class after
 
 .pull-right[
-&lt;table&gt;
- &lt;thead&gt;
-  &lt;tr&gt;
-   &lt;th style="text-align:right;"&gt; id &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; read1 &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; read2 &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; read3 &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; read4 &lt;/th&gt;
-  &lt;/tr&gt;
- &lt;/thead&gt;
-&lt;tbody&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:right;"&gt; 22 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 2.1 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 3.9 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:right;"&gt; 34 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 2.1 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 2.9 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 4.5 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 4.5 &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:right;"&gt; 58 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 2.3 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 4.5 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 4.2 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 4.6 &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:right;"&gt; 122 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 3.7 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 8.0 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
+
+|  id| read1| read2| read3| read4|
+|---:|-----:|-----:|-----:|-----:|
+|  22|   2.1|   3.9|    NA|    NA|
+|  34|   2.1|   2.9|   4.5|   4.5|
+|  58|   2.3|   4.5|   4.2|   4.6|
+| 122|   3.7|   8.0|    NA|    NA|
 ]
 
-<div class="countdown" id="timer_606e5481" style="right:1;bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9054e" style="right:1;bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">02</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -248,18 +215,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
-##  1    22 read1      2.1     
-##  2    22 read2      3.9     
-##  3    22 read3     NA       
-##  4    22 read4     NA       
-##  5    34 read1      2.1     
-##  6    34 read2      2.9     
-##  7    34 read3      4.5     
-##  8    34 read4      4.5     
-##  9    58 read1      2.300000
-## 10    58 read2      4.5     
+##       id timepoint score
+##    &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1    22 read1       2.1
+##  2    22 read2       3.9
+##  3    22 read3      NA  
+##  4    22 read4      NA  
+##  5    34 read1       2.1
+##  6    34 read2       2.9
+##  7    34 read3       4.5
+##  8    34 read4       4.5
+##  9    58 read1       2.3
+## 10    58 read2       4.5
 ## # … with 1,610 more rows
 ```
 
@@ -277,18 +244,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
-##  1    22 read1      2.1     
-##  2    22 read2      3.9     
-##  3    22 read3     NA       
-##  4    22 read4     NA       
-##  5    34 read1      2.1     
-##  6    34 read2      2.9     
-##  7    34 read3      4.5     
-##  8    34 read4      4.5     
-##  9    58 read1      2.300000
-## 10    58 read2      4.5     
+##       id timepoint score
+##    &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1    22 read1       2.1
+##  2    22 read2       3.9
+##  3    22 read3      NA  
+##  4    22 read4      NA  
+##  5    34 read1       2.1
+##  6    34 read2       2.9
+##  7    34 read3       4.5
+##  8    34 read4       4.5
+##  9    58 read1       2.3
+## 10    58 read2       4.5
 ## # … with 1,610 more rows
 ```
 
@@ -319,18 +286,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22         0  2.1     
-##  2    22         1  3.9     
-##  3    22         2 NA       
-##  4    22         3 NA       
-##  5    34         0  2.1     
-##  6    34         1  2.9     
-##  7    34         2  4.5     
-##  8    34         3  4.5     
-##  9    58         0  2.300000
-## 10    58         1  4.5     
+##       id timepoint score
+##    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+##  1    22         0   2.1
+##  2    22         1   3.9
+##  3    22         2  NA  
+##  4    22         3  NA  
+##  5    34         0   2.1
+##  6    34         1   2.9
+##  7    34         2   4.5
+##  8    34         3   4.5
+##  9    58         0   2.3
+## 10    58         1   4.5
 ## # … with 1,610 more rows
 ```
 
@@ -352,18 +319,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22         1  2.1     
-##  2    22         2  3.9     
-##  3    22         3 NA       
-##  4    22         4 NA       
-##  5    34         1  2.1     
-##  6    34         2  2.9     
-##  7    34         3  4.5     
-##  8    34         4  4.5     
-##  9    58         1  2.300000
-## 10    58         2  4.5     
+##       id timepoint score
+##    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+##  1    22         1   2.1
+##  2    22         2   3.9
+##  3    22         3  NA  
+##  4    22         4  NA  
+##  5    34         1   2.1
+##  6    34         2   2.9
+##  7    34         3   4.5
+##  8    34         4   4.5
+##  9    58         1   2.3
+## 10    58         2   4.5
 ## # … with 1,610 more rows
 ```
 
@@ -384,18 +351,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22         0  2.1     
-##  2    22         1  3.9     
-##  3    22         2 NA       
-##  4    22         3 NA       
-##  5    34         0  2.1     
-##  6    34         1  2.9     
-##  7    34         2  4.5     
-##  8    34         3  4.5     
-##  9    58         0  2.300000
-## 10    58         1  4.5     
+##       id timepoint score
+##    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+##  1    22         0   2.1
+##  2    22         1   3.9
+##  3    22         2  NA  
+##  4    22         3  NA  
+##  5    34         0   2.1
+##  6    34         1   2.9
+##  7    34         2   4.5
+##  8    34         3   4.5
+##  9    58         0   2.3
+## 10    58         1   4.5
 ## # … with 1,610 more rows
 ```
 
@@ -414,18 +381,18 @@ read %&gt;%
 
 ```
 ## # A tibble: 1,620 x 3
-##       id timepoint     score
-##    &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
-##  1    22 1          2.1     
-##  2    22 2          3.9     
-##  3    22 3         NA       
-##  4    22 4         NA       
-##  5    34 1          2.1     
-##  6    34 2          2.9     
-##  7    34 3          4.5     
-##  8    34 4          4.5     
-##  9    58 1          2.300000
-## 10    58 2          4.5     
+##       id timepoint score
+##    &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1    22 1           2.1
+##  2    22 2           3.9
+##  3    22 3          NA  
+##  4    22 4          NA  
+##  5    34 1           2.1
+##  6    34 2           2.9
+##  7    34 3           4.5
+##  8    34 4           4.5
+##  9    58 1           2.3
+## 10    58 2           4.5
 ## # … with 1,610 more rows
 ```
 
@@ -459,18 +426,18 @@ l %&gt;%
 
 ```
 ## # A tibble: 405 x 5
-##       id      `0`   `1`       `2`       `3`
-##    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22 2.1        3.9 NA        NA       
-##  2    34 2.1        2.9  4.5       4.5     
-##  3    58 2.300000   4.5  4.2       4.600000
-##  4   122 3.7        8   NA        NA       
-##  5   125 2.300000   3.8  4.3       6.2     
-##  6   133 1.8        2.6  4.100000  4       
-##  7   163 3.5        4.8  5.8       7.5     
-##  8   190 2.9        6.1 NA        NA       
-##  9   227 1.8        3.8  4        NA       
-## 10   248 3.5        5.7  7         6.9     
+##       id   `0`   `1`   `2`   `3`
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1    22   2.1   3.9  NA    NA  
+##  2    34   2.1   2.9   4.5   4.5
+##  3    58   2.3   4.5   4.2   4.6
+##  4   122   3.7   8    NA    NA  
+##  5   125   2.3   3.8   4.3   6.2
+##  6   133   1.8   2.6   4.1   4  
+##  7   163   3.5   4.8   5.8   7.5
+##  8   190   2.9   6.1  NA    NA  
+##  9   227   1.8   3.8   4    NA  
+## 10   248   3.5   5.7   7     6.9
 ## # … with 395 more rows
 ```
 
@@ -498,7 +465,7 @@ There are, again, multiple ways to do this, including only through pivot_longer
 ## # … with 3,230 more rows
 ```
 
-<div class="countdown" id="timer_606e5659" style="right:1;bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b9035d" style="right:1;bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -509,22 +476,22 @@ Our data is probably still not in the format we want. Can you get it in the form
 
 ```
 ## # A tibble: 1,620 x 10
-##       id kidgen momage kidage homecog homeemo  nmis timepoint  anti      read
-##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22      0     28   6.08      13      10     4         0     1  2.1     
-##  2    22      0     28   6.08      13      10     4         1     2  3.9     
-##  3    22      0     28   6.08      13      10     4         2    NA NA       
-##  4    22      0     28   6.08      13      10     4         3    NA NA       
-##  5    34      1     28   6.83       9       9     0         0     3  2.1     
-##  6    34      1     28   6.83       9       9     0         1     6  2.9     
-##  7    34      1     28   6.83       9       9     0         2     4  4.5     
-##  8    34      1     28   6.83       9       9     0         3     5  4.5     
-##  9    58      0     28   6.5        9       6     0         0     0  2.300000
-## 10    58      0     28   6.5        9       6     0         1     2  4.5     
+##       id kidgen momage kidage homecog homeemo  nmis timepoint  anti  read
+##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1    22      0     28   6.08      13      10     4         0     1   2.1
+##  2    22      0     28   6.08      13      10     4         1     2   3.9
+##  3    22      0     28   6.08      13      10     4         2    NA  NA  
+##  4    22      0     28   6.08      13      10     4         3    NA  NA  
+##  5    34      1     28   6.83       9       9     0         0     3   2.1
+##  6    34      1     28   6.83       9       9     0         1     6   2.9
+##  7    34      1     28   6.83       9       9     0         2     4   4.5
+##  8    34      1     28   6.83       9       9     0         3     5   4.5
+##  9    58      0     28   6.5        9       6     0         0     0   2.3
+## 10    58      0     28   6.5        9       6     0         1     2   4.5
 ## # … with 1,610 more rows
 ```
 
-<div class="countdown" id="timer_606e560b" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90357" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">04</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -541,19 +508,22 @@ ls
 
 ```
 ## # A tibble: 962 x 13
-##    county       distid dist_name          instid inst_name          inst_type asian black_african_american hispanic_latino american_indian_alaska_native
-##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt;     &lt;dbl&gt;                  &lt;dbl&gt;           &lt;dbl&gt;                         &lt;dbl&gt;
-##  1 All Counties   9999 Statewide            9999 Statewide          State      11.8                    7          4.100000                      5.100000
-##  2 Baker          1894 Baker SD 5J          1894 Baker SD 5J        District   NA                     NA         14.6                          NA       
-##  3 Baker          1895 Huntington SD 16J    1895 Huntington SD 16J  District   NA                     NA         NA                            NA       
-##  4 Baker          1896 Burnt River SD 30J   1896 Burnt River SD 30J District   NA                     NA         NA                            NA       
-##  5 Baker          1897 Pine Eagle SD 61     1897 Pine Eagle SD 61   District   NA                     NA         NA                            NA       
-##  6 Benton         1898 Monroe SD 1J         1898 Monroe SD 1J       District   NA                     NA         NA                            NA       
-##  7 Benton         1899 Alsea SD 7J          1899 Alsea SD 7J        District   NA                     NA         NA                            NA       
-##  8 Benton         1900 Philomath SD 17J     1900 Philomath SD 17J   District   NA                     NA          5.8                          NA       
-##  9 Benton         1901 Corvallis SD 509J    1901 Corvallis SD 509J  District   13.8                   10.4        7.8                          NA       
-## 10 Clackamas      1902 Clackamas ESD        1902 Clackamas ESD      District   NA                     NA         NA                            NA       
-## # … with 952 more rows, and 3 more variables: multi_racial &lt;dbl&gt;, native_hawaiian_pacific_islander &lt;dbl&gt;, white &lt;dbl&gt;
+##    county       distid dist_name          instid inst_name          inst_type
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt;    
+##  1 All Counties   9999 Statewide            9999 Statewide          State    
+##  2 Baker          1894 Baker SD 5J          1894 Baker SD 5J        District 
+##  3 Baker          1895 Huntington SD 16J    1895 Huntington SD 16J  District 
+##  4 Baker          1896 Burnt River SD 30J   1896 Burnt River SD 30J District 
+##  5 Baker          1897 Pine Eagle SD 61     1897 Pine Eagle SD 61   District 
+##  6 Benton         1898 Monroe SD 1J         1898 Monroe SD 1J       District 
+##  7 Benton         1899 Alsea SD 7J          1899 Alsea SD 7J        District 
+##  8 Benton         1900 Philomath SD 17J     1900 Philomath SD 17J   District 
+##  9 Benton         1901 Corvallis SD 509J    1901 Corvallis SD 509J  District 
+## 10 Clackamas      1902 Clackamas ESD        1902 Clackamas ESD      District 
+## # … with 952 more rows, and 7 more variables: asian &lt;dbl&gt;,
+## #   black_african_american &lt;dbl&gt;, hispanic_latino &lt;dbl&gt;,
+## #   american_indian_alaska_native &lt;dbl&gt;, multi_racial &lt;dbl&gt;,
+## #   native_hawaiian_pacific_islander &lt;dbl&gt;, white &lt;dbl&gt;
 ```
 
 ---
@@ -566,7 +536,7 @@ ls
 
 * Try structuring this data so you could estimate between-district variability, while accounting for  race/ethnicity
 
-<div class="countdown" id="timer_606e5536" style="right:0;bottom:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b90432" style="right:0;bottom:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -585,22 +555,24 @@ selfreg
 
 ```
 ## # A tibble: 6,734 x 13
-##    county       distid dist_name   instid inst_name   inst_type selfreg_score Asian Black.African.American Hispanic.Latino Multi.Racial
-##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;             &lt;dbl&gt; &lt;dbl&gt;                  &lt;dbl&gt;           &lt;dbl&gt;        &lt;dbl&gt;
-##  1 All Counties   9999 Statewide     9999 Statewide   State               3.7     1                      0               0            0
-##  2 All Counties   9999 Statewide     9999 Statewide   State               3.3     0                      1               0            0
-##  3 All Counties   9999 Statewide     9999 Statewide   State               3.4     0                      0               1            0
-##  4 All Counties   9999 Statewide     9999 Statewide   State               3.3     0                      0               0            0
-##  5 All Counties   9999 Statewide     9999 Statewide   State               3.5     0                      0               0            1
-##  6 All Counties   9999 Statewide     9999 Statewide   State               3.4     0                      0               0            0
-##  7 All Counties   9999 Statewide     9999 Statewide   State               3.5     0                      0               0            0
-##  8 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA       1                      0               0            0
-##  9 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA       0                      1               0            0
-## 10 Baker          1894 Baker SD 5J   1894 Baker SD 5J District            3.9     0                      0               1            0
-## # … with 6,724 more rows, and 2 more variables: Native.Hawaiian.Pacific.Islander &lt;dbl&gt;, White &lt;dbl&gt;
+##    county       distid dist_name   instid inst_name   inst_type selfreg_score
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;             &lt;dbl&gt;
+##  1 All Counties   9999 Statewide     9999 Statewide   State               3.7
+##  2 All Counties   9999 Statewide     9999 Statewide   State               3.3
+##  3 All Counties   9999 Statewide     9999 Statewide   State               3.4
+##  4 All Counties   9999 Statewide     9999 Statewide   State               3.3
+##  5 All Counties   9999 Statewide     9999 Statewide   State               3.5
+##  6 All Counties   9999 Statewide     9999 Statewide   State               3.4
+##  7 All Counties   9999 Statewide     9999 Statewide   State               3.5
+##  8 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA  
+##  9 Baker          1894 Baker SD 5J   1894 Baker SD 5J District           NA  
+## 10 Baker          1894 Baker SD 5J   1894 Baker SD 5J District            3.9
+## # … with 6,724 more rows, and 6 more variables: Asian &lt;dbl&gt;,
+## #   Black.African.American &lt;dbl&gt;, Hispanic.Latino &lt;dbl&gt;, Multi.Racial &lt;dbl&gt;,
+## #   Native.Hawaiian.Pacific.Islander &lt;dbl&gt;, White &lt;dbl&gt;
 ```
 
-<div class="countdown" id="timer_606e55a6" style="bottom:0;left:0;" data-warnwhen="0">
+<div class="countdown" id="timer_60b903ad" style="bottom:0;left:0;" data-warnwhen="0">
 <code class="countdown-time"><span class="countdown-digits minutes">06</span><span class="countdown-digits colon">:</span><span class="countdown-digits seconds">00</span></code>
 </div>
 
@@ -645,18 +617,18 @@ d
 
 ```
 ## # A tibble: 1,620 x 10
-##       id kidgen momage kidage homecog homeemo  nmis timepoint  anti      read
-##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
-##  1    22      0     28   6.08      13      10     4         0     1  2.1     
-##  2    22      0     28   6.08      13      10     4         1     2  3.9     
-##  3    22      0     28   6.08      13      10     4         2    NA NA       
-##  4    22      0     28   6.08      13      10     4         3    NA NA       
-##  5    34      1     28   6.83       9       9     0         0     3  2.1     
-##  6    34      1     28   6.83       9       9     0         1     6  2.9     
-##  7    34      1     28   6.83       9       9     0         2     4  4.5     
-##  8    34      1     28   6.83       9       9     0         3     5  4.5     
-##  9    58      0     28   6.5        9       6     0         0     0  2.300000
-## 10    58      0     28   6.5        9       6     0         1     2  4.5     
+##       id kidgen momage kidage homecog homeemo  nmis timepoint  anti  read
+##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1    22      0     28   6.08      13      10     4         0     1   2.1
+##  2    22      0     28   6.08      13      10     4         1     2   3.9
+##  3    22      0     28   6.08      13      10     4         2    NA  NA  
+##  4    22      0     28   6.08      13      10     4         3    NA  NA  
+##  5    34      1     28   6.83       9       9     0         0     3   2.1
+##  6    34      1     28   6.83       9       9     0         1     6   2.9
+##  7    34      1     28   6.83       9       9     0         2     4   4.5
+##  8    34      1     28   6.83       9       9     0         3     5   4.5
+##  9    58      0     28   6.5        9       6     0         0     0   2.3
+## 10    58      0     28   6.5        9       6     0         1     2   4.5
 ## # … with 1,610 more rows
 ```
 
@@ -736,7 +708,7 @@ summary(m_intercepts)
 ```
 
 ```
-## Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+## Linear mixed model fit by REML ['lmerMod']
 ## Formula: read ~ 1 + timepoint + (1 | id)
 ##    Data: d
 ## 
@@ -753,11 +725,9 @@ summary(m_intercepts)
 ## Number of obs: 1325, groups:  id, 405
 ## 
 ## Fixed effects:
-##              Estimate Std. Error        df t value Pr(&gt;|t|)    
-## (Intercept)   2.70374    0.05257 569.45801   51.43   &lt;2e-16 ***
-## timepoint     1.10134    0.01759 965.48963   62.62   &lt;2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##             Estimate Std. Error t value
+## (Intercept)  2.70374    0.05257   51.43
+## timepoint    1.10134    0.01759   62.62
 ## 
 ## Correlation of Fixed Effects:
 ##           (Intr)
@@ -908,7 +878,7 @@ summary(m_slopes)
 ```
 
 ```
-## Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+## Linear mixed model fit by REML ['lmerMod']
 ## Formula: read ~ 1 + timepoint + (1 + timepoint | id)
 ##    Data: d
 ## 
@@ -926,11 +896,9 @@ summary(m_slopes)
 ## Number of obs: 1325, groups:  id, 405
 ## 
 ## Fixed effects:
-##              Estimate Std. Error        df t value Pr(&gt;|t|)    
-## (Intercept)   2.69609    0.04530 400.87693   59.52   &lt;2e-16 ***
-## timepoint     1.11915    0.02169 308.40833   51.60   &lt;2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##             Estimate Std. Error t value
+## (Intercept)  2.69609    0.04530   59.52
+## timepoint    1.11915    0.02169   51.60
 ## 
 ## Correlation of Fixed Effects:
 ##           (Intr)
@@ -955,7 +923,7 @@ summary(m_slopes)
 
 $$
 `\begin{aligned}
-  \operatorname{\widehat{read}}_{i}  &amp;\sim N \left(2.7_{\alpha_{j[i]}} + 1.12_{\beta_{1j[i]}}(\operatorname{timepoint}), 0.59 \right) \\    
+  \operatorname{\widehat{read}}_{i}  &amp;\sim N \left(2.7_{\alpha_{j[i]}} + 1.12_{\beta_{1j[i]}}(\operatorname{timepoint}), \sigma^2 \right) \\    
 \left(
   \begin{array}{c} 
     \begin{aligned}
@@ -1043,7 +1011,8 @@ summary(m_slopes2)
 ```
 
 ```
-## Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+## Linear mixed model fit by REML. t-tests use Satterthwaite's method [
+## lmerModLmerTest]
 ## Formula: read ~ timepoint + (timepoint | id)
 ##    Data: d
 ## 
@@ -1130,10 +1099,10 @@ compare_performance(m_intercepts, m_slopes) %&gt;%
 
 Table: Comparison of Model Performance Indices
 
-|Name         |           Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
-|:------------|:---------------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
-|m_intercepts | lmerModLmerTest | 3495.56 | 3516.32 |       0.83 |       0.55 | 0.63 | 0.59 |  0.68 |
-|m_slopes     | lmerModLmerTest | 3394.00 | 3425.14 |       0.88 |       0.54 | 0.73 | 0.47 |  0.59 |
+|Name         |   Model |     AIC |     BIC | R2 (cond.) | R2 (marg.) |  ICC | RMSE | Sigma |
+|:------------|:-------:|:-------:|:-------:|:----------:|:----------:|:----:|:----:|:-----:|
+|m_intercepts | lmerMod | 3495.56 | 3516.32 |       0.83 |       0.55 | 0.63 | 0.59 |  0.68 |
+|m_slopes     | lmerMod | 3394.00 | 3425.14 |       0.88 |       0.54 | 0.73 | 0.47 |  0.59 |
 
 ---
 # Likelihood ratio test
@@ -1145,10 +1114,10 @@ test_likelihoodratio(m_intercepts, m_slopes) %&gt;%
 
 
 
-|Name         |          Model | df| df_diff|   Chi2|        p|
-|:------------|:---------------|--:|-------:|------:|--------:|
-|m_intercepts |lmerModLmerTest |  4|        |       |         |
-|m_slopes     |lmerModLmerTest |  6|       2| 105.56| 1.20e-23|
+|Name         |  Model | df| df_diff|   Chi2|        p|
+|:------------|:-------|--:|-------:|------:|--------:|
+|m_intercepts |lmerMod |  4|        |       |         |
+|m_slopes     |lmerMod |  6|       2| 105.56| 1.20e-23|
 
 ---
 # Or use Bayes factors
@@ -1163,10 +1132,10 @@ test_performance(m_intercepts, m_slopes) %&gt;%
 
 
 
-|Name         |          Model |     BF|
-|:------------|:---------------|------:|
-|m_intercepts |lmerModLmerTest |       |
-|m_slopes     |lmerModLmerTest | &gt; 1000|
+|Name         |  Model |     BF|
+|:------------|:-------|------:|
+|m_intercepts |lmerMod |       |
+|m_slopes     |lmerMod | &gt; 1000|
 Models were detected as nested and are compared in sequential order.
 
 ---
