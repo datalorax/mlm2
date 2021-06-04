@@ -23,11 +23,11 @@ Each homework assignment is worth 15 points. Please do not turn in partial work.
 
 {{< bootstrap-table "table table-hover" >}}
 
-| Lab|Date Assigned |Date Due      |Topic                                                                       |
-|---:|:-------------|:-------------|:---------------------------------------------------------------------------|
-|   1|Fri, April 09 |Fri, April 23 |[Basic multilevel modeling with R](../homework-1)                           |
-|   2|Fri, April 30 |Fri, May 14   |[Growth models and variance-covariance matrices](../homework-2)             |
-|   3|Fri, May 14   |Fri, May 28   |[Bayesian estimation & multilevel logistic regression models](../homework-3 |
+| Lab|Date Assigned |Date Due      |Topic                                                                        |
+|---:|:-------------|:-------------|:----------------------------------------------------------------------------|
+|   1|Fri, April 09 |Fri, April 23 |[Basic multilevel modeling with R](../homework-1)                            |
+|   2|Fri, April 30 |Fri, May 14   |[Growth models and variance-covariance matrices](../homework-2)              |
+|   3|Fri, May 14   |Fri, May 28   |[Bayesian estimation & multilevel logistic regression models](../homework-3) |
 
 {{< /bootstrap-table >}}
 

@@ -37,7 +37,7 @@ labs <- tibble(
   `Date Due` = mdy(c("4/23/21", "5/14/21", "5/28/21")),
   Topic = c("[Basic multilevel modeling with R](../homework-1)",
             "[Growth models and variance-covariance matrices](../homework-2)",
-            "[Bayesian estimation & multilevel logistic regression models](../homework-3")
+            "[Bayesian estimation & multilevel logistic regression models](../homework-3)")
 ) %>% 
   mutate(across(where(is.Date), ~format(.x, "%a, %B %d")))
 
