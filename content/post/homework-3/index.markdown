@@ -60,11 +60,11 @@ You must use Bayesian estimation, and provide evidence to justify your conclusio
 If you would like additional practice, you can address the remaining questions
 
 
-> To what extent does the likelihood of repeating a grade vary between schools?
+> RQ1: To what extent does the likelihood of repeating a grade vary between schools?
 
-> Does the coded sex of the student relate to this likelihood?
+> RQ2: Does the coded sex of the student relate to this likelihood?
 
-> Does the relation between students' coded sex and likelihood of repeating depend upon the school in which they are enrolled?
+> RQ3: Does the relation between students' coded sex and likelihood of repeating depend upon the school in which they are enrolled?
 
 
 ## Research Question 1
@@ -78,10 +78,12 @@ Use the data to fit a model to address the first research question. Use maximum 
 ### RQ1, Part 2
 After fitting the model, provide a brief interpretation of the model and the coefficients.
 
+
+
 ### RQ1, Part 3
 Use the fitted model to display the variability between schools in terms of the probability of students repeating a grade. It should look something like the below.
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
 
 ## Research Question 2 & 3
 
@@ -106,5 +108,5 @@ Compare the two Bayesian fits using leave-one-out cross-validation (LOO). What d
 
 This is the only required research question you must address. You must only address the parts mentioned in the disclaimer part above. If you would like additional practice, please try to replicate the plot below. As always, don't worry about styling of the plots. Just replicate the important parts.
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" />
 

@@ -1,0 +1,213 @@
+---
+title: Homework 3
+subtitle: 
+author: Daniel Anderson
+date: '2021-05-11'
+assigned: '2021-05-14'
+due: '2021-05-28'
+slug: homework-3
+toc: true
+categories:
+  - Assignments
+tags:
+  - Assignments
+  - Homework
+---
+
+Read in the `"thai-education.csv"` file. It should look like the below.
+
+```{r echo = FALSE, message = FALSE}
+library(tidyverse)
+library(lme4)
+library(brms)
+library(broom.mixed)
+library(tidybayes)
+theme_set(theme_minimal(15))
+
+thai_edu <- read_csv(here::here("data", "thai-education.csv"))
+thai_edu
+```
+
+These variables represent the following:
+* `schoolid`: School identification number
+* `sex`: The coded sex of the student
+* `pped`: An indicator of whether the student attended preschool or not
+* `repeated_grade`: Whether or not a student repeated a grade level
+* `msesc`: The mean socioeconomic status at the school.
+
+Throughout this homework, we will address the following research questions
+
+
+# Disclaimer
+I am leaving the full homework here. However, you are only required to address the following question:
+
+> Does the relation between students' coded sex and likelihood of repeating depend upon the mean SES at the school level?
+
+
+You must use Bayesian estimation, and provide evidence to justify your conclusion. Make sure to also account for between-school variability in the baseline log-odds of a student repeating a grade.
+
+
+```{r include = FALSE}
+td <- thai_edu %>% 
+  mutate(out = ifelse(repeated_grade == "yes", 1, 0))
+
+m3 <- brm(out ~ sex + msesc + sex:msesc + (1|schoolid),
+          data = td,
+          family = bernoulli(link = "logit"),
+          cores = 4,
+          backend = "cmdstan",
+          control = list(adapt_delta = .99))
+summary(m3)
+
+posterior <- insight::get_parameters(m3)
+ggplot(posterior, aes(b_sexgirl.msesc)) +
+  geom_density(fill = "#91A8D0") +
+  geom_vline(xintercept = 0, 
+             color = "gray40",
+             linetype = "dashed",
+             size = 1.2) 
+
+quantile(posterior$b_Intercept,
+         probs = c(0.025, 0.975))
+
+quantile(posterior$b_Intercept + posterior$b_sexgirl,
+         probs = c(0.025, 0.975))
+
+sum(posterior$b_msesc < 0) / nrow(posterior)
+sum(posterior$b_sexgirl.msesc < 0) / nrow(posterior)
+
+pred_frame <- expand.grid(
+    msesc = seq(-1, 2, 0.01),
+    sex = c("girl", "boy"),
+    schoolid = -999
+  ) %>% 
+  add_fitted_draws(m3, n = 500, allow_new_levels = TRUE)
+
+ggplot(pred_frame, aes(msesc, .value)) +
+  stat_lineribbon() +
+  facet_wrap(~sex) +
+  scale_fill_brewer(palette = "Greys")
+
+# The primary research question concerned whether the differential likelihood of being retained by sex (boy/girl) depended on the mean SES of the school. On average, the log-odds of being retained were -1.99 (95% credible interval = [-2.18, -1.82]) for boys, and -1.99 + -0.55 = -2.54 for girls (95% CI = [-2.74, -2.36]. These log odds translate to a 12% and 7% chance of being retained, respectively. The 95% credible interval for both the mean SES parameter and the interaction between mean SES and sex crossed zero. However, 92% and 94% of the posterior density, respectively, was below zero, indicating a low likelihood of a positive impact (increased likelihood of being retained) of school mean SES. This indicated that as the mean SES of the school increased, the likelihood of students being retained decreased, on average. The mean of the posterior distribution for school mean SES suggested that the log-odds of being retained for boys decreased by 0.33 for every one unit increase in mean SES. For girls, this relation was steeper, with the mean of the posterior distribution suggesting a one unit increase in mean SES would reduce the log-odds of being retained by 0.63 points. In sum, there is modest evidence that higher mean SES at the school level was associated with lower odds of being retained, and that this relation was stronger for girls than for boys (who already had a lower likelihood of being retained). However, there is a fairly high amount of uncertainty around these estimates.
+
+```
+
+# The rest
+
+If you would like additional practice, you can address the remaining questions
+
+
+> RQ1: To what extent does the likelihood of repeating a grade vary between schools?
+
+> RQ2: Does the coded sex of the student relate to this likelihood?
+
+> RQ3: Does the relation between students' coded sex and likelihood of repeating depend upon the school in which they are enrolled?
+
+
+## Research Question 1
+
+### RQ1, Part 1 
+Use the data to fit a model to address the first research question. Use maximum likelihood estimation. Note - you may run into some convergence issues. Use the troubleshooting skills we've talked about to modify the model so it converges without warning.
+
+
+```{r include = FALSE}
+m0 <- glmer(out ~ 1 + (1|schoolid),
+            data = td,
+            family = binomial(link = "logit"),
+            control = glmerControl(optimizer = "bobyqa"))
+summary(m0)
+brms::inv_logit_scaled(fixef(m0) + 1.283)
+```
+
+### RQ1, Part 2
+After fitting the model, provide a brief interpretation of the model and the coefficients.
+
+```{r include = FALSE}
+# The average log-odds of being retained was -2.22, which was significantly different from zero (p < 0.001) and varied between schools with a standard deviation of 1.28. The baseline log-odds translated to an average probability of being retained of approximately 10%. Students enrolled in a school one standard deviation below the average would have about a 3% probability of being retained, while students in a school one standard deviation above the norm would have about a 28% chance of being retained.
+```
+
+### RQ1, Part 3
+Use the fitted model to display the variability between schools in terms of the probability of students repeating a grade. It should look something like the below.
+
+```{r echo = FALSE, fig.height = 10}
+m0_tidied <- tidy(m0, effects = "ran_vals", conf.int = TRUE)
+
+m0_tidied %>% 
+  mutate(level = forcats::fct_reorder(level, estimate)) %>% 
+  ggplot(aes(estimate, level)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
+                 color = "gray80") +
+  geom_point(color = "#009dff") +
+  geom_vline(xintercept = 0, color = "gray40", size = 3) +
+  labs(x = "Log-Odds Estimate", y = "") +
+  guides(color = "none") +
+  theme_minimal(25) +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank()) 
+```
+
+## Research Question 2 & 3
+
+### RQ2/3, Part 1
+
+Building more complicated models will result in convergence issues that are difficult to solve via maximum likelihood. Fit model(s) to address Research Questions 2 and 3 using Bayesian estimation. Assume default, flat priors.
+
+Conduct diagnostic checks on these model(s) to make sure there were no issues with convergence.
+
+```{r include = FALSE}
+m1 <- brm(out ~ sex + (1|schoolid),
+          data = td,
+          family = bernoulli(link = "logit"),
+          cores = 4,
+          backend = "cmdstan")
+summary(m1)
+brms::pp_check(m1, type = "bars")
+brms::pp_check(m1, type = "stat")
+plot(m1)
+
+m2 <- brm(out ~ sex + (sex|schoolid),
+          data = td,
+          family = bernoulli(link = "logit"),
+          cores = 4,
+          backend = "cmdstan",
+          control = list(adapt_delta = .99))
+summary(m2)
+plot(m2)
+brms::pp_check(m2, type = "bars")
+brms::pp_check(m1, type = "stat")
+
+```
+
+### RQ2/3, Part 2
+Provide a brief interpretation of the model. For this section, focus primarily on the mean of the primary parameters you're estimating (i.e., the estimates when you call `summary()`), along with the credible intervals around those means.
+
+
+### RQ2/3, Part 3
+Compare the two Bayesian fits using leave-one-out cross-validation (LOO). What do you conclude?
+
+```{r include = FALSE}
+loo_compare(loo(m1), loo(m2))
+loo_compare(waic(m1), waic(m2))
+
+# The evidence does not indiciate that the fit of the more complex model is justifed by the data (the LOO difference is only about 1/4 the SE)
+```
+
+## Final Research Question
+
+This is the only required research question you must address. You must only address the parts mentioned in the disclaimer part above. If you would like additional practice, please try to replicate the plot below. As always, don't worry about styling of the plots. Just replicate the important parts.
+
+```{r echo = FALSE, fig.height = 8}
+expand.grid(sex = c("boy", "girl"),
+            msesc = seq(0, 1, 0.1), 
+            schoolid = unique(td$schoolid)[1:6]) %>% 
+  add_fitted_draws(model = m3, n = 100, scale = "response") %>% 
+  ggplot(aes(msesc, .value, color = sex)) +
+  geom_line(aes(group = paste(sex, .draw)),
+            alpha = 0.4) +
+  facet_wrap(~schoolid) +
+  theme_minimal(25) +
+  scale_color_manual(values = c("#8e95f6", "#505160")) +
+  theme(axis.text.x = element_text(size = 14),
+        legend.position = "top")
+```
+

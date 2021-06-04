@@ -1,0 +1,164 @@
+---
+title: Homework 2
+subtitle: Growth models and variance-covariance matrices
+author: Daniel Anderson
+date: '2021-04-20'
+assigned: '2021-04-09'
+due: '2021-04-23'
+slug: homework-2
+categories:
+  - Assignments
+tags:
+  - Assignments
+  - Homework
+toc: true
+---
+
+```{r echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+## Background
+For this homework, we will use a dataset on adolescent alcohol use collected by [Curran et al.](https://curran.web.unc.edu/wp-content/uploads/sites/6785/2015/03/CurranSticeChassin1997.pdf), which includes three waves of data on 82 adolescents. Below is some additional information about the data.
+
+* Waves of data were collected annually, begining at age 14
+* `alcuse` is the outcome, ranging from 0 ("not at all") to 7 ("every day"). A square root transformation has been applied.
+* `coa` is a dummy variabe indicating whether or not the participant was the **c**hild **o**f and **a**lcoholic.
+* `peer` is measure of alcohol use among the participant's peer group. Similar to the outcome, a square root transformation has been applied.
+
+
+
+### 1: Data
+Read in the data and conduct any data prep work needed. Specifically, we will be fitting a number of different growth models in this homework, so you'll need to think about how you're going to code time.
+
+```{r }
+library(tidyverse)
+library(lme4)
+library(nlme)
+library(sundry)
+
+d <- read_csv(here::here("data", "alcohol-adolescents.csv")) %>% 
+  mutate(wave = age - 14)
+```
+
+### 2: Initial fits
+Fit a model with random intercepts and parallel slopes. Compare the fit of this model to one with random intercepts *and* random slopes. Describe which model you believe fits the data better, and provide evidence to justify this conclusion.
+
+```{r }
+m0a <- lmer(alcuse ~ wave + (1|id), d)
+m0b <- lmer(alcuse ~ wave + (wave|id), d)
+#anova(m0a, m0b)
+
+# The fit of the models is very close. The AIC value was approximately 6 points lower for the random slopes model, while the BIC value was slightly higher (0.7 points) for the random slopes model. The $\chi^2$ test of the model deviance was significant ($p = 0.005$), suggesting the random slopes model displayed the better fit. While model parsimony may preference the random intercept model, I chose to move forward with the random slopes model given that, theoretically, we would expect each student to have a different trajectory.
+```
+
+
+
+### 3: Alternative residual VCOV
+Use Generalized Least Squares (gls) to re-estimate the model with (a) autoregressive, (b) heterogeneous autoregressive, and (c) Toeplitz structures. Compare the composite residuals from these models with the composite residual from the random slopes model fit in Question 2.
+
+```{r }
+ar <- gls(alcuse ~ wave,
+          data = d, 
+          correlation = corAR1(form = ~1|id))
+
+har <- gls(alcuse ~ wave,
+          data = d, 
+          correlation = corAR1(form = ~1|id),
+          weights = varIdent(form = ~1|wave))
+
+toep <- gls(alcuse ~ wave,
+            data = d, 
+            correlation = corARMA(form = ~1|id, p = 2))
+
+# AR
+cm_ar <- corMatrix(ar$modelStruct$corStruct)[[1]]
+
+# HAR
+cm_har <- corMatrix(har$modelStruct$corStruct)[[1]] 
+var_struct <- har$modelStruct$varStruct
+vars <- coef(var_struct, 
+             unconstrained = FALSE, 
+             allCoef = TRUE)
+vars <- matrix(vars, ncol = 1)
+
+# toep
+cr_toep <- corMatrix(toep$modelStruct$corStruct)[[1]] 
+
+# cm_ar * sigma(ar)^2
+# 
+# cm_har * sigma(har)^2 *
+#   (vars %*% t(vars))
+# 
+# cr_toep * sigma(toep)^2
+# 
+# pull_residual_vcov(m0b)[1:3, 1:3]
+```
+
+### 4: Comparing models
+Compare the fit of all models. Which model does the evidence suggest provides the best fit to the data?
+
+```{r eval = FALSE}
+performance::compare_performance(m0a, m0b, ar, har, toep)
+sundry::aic_weights(m0a, m0b, ar, har, toep)
+
+# The heterogenous autoregressive model had the lowest AIC and BIC values. However, the AIC values between the AR1 and heterogenous models were separated by less than one point, while the BIC value indicated the AR1 model displayed the best fit to the data (by approximately 5 points). This suggests that a simpler model (from the unstructured model) likely fits the data better (and by extension, that the unstructured model may be overfitting the data to some extent). However, the evidence was somewhat mixed and not overwhelmingly convincing.
+```
+
+### 5: Adding predictors
+Include `coa` and `peer` as predictors in the model. Evaluate whether adolescents alcohol use trajectories (slopes) depend on these variables. You can extend your `{lme4}` model or your `gls()` model, regardless of your conclusions from above. Provide a brief summary of your findings (you do not have to interpret the entire model, just whether or not the trajectories depend on `coa` and/or `peer`).
+
+```{r }
+m1 <- lmer(alcuse ~ wave + coa + peer + (wave|id), d)
+m2 <- lmer(alcuse ~ wave*coa + wave*peer + (wave|id), d)
+
+summary(m1)
+summary(m2)
+
+anova(m0b, m1, m2)
+
+m3 <- lmer(alcuse ~ wave*peer + coa + (wave|id), d)
+anova(m1, m2, m3)
+
+#anova(m1, m0b)
+
+
+#### Same thing with AR model
+ar1 <- gls(alcuse ~ wave + coa + peer,
+          data = d, 
+          correlation = corAR1(form = ~1|id))
+ar2 <- gls(alcuse ~ wave*coa + wave*peer,
+          data = d, 
+          correlation = corAR1(form = ~1|id))
+ar3 <- gls(alcuse ~ coa + wave*peer,
+          data = d, 
+          correlation = corAR1(form = ~1|id))
+# summary(ar1)
+# summary(ar2)
+# summary(ar3)
+# anova(ar1, ar2, ar3)
+# anova(ar1, ar3)
+
+# Adding `coa` and `peer` substantially reduced the model AIC and BIC when compared to the unconditional growth model, suggesting they were important predictors of adolescents alcohol consumption at 14 years old. However, both the model AIC and BIC increased when these variables were included as predictors of the slope (estimated rate of change in alcohol use from 14 to 16). Inspection of the fixed effects indicated the interaction between `coa` and `wave` was particularly small, indicating any observed difference was likely related to random sampling variability. A model was then fit including only the interaction between `peer` and `wave`. This model had a slightly lower AIC value (approximately 1 point) but the model BIC value was approximately 2.5 points higher. Similarly, the $\chi^2$ test of the model deviance was not significant for either model. Taken together, these results suggest that the simpler model, with `coa` and `peer` main effects, but no interaction with `wave` provided the best description of the data.
+```
+
+### 6: Plots
+
+Produce the following plot. Don't worry about differences in the theming. Just get the basics structure. Note, I'm using the model that I felt displayed the best fit to the data to make my predictions.
+
+```{r}
+preds <- expand.grid(wave = 0:2,
+                     coa = 0:1,
+                     peer = 0:2,
+                     id = -999) 
+preds %>% 
+  mutate(pred = predict(m1, newdata = preds, allow.new.levels = TRUE)) %>% 
+  ggplot(aes(wave, pred)) +
+  geom_line(aes(color = factor(peer)), size = 1.4) +
+  facet_wrap(~coa) +
+  scale_color_brewer(palette = "Accent") +
+  labs(title = "Marginal prediction",
+       subtitle = str_wrap("Lines represent different levels of alcohol use across peer groups, while the plots themselves are separated by whether or not the participant was the child of an alcoholic", 60)) + 
+  theme_minimal(14) +
+  theme(plot.title.position = "plot") 
+```
