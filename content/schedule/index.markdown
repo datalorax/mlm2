@@ -249,7 +249,7 @@ Icons in the schedule link to specific chapters.
 {{< readings "clark" "extensions.html" "NA" >}}
 {{< /wrap >}}
   {{< wrap >}}
-{{< lecture "" >}}
+{{< lecture "https://youtu.be/ezPNfJqKT04" >}}
 {{< /wrap >}}
 {{< /week >}}
 
